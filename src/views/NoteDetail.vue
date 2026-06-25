@@ -1,0 +1,344 @@
+<template>
+    <div v-if="note" class="container">
+        <!-- 内容区域 -->
+        <div class="header-section">
+            <div class="title-row">
+                <el-button text @click="router.back()" :icon="ArrowLeft" class="back-button">
+                    返回
+                </el-button>
+                <el-breadcrumb separator="/">
+                    <el-breadcrumb-item>{{ note.subject }}</el-breadcrumb-item>
+                    <el-breadcrumb-item>{{ note.title }}</el-breadcrumb-item>
+                </el-breadcrumb>
+            </div>
+            <div class="header-row">
+                <div class="tags" v-if="note.tags && note.tags.length > 0">
+                    <el-tag v-for="tag in note.tags" :key="tag" size="small">{{ tag }}</el-tag>
+                </div>
+                <div class="buttons">
+                    <el-button type="success" @click="handleOpenQuiz" :icon="ChatDotRound">
+                        生成复习题
+                    </el-button>
+                    <el-button type="warning" @click="handleExportPdf" :icon="Document">
+                        导出 PDF
+                    </el-button>
+                    <el-button type="primary" @click="showEditForm = true" :icon="Edit">
+                        编辑笔记
+                    </el-button>
+                    <el-button type="danger" @click="deleteCurrentNote" :icon="Delete">
+                        删除笔记
+                    </el-button>
+                </div>
+            </div>
+        </div>
+        <div ref="contentRef">
+            <MarkdownRenderer v-if="note.content" class="page-content" :content="note.content" />
+        </div>
+        <div v-if="note.imgs.length > 0" class="image-container" ref="imagesRef">
+            <div v-for="(img, index) in note.imgs" :key="img" class="image-item" :style="itemStyles[index]">
+                <el-image :src="`${baseUrl}/assets/${img}`" alt="Note Image" :initial-index="index"
+                    @click="showPreview = true; previewIndex = index" @load="onImageLoaded(index, $event)" />
+            </div>
+        </div>
+    </div>
+    <div v-else class="container">
+        <el-empty description="笔记不存在，正在跳转..." />
+    </div>
+    <el-image-viewer v-if="showPreview" :url-list="note!.imgs.map(item => `${baseUrl}/assets/${item}`)" show-progress
+        hide-on-click-modal :max-scale="7" :min-scale="0.2" :initial-index="previewIndex" @close="showPreview = false"
+        :infinite="false" />
+    <!-- 编辑表单弹窗 -->
+    <el-dialog v-model="showEditForm" title="编辑笔记" append-to-body width="900px" class="edit-dialog">
+        <NoteForm title="编辑笔记" submit-button-text="保存修改" show-cancel-button :loading="editSubmitting" :initial-data="{
+            title: note!.title,
+            subject: note!.subject,
+            content: note!.content,
+            tags: note!.tags,
+        }" :initial-images="note!.imgs" @submit="handleEditSubmit" @cancel="showEditForm = false" />
+    </el-dialog>
+    <!-- 复习题对话框 -->
+    <el-dialog v-model="showQuizDialog" title="AI 复习题" append-to-body width="900px" class="quiz-dialog">
+        <QuizDialog :note-content="note?.content ?? ''" ref="quizDialogRef" />
+    </el-dialog>
+</template>
+
+<script setup lang="ts" name="NoteDetail">
+import { computed, nextTick, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { Edit, Delete, ArrowLeft, ChatDotRound, Document } from '@element-plus/icons-vue'
+import NoteForm from '@/components/NoteForm.vue'
+import QuizDialog from '@/components/QuizDialog.vue'
+import { useNoteDetail } from '@/hooks/useNoteDetail'
+import { useWaterfallLayout } from '@/hooks/useWaterfallLayout'
+import { exportNoteToPdf } from '@/utils/pdf'
+
+const router = useRouter()
+const route = useRoute()
+
+// 图片基础路径（生产环境 Flask 同源服务，直接用相对路径）
+const baseUrl = ''
+
+const {
+    note,
+    showPreview,
+    previewIndex,
+    showEditForm,
+    editSubmitting,
+    showQuizDialog,
+    getNote,
+    handleEditSubmit,
+    deleteCurrentNote,
+    openQuiz,
+} = useNoteDetail()
+
+const quizDialogRef = ref<InstanceType<typeof QuizDialog> | null>(null)
+const contentRef = ref<HTMLElement | null>(null)
+const imagesRef = ref<HTMLElement | null>(null)
+
+const imagesList = computed(() => note.value?.imgs ?? [])
+
+const { itemStyles, onImageLoaded, resetLayout } = useWaterfallLayout(imagesRef, imagesList)
+
+// 根据路由参数拉取笔记
+watch(() => route.params.id, async (newId) => {
+    if (newId) {
+        resetLayout()
+        await getNote(newId as string)
+    }
+}, { immediate: true })
+
+async function handleOpenQuiz() {
+    const ok = openQuiz()
+    if (!ok) return
+    await nextTick()
+    quizDialogRef.value?.startQuiz()
+}
+
+async function handleExportPdf() {
+    if (!note.value) return
+    await exportNoteToPdf(note.value, contentRef.value, imagesRef.value)
+}
+</script>
+
+<style scoped>
+.container {
+    margin: 0 auto;
+    padding: 40px 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.8;
+    color: #333;
+}
+
+.title-row {
+    display: flex;
+    align-items: center;
+    padding-bottom: 15px;
+    border-bottom: 3px solid #3498db;
+    gap: 12px;
+}
+
+.back-button {
+    flex-shrink: 0;
+    font-size: 1rem !important;
+    font-weight: normal !important;
+    color: #3498db !important;
+}
+
+.back-button :deep(.el-icon) {
+    font-size: 1rem !important;
+}
+
+.header-section :deep(.el-breadcrumb) {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #2c3e50;
+    word-break: break-all;
+}
+
+.header-section :deep(.el-breadcrumb__inner) {
+    color: #2c3e50;
+    font-weight: 700;
+}
+
+.header-section :deep(.el-breadcrumb__inner):hover {
+    color: #2c3e50;
+    font-weight: 700;
+}
+
+.page-content {
+    font-size: 1.1rem;
+    color: #4a4a4a;
+    margin-bottom: 40px;
+    padding: 25px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    word-break: break-word;
+}
+
+.image-container {
+    position: relative;
+    margin-top: 30px;
+    min-height: 100px;
+}
+
+.image-item {
+    overflow: hidden;
+    border-radius: 8px;
+    cursor: zoom-in;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.image-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.image-item :deep(.el-image) {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.image-item :deep(.el-image img) {
+    width: 100% !important;
+    height: auto !important;
+    object-fit: contain !important;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 20px 15px;
+    }
+
+    .header-section :deep(.el-breadcrumb) {
+        font-size: 1.3rem;
+    }
+
+    .page-content {
+        font-size: 1rem;
+        padding: 20px;
+    }
+
+    .buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .buttons .el-button {
+        font-size: 13px;
+        padding: 7px 12px;
+        flex: 1;
+        min-width: 100px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 12px 10px;
+    }
+
+    .header-section {
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .header-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .buttons {
+        width: 100%;
+        gap: 6px;
+    }
+
+    .buttons .el-button {
+        flex: 1;
+        justify-content: center;
+        font-size: 12px;
+        padding: 7px 8px;
+    }
+
+    .page-content {
+        font-size: 0.95rem;
+        padding: 14px;
+        margin-bottom: 24px;
+    }
+
+    .title-row {
+        padding-bottom: 10px;
+    }
+
+    .back-button {
+        font-size: 0.85rem !important;
+    }
+
+    .header-section :deep(.el-breadcrumb) {
+        font-size: 1.1rem;
+    }
+}
+
+:deep(.edit-dialog),
+:deep(.quiz-dialog) {
+    width: 900px;
+}
+
+@media (max-width: 768px) {
+
+    :deep(.edit-dialog),
+    :deep(.quiz-dialog) {
+        width: 90%;
+        max-width: 600px;
+    }
+}
+
+@media (max-width: 480px) {
+
+    :deep(.edit-dialog),
+    :deep(.quiz-dialog) {
+        width: 95%;
+        max-width: 100%;
+    }
+}
+
+.header-section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.buttons .el-button {
+    margin: auto;
+}
+
+:deep(.form-card) {
+    margin-bottom: 0;
+}
+
+:deep(.el-dialog__body) {
+    padding: 20px 0;
+}
+</style>

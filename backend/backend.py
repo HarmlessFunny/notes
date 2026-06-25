@@ -2,9 +2,9 @@ import os
 import json
 import time
 import re
-from flask import Flask, request, jsonify, Response, send_from_directory, send_file, stream_with_context
+from flask import Flask, request, jsonify, send_from_directory, send_file, stream_with_context
 from flask_cors import CORS
-from typing import List, Tuple, Any
+from typing import Tuple, Any
 from backend_ai import ai_chat, generate_quiz, grade_quiz
 from openai import OpenAI
 from backend_tools import init_database, fetch_all_notes, fetch_notes_by_day, fetch_note_by_id, fetch_notes_by_tag, search_notes, fetch_notes_by_ids, add_note, update_note, delete_notes, save_images, fetch_ai_chat, save_ai_chat, delete_ai_chat, Note, DB_FILE, ASSETS_FOLDER
@@ -17,7 +17,7 @@ load_dotenv()
 # 初始化数据库
 init_database()
 
-# 检查 API Key
+# 检查环境变量
 api_key = os.getenv("API_KEY")
 if not api_key:
     raise RuntimeError("请设置 API_KEY 环境变量")
@@ -96,7 +96,7 @@ def serve_image_route(filename: str) -> Tuple[Any, int]:
     if os.path.exists(user_path):
         return send_file(user_path), 200
     
-    dist_path = os.path.join('dist', 'assets', filename)
+    dist_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dist', 'assets', filename)
     if os.path.exists(dist_path):
         return send_file(dist_path), 200
     
@@ -239,7 +239,7 @@ def ai_grade_route() -> Any:
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_static_route(path: str) -> Any:
-    if path != "" and os.path.exists(os.path.join('dist', path)):
+    if path != "" and os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dist', path)):
         return send_from_directory('dist', path)
     else:
         return send_from_directory('dist', 'index.html')

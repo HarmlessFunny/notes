@@ -61,7 +61,7 @@ cp .env.example .env
 # 编辑 .env 文件，填入你的 API_KEY、BASE_URL 和 MODEL_NAME
 
 # 启动后端服务
-python backend.py
+python backend/backend.py
 ```
 
 ### 4. 访问应用

@@ -5,10 +5,11 @@ import os
 from nanoid import generate
 import time
 
-# 配置
-DB_FILE = 'database.json'
+# 配置 - 使用脚本所在目录的绝对路径
+_BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_FILE = os.path.join(_BACKEND_DIR, 'database.json')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-ASSETS_FOLDER = 'assets'
+ASSETS_FOLDER = os.path.join(_BACKEND_DIR, 'assets')
 
 # 艾宾浩斯遗忘曲线推荐复习间隔（天数）
 REVIEW_INTERVAL_DAYS: List[int] = [0, 1, 2, 4, 7, 15, 30, 60, 120, 240]

@@ -13,8 +13,8 @@ export default defineConfig({
     vue(),
     vueDevTools(),
     vueSetupExtend(),
-    AutoImport({resolvers: [ElementPlusResolver()]}),
-    Components({resolvers: [ElementPlusResolver()]}),
+    AutoImport({ resolvers: [ElementPlusResolver()] }),
+    Components({ resolvers: [ElementPlusResolver()] }),
   ],
   resolve: {
     alias: {
@@ -38,7 +38,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: './dist',
+    outDir: './backend/dist',
     assetsDir: 'assets',
     emptyOutDir: true,
   },

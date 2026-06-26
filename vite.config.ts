@@ -31,7 +31,7 @@ export default defineConfig({
         secure: false,
         rewrite: (path) => path,
       },
-      '/static': {
+      '/assets': {
         target: 'http://localhost:5000',
         changeOrigin: true,
       }

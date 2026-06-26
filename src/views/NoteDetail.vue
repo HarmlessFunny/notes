@@ -12,9 +12,6 @@
                 </el-breadcrumb>
             </div>
             <div class="header-row">
-                <div class="tags" v-if="note.tags && note.tags.length > 0">
-                    <el-tag v-for="tag in note.tags" :key="tag" size="small">{{ tag }}</el-tag>
-                </div>
                 <div class="buttons">
                     <el-button type="success" @click="handleOpenQuiz" :icon="ChatDotRound">
                         生成复习题
@@ -53,7 +50,6 @@
             title: note!.title,
             subject: note!.subject,
             content: note!.content,
-            tags: note!.tags,
         }" :initial-images="note!.imgs" @submit="handleEditSubmit" @cancel="showEditForm = false" />
     </el-dialog>
     <!-- 复习题对话框 -->
@@ -317,12 +313,6 @@ async function handleExportPdf() {
     align-items: center;
     flex-wrap: wrap;
     gap: 15px;
-}
-
-.tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
 }
 
 .buttons {

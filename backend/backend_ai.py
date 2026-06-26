@@ -1,6 +1,6 @@
 import json
 from openai import OpenAI
-from backend_tools import fetch_all_notes, fetch_notes_by_day, fetch_note_by_id, fetch_notes_by_tag, search_notes, add_note, update_note, delete_notes
+from backend_tools import fetch_all_notes, fetch_notes_by_day, fetch_note_by_id, search_notes, add_note, update_note, delete_notes
 from backend_utils import stream_ai_response
 
 tools = [
@@ -15,20 +15,6 @@ tools = [
                     "id": {"type": "string", "description": "笔记ID"}
                 },
                 "required": ["id"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "fetch_notes_by_tag",
-            "description": "根据标签精确查找笔记，返回笔记ID、标题、科目列表（如果想查看详细内容，调用fetch_note_by_id工具）",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "tag": {"type": "string", "description": "标签名称（精确匹配）"}
-                },
-                "required": ["tag"]
             }
         }
     },
@@ -84,10 +70,9 @@ tools = [
                     "subject": {"type": "string", "description": "笔记科目"},
                     "content": {"type": "string", "description": "笔记内容"},
                     "timestamp": {"type": "string", "description": "毫秒级时间戳字符串（自动生成）"},
-                    "imgs": {"type": "array", "items": {"type": "string", "description": "笔记图片URL列表（无需生成）"}},
-                    "tags": {"type": "array", "items": {"type": "string", "description": "标签列表"}}
+                    "imgs": {"type": "array", "items": {"type": "string", "description": "笔记图片URL列表（无需生成）"}}
                 },
-                "required": ["title", "subject", "content", "tags"]
+                "required": ["title", "subject", "content"]
             }
         }
     },
@@ -109,17 +94,16 @@ tools = [
         "type": "function",
         "function": {
             "name": "update_note",
-            "description": "更新单篇笔记的标题、科目、内容、标签等信息（不修改时间戳和图片）",
+            "description": "更新单篇笔记的标题、科目、内容等信息（不修改时间戳和图片）",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "id": {"type": "string", "description": "要修改的笔记ID"},
                     "title": {"type": "string", "description": "笔记标题"},
                     "subject": {"type": "string", "description": "笔记科目"},
-                    "content": {"type": "string", "description": "笔记内容"},
-                    "tags": {"type": "array", "items": {"type": "string", "description": "标签列表"}}
+                    "content": {"type": "string", "description": "笔记内容"}
                 },
-                "required": ["id", "title", "subject", "content", "tags"]
+                "required": ["id", "title", "subject", "content"]
             }
         }
     },
@@ -129,7 +113,6 @@ TOOL_CALL_MAP = {
     "fetch_note_by_id": fetch_note_by_id,
     "fetch_all_notes": fetch_all_notes,
     "fetch_notes_by_day": fetch_notes_by_day,
-    "fetch_notes_by_tag": fetch_notes_by_tag,
     "search_notes": search_notes,
     "add_note": add_note,
     "update_note": update_note,

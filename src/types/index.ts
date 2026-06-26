@@ -2,7 +2,6 @@ export interface FormData {
     title: string
     subject: string
     content: string
-    tags: string[]
 }
 
 export interface UploadFile {
@@ -20,7 +19,6 @@ export interface Note {
     content: string
     time: string
     imgs: string[]
-    tags: string[]
 }
 
 export interface LightNote {

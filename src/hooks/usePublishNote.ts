@@ -5,12 +5,11 @@ import { useNotesStore } from '@/stores/notes'
 
 export function usePublishNote() {
     const notesStore = useNotesStore()
-    
+
     const formData = ref<FormData>({
         title: '',
         subject: '',
-        content: '',
-        tags: []
+        content: ''
     })
 
     const canSubmit = computed(() => {
@@ -20,7 +19,7 @@ export function usePublishNote() {
     })
 
     const resetForm = () => {
-        formData.value = { title: '', subject: '', content: '', tags: [] }
+        formData.value = { title: '', subject: '', content: '' }
     }
 
     const fileList = ref<UploadFile[]>([])
@@ -68,7 +67,6 @@ export function usePublishNote() {
             submitFormData.append('content', formData.value.content)
             submitFormData.append('timestamp', Date.now().toString())
             submitFormData.append('id', nanoid())
-            submitFormData.append('tags', JSON.stringify(formData.value.tags))
 
             fileList.value.forEach(item => {
                 if (item.raw) submitFormData.append('images', item.raw)

@@ -7,7 +7,7 @@ from flask_cors import CORS
 from typing import Tuple, Any
 from backend_ai import ai_chat, generate_quiz, grade_quiz
 from openai import OpenAI
-from backend_tools import init_database, fetch_all_notes, fetch_notes_by_day, fetch_note_by_id, fetch_notes_by_tag, search_notes, fetch_notes_by_ids, add_note, update_note, delete_notes, save_images, fetch_ai_chat, save_ai_chat, delete_ai_chat, Note, DB_FILE, ASSETS_FOLDER
+from backend_tools import init_database, fetch_all_notes, fetch_notes_by_day, fetch_note_by_id, search_notes, fetch_notes_by_ids, add_note, update_note, delete_notes, save_images, fetch_ai_chat, save_ai_chat, delete_ai_chat, Note, DB_FILE, ASSETS_FOLDER
 from backend_utils import api_response, validate_required_fields, handle_api_error, sse_stream
 from dotenv import load_dotenv
 
@@ -81,14 +81,6 @@ def batch_notes_route() -> dict:
     return fetch_notes_by_ids(ids)
 
 
-@app.route('/api/notes/tag', methods=['GET'])
-@api_response
-def notes_by_tag_route() -> dict:
-    """根据标签获取笔记（精简字段）"""
-    tag = request.args.get('tag', '').strip()
-    return fetch_notes_by_tag(tag)
-
-
 @app.route('/assets/<filename>', methods=['GET'])
 def serve_image_route(filename: str) -> Tuple[Any, int]:
     """提供图片访问（先查上传目录，再查前端构建目录）"""
@@ -117,7 +109,6 @@ def submit_note_route() -> dict:
     timestamp = request.form.get('timestamp', '').strip() or str(int(time.time() * 1000))
     content = request.form.get('content', '').strip()
     id = request.form.get('id', '').strip()
-    tags = json.loads(request.form.get('tags', '[]'))
 
     images = request.files.getlist('images')
     safe_title = re.sub(r'[\\/:*?"<>|]', '_', title.strip())[:30] or f"note_{int(time.time())}"
@@ -129,11 +120,10 @@ def submit_note_route() -> dict:
         'content': content,
         'time': timestamp,
         'imgs': saved_images,
-        'tags': tags,
         'id': id
     }
     
-    add_note(title, subject, content, timestamp, saved_images, id, tags)
+    add_note(title, subject, content, timestamp, saved_images, id)
     
     return {
         'status': 'success',
@@ -161,7 +151,6 @@ def update_note_route(id: str) -> dict:
     title = request.form.get('title', '').strip()
     subject = request.form.get('subject', '').strip()
     content = request.form.get('content', '').strip()
-    tags = json.loads(request.form.get('tags', '[]'))
 
     existing_images = json.loads(request.form.get('existing_images', '[]'))
     images = request.files.getlist('images')
@@ -176,7 +165,7 @@ def update_note_route(id: str) -> dict:
                 if os.path.exists(img_path):
                     os.remove(img_path)
     
-    return update_note(id, title, subject, content, saved_images, tags)
+    return update_note(id, title, subject, content, saved_images)
 
 
 @app.route('/api/ai', methods=['POST'])

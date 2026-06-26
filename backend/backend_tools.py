@@ -21,7 +21,6 @@ class Note(TypedDict):
     content: str        # 笔记内容
     time: str           # 时间戳（字符串形式，如 "1780547279074"）
     imgs: List[str]     # 关联的图片文件名列表
-    tags: List[str]     # 标签列表
 
 class ChatMessage(TypedDict):
     role: str
@@ -167,19 +166,6 @@ def fetch_notes_by_day(someday: str) -> dict:
     except Exception as e:
         return {'status': 'error', 'message': f'加载数据失败: {str(e)}'}
 
-def fetch_notes_by_tag(tag: str) -> dict:
-    """根据标签搜索笔记，返回匹配的笔记（精简字段：id/title/subject）"""
-    try:
-        if not tag.strip():
-            return {'status': 'success', 'notes': []}
-        notes: List[Note] = load_database().get('notes', [])
-        q = tag.strip().lower()
-        matched = [n for n in notes if any(q == t.lower() for t in n.get('tags', []))]
-        light = [{'id': n['id'], 'title': n['title'], 'subject': n['subject']} for n in matched]
-        return {'status': 'success', 'notes': light}
-    except Exception as e:
-        return {'status': 'error', 'message': f'标签搜索失败: {str(e)}'}
-
 def fetch_note_by_id(id: str) -> dict:
     """根据ID获取笔记"""
     try:
@@ -193,7 +179,7 @@ def fetch_note_by_id(id: str) -> dict:
         return {'status': 'error', 'message': f'加载数据失败: {str(e)}'}
 
 def search_notes(keyword: str) -> dict:
-    """根据关键词搜索笔记，返回匹配的笔记（精简字段：id/title/subject，匹配标题/科目/内容/标签，大小写不敏感）"""
+    """根据关键词搜索笔记，返回匹配的笔记（精简字段：id/title/subject，匹配标题/科目/内容，大小写不敏感）"""
     try:
         if not keyword.strip():
             return {'status': 'success', 'notes': []}
@@ -204,21 +190,18 @@ def search_notes(keyword: str) -> dict:
             if q in n['title'].lower()
             or q in n['subject'].lower()
             or q in n.get('content', '').lower()
-            or any(q in tag.lower() for tag in n.get('tags', []))
         ]
         light = [{'id': n['id'], 'title': n['title'], 'subject': n['subject']} for n in matched]
         return {'status': 'success', 'notes': light}
     except Exception as e:
         return {'status': 'error', 'message': f'搜索失败: {str(e)}'}
 
-def add_note(title: str, subject: str, content: str='', timestamp: str=None, imgs: List[str]=[], id: str=None, tags: List[str]=None) -> None:
+def add_note(title: str, subject: str, content: str='', timestamp: str=None, imgs: List[str]=[], id: str=None) -> None:
     """添加笔记到数据库"""
     if timestamp is None:
         timestamp = str(int(time.time() * 1000))
     if id is None:
         id = generate()
-    if tags is None:
-        tags = []
     
     db_data = load_database()
     notes: List[Note] = db_data.get('notes', [])
@@ -228,14 +211,13 @@ def add_note(title: str, subject: str, content: str='', timestamp: str=None, img
         'content': content,
         'time': timestamp,
         'imgs': imgs,
-        'tags': tags,
         'id': id
     })
     db_data['notes'] = notes
     with open(DB_FILE, 'w', encoding='utf-8') as f:
         json.dump(db_data, f, ensure_ascii=False, indent=2)
 
-def update_note(id: str, title: str, subject: str, content: str='', imgs: List[str]=None, tags: List[str]=None) -> dict:
+def update_note(id: str, title: str, subject: str, content: str='', imgs: List[str]=None) -> dict:
     """更新笔记（纯函数，不修改时间戳和图片列表）"""
     db_data = load_database()
     notes: List[Note] = db_data.get('notes', [])
@@ -250,8 +232,6 @@ def update_note(id: str, title: str, subject: str, content: str='', imgs: List[s
     updated_note['content'] = content
     if imgs is not None:
         updated_note['imgs'] = imgs
-    if tags is not None:
-        updated_note['tags'] = tags
     
     with open(DB_FILE, 'w', encoding='utf-8') as f:
         json.dump(db_data, f, ensure_ascii=False, indent=2)

@@ -34,7 +34,6 @@ export function useNoteDetail() {
         submitFormData.append('subject', formData.subject)
         submitFormData.append('content', formData.content)
         submitFormData.append('id', note.value.id)
-        submitFormData.append('tags', JSON.stringify(formData.tags))
 
         // 分离已有图片和新上传的图片
         const existingImages: string[] = []

@@ -15,10 +15,6 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item label="标签">
-        <el-input-tag v-model="formData.tags" placeholder="输入标签" clearable delimiter=" " />
-      </el-form-item>
-
       <el-form-item label="笔记内容">
         <el-input v-model="formData.content" placeholder="输入笔记内容（可选）" type="textarea" :rows="1" show-word-limit
           maxlength="50000" autosize />
@@ -90,8 +86,7 @@ const hook = props.usePublishNote
 const formData = hook?.formData ?? ref<FormData>({
   title: '',
   subject: '',
-  content: '',
-  tags: []
+  content: ''
 })
 
 const canSubmit = hook?.canSubmit ?? computed(() => {
@@ -134,7 +129,7 @@ const closePreview = hook?.closePreview ?? (() => {
 })
 
 const resetForm = hook?.resetForm ?? (() => {
-  formData.value = { title: '', subject: '', content: '', tags: [] }
+  formData.value = { title: '', subject: '', content: '' }
 })
 
 const initForm = () => {
@@ -220,8 +215,5 @@ defineExpose({ resetForm, clearFiles })
     grid-template-columns: repeat(auto-fill, 80px);
   }
 
-  :deep(.el-input-tag) {
-    --el-input-tag-input-width: 60px;
-  }
 }
 </style>

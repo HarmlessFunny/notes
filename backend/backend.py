@@ -1,18 +1,21 @@
 import os
 import json
+import subprocess
 import time
 import re
+import threading
+import webbrowser
 from flask import Flask, request, jsonify, send_from_directory, send_file, stream_with_context
 from flask_cors import CORS
 from typing import Tuple, Any
 from backend_ai import ai_chat, generate_quiz, grade_quiz
 from openai import OpenAI
-from backend_tools import init_database, fetch_all_notes, fetch_notes_by_day, fetch_note_by_id, search_notes, fetch_notes_by_ids, add_note, update_note, delete_notes, save_images, fetch_ai_chat, save_ai_chat, delete_ai_chat, Note, DB_FILE, ASSETS_FOLDER
+from backend_tools import init_database, fetch_all_notes, fetch_notes_by_day, fetch_note_by_id, search_notes, fetch_notes_by_ids, add_note, update_note, delete_notes, save_images, fetch_ai_chat, save_ai_chat, delete_ai_chat, Note, DB_FILE, ASSETS_FOLDER, DIST_FOLDER, APP_DIR
 from backend_utils import api_response, validate_required_fields, handle_api_error, sse_stream
 from dotenv import load_dotenv
 
-# 加载环境变量
-load_dotenv()
+# 加载环境变量（从 exe/脚本同级目录的 .env 读取）
+load_dotenv(os.path.join(APP_DIR, '.env'))
 
 # 初始化数据库
 init_database()
@@ -88,7 +91,7 @@ def serve_image_route(filename: str) -> Tuple[Any, int]:
     if os.path.exists(user_path):
         return send_file(user_path), 200
     
-    dist_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dist', 'assets', filename)
+    dist_path = os.path.join(DIST_FOLDER, 'assets', filename)
     if os.path.exists(dist_path):
         return send_file(dist_path), 200
     
@@ -228,11 +231,22 @@ def ai_grade_route() -> Any:
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_static_route(path: str) -> Any:
-    if path != "" and os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dist', path)):
-        return send_from_directory('dist', path)
+    if path != "" and os.path.exists(os.path.join(DIST_FOLDER, path)):
+        return send_from_directory(DIST_FOLDER, path)
     else:
-        return send_from_directory('dist', 'index.html')
+        return send_from_directory(DIST_FOLDER, 'index.html')
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    if getattr(sys, 'frozen', False):
+        # 打包模式：后端直接 serve 前端，延迟打开浏览器
+        backend_port = int(os.getenv('BACKEND_PORT', 5000))
+        threading.Timer(1.5, lambda: webbrowser.open(f'http://localhost:{backend_port}')).start()
+        app.run(host='0.0.0.0', port=backend_port)
+    else:
+        # 开发模式：非阻塞启动 vite，延迟打开浏览器，再启动后端
+        frontend_port = int(os.getenv('FRONTEND_PORT', 5173))
+        backend_port = int(os.getenv('BACKEND_PORT', 5000))
+        subprocess.Popen(['npm', 'run', 'dev'], shell=True)
+        threading.Timer(3.0, lambda: webbrowser.open(f'http://localhost:{frontend_port}')).start()
+        app.run(host='0.0.0.0', port=backend_port, debug=True)

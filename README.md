@@ -1,15 +1,17 @@
 # Notes - 智能笔记应用
 
-一个基于 Vue 3 + Flask 的智能笔记管理系统，支持 Markdown 渲染、数学公式、AI 复习助手等功能。
+一个基于 Vue 3 + Flask 的智能笔记管理系统，主打**轻量化**设计，支持 Markdown 渲染、数学公式、AI 复习助手等功能。
 
 ## 功能特性
 
 - **笔记管理** - 创建、编辑、删除笔记，支持图片上传
+- **Markdown 存储** - 笔记正文以 `.md` 文件存储，database.json 只存元信息，清晰可读
 - **Markdown 渲染** - 支持代码高亮、数学公式（KaTeX）
 - **艾宾浩斯复习** - 根据遗忘曲线智能推荐复习计划
 - **AI 复习助手** - 与 AI 对话复习笔记内容，自动生成练习题并批改
 - **PDF 导出** - 将笔记导出为 PDF 文件
 - **响应式设计** - 适配桌面端和移动端
+- **单文件部署** - 后端可打包为单个 `.exe`，前端已内嵌，开箱即用
 
 ## 技术栈
 
@@ -26,18 +28,20 @@
 - Python 3
 - Flask
 - OpenAI SDK
-- JSON 文件数据库
+- JSON 文件数据库 + Markdown 文件存储
 
 ## 快速开始
 
-### 1. 克隆项目
+### 开发模式
+
+#### 1. 克隆项目
 
 ```bash
 git clone https://github.com/HarmlessFunny/notes.git
 cd notes
 ```
 
-### 2. 前端配置
+#### 2. 前端配置
 
 ```bash
 # 安装依赖
@@ -45,12 +49,9 @@ npm install
 
 # 启动开发服务器
 npm run dev
-
-# 构建生产版本
-npm run build
 ```
 
-### 3. 后端配置
+#### 3. 后端配置
 
 ```bash
 # 安装 Python 依赖
@@ -64,10 +65,34 @@ cp .env.example .env
 python backend/backend.py
 ```
 
-### 4. 访问应用
+#### 4. 访问应用
 
 前端开发服务器运行在 `http://localhost:5173`
 后端 API 服务运行在 `http://localhost:5000`
+
+### 打包部署
+
+项目支持一键打包为单个可执行文件（含前端 + 后端）：
+
+```bash
+# 双击运行 build.bat（Windows）
+# 或手动执行：
+npm run build
+cd backend
+pyinstaller --onefile --noconfirm --name backend --distpath ../release --hidden-import nanoid --add-data "dist;dist" backend.py
+```
+
+打包完成后，`release/backend.exe` 即为完整应用（约 30MB）。
+
+**部署时**，将 `backend.exe` 放到任意目录，同级放一个 `.env` 文件：
+
+```env
+API_KEY=your_api_key
+BASE_URL=https://api.example.com/
+MODEL_NAME=your_model_name
+```
+
+首次运行会自动创建 `database.json`、`assets/`、`notes/`。
 
 ## 环境变量
 
@@ -76,7 +101,28 @@ python backend/backend.py
 | `API_KEY` | API 密钥，用于 AI 功能 | 是 |
 | `BASE_URL` | API 基础 URL，用于 AI 功能，例如 'https://api.deepseek.com/' | 是 |
 | `MODEL_NAME` | 模型名称，用于 AI 功能，例如 'deepseek-v4-flash' | 是 |
+| `FRONTEND_PORT` | 前端开发服务器端口（仅开发模式），默认 5173 | 否 |
+| `BACKEND_PORT` | 后端服务端口，默认 5000 | 否 |
 
+## 数据存储
+
+采用**分离式存储**设计，轻量且清晰：
+
+```
+backend/
+├── database.json          # 元信息：title / subject / time / id
+├── notes/                 # 笔记正文（Markdown 文件）
+│   ├── <id>.md            # 格式：# subject/title\n正文+图片引用
+│   └── ...
+├── assets/                # 上传的图片文件
+│   ├── xxx.png
+│   └── ...
+└── dist/                  # 前端构建产物（打包后内嵌于 exe）
+```
+
+- `database.json` 只存笔记元信息（标题、科目、时间、ID），不存正文和图片列表
+- 每篇笔记正文存储在 `notes/<id>.md`，首行为 `# subject/title`，其余为正文 + 图片引用
+- 图片引用格式：`![图片](../assets/文件名)`，运行时后端从 md 文件解析
 
 ## 项目结构
 
@@ -88,32 +134,39 @@ notes/
 │   ├── stores/             # Pinia 状态管理
 │   ├── views/              # 页面视图
 │   ├── router/             # 路由配置
-│   └ utils/                # 工具函数
-│   └ App.vue               # 根组件
-│   └ main.ts               # 入口文件
-├── backend.py              # Flask 主服务
-├── backend_ai.py           # AI 相关功能
-├── backend_tools.py        # 数据库操作
-├── backend_utils.py        # 工具函数
-├── assets/                 # 图片资源
-├── database.json           # 数据库文件
+│   ├── types/              # TypeScript 类型定义
+│   └── utils/              # 工具函数
+├── backend/                # 后端源码
+│   ├── backend.py          # Flask 主服务（路由）
+│   ├── backend_ai.py       # AI 相关功能（对话、出题、批改）
+│   ├── backend_tools.py    # 数据访问层（md 文件读写 + database.json）
+│   ├── backend_utils.py    # 工具函数（装饰器、SSE 流式响应）
+│   ├── notes/              # 笔记 Markdown 文件
+│   ├── assets/             # 图片资源
+│   ├── database.json       # 元信息数据库
+│   └── dist/               # 前端构建产物
+├── build.bat               # 一键构建脚本
 ├── requirements.txt        # Python 依赖
 ├── package.json            # Node.js 依赖
-└ vite.config.ts            # Vite 配置
+└── vite.config.ts          # Vite 配置
 ```
 
 ## API 接口
 
 | 接口 | 方法 | 说明 |
 |------|------|------|
-| `/api/notes` | GET | 获取所有笔记 |
-| `/api/notes/<someday>` | GET | 获取指定日期的复习笔记 |
-| `/api/note/<id>` | GET | 获取单篇笔记详情 |
-| `/api/submit` | POST | 创建/更新笔记 |
+| `/api/notes` | GET | 获取所有笔记（精简字段） |
+| `/api/notes/<someday>` | GET | 获取指定日期需复习的笔记 |
+| `/api/notes/search?q=` | GET | 搜索笔记（匹配标题/科目） |
+| `/api/note/<id>` | GET | 获取单篇笔记详情（含正文和图片） |
+| `/api/notes/batch` | POST | 批量获取笔记 |
+| `/api/submit` | POST | 创建笔记 |
+| `/api/note/<id>` | PUT | 更新笔记 |
 | `/api/notes/delete` | DELETE | 批量删除笔记 |
 | `/api/ai` | POST | AI 流式对话 |
 | `/api/ai/quiz` | POST | 生成练习题 |
 | `/api/ai/grade` | POST | 批改练习题 |
+| `/api/ai/chat` | GET/POST/DELETE | AI 对话记录管理 |
 
 ## 许可证
 

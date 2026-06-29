@@ -1,17 +1,29 @@
 from typing import List, TypedDict
 import json
 import re
+import sys
 from datetime import datetime
 import os
 from nanoid import generate
 import time
 
-# 配置 - 使用脚本所在目录的绝对路径
-_BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_FILE = os.path.join(_BACKEND_DIR, 'database.json')
+# 路径处理：PyInstaller 打包后 __file__ 指向临时解压目录 _MEIPASS，
+# 而 sys.executable 指向 exe 实际位置。
+# - 外部资源（需运行时读写）：database.json / assets / notes / .env → exe 同级目录
+# - 内部资源（只读，打包进 exe）：dist（前端构建产物）→ _MEIPASS/dist
+if getattr(sys, 'frozen', False):
+    # 打包环境
+    APP_DIR = os.path.dirname(sys.executable)
+    DIST_FOLDER = os.path.join(sys._MEIPASS, 'dist')
+else:
+    # 开发环境
+    APP_DIR = os.path.dirname(os.path.abspath(__file__))
+    DIST_FOLDER = os.path.join(APP_DIR, 'dist')
+
+DB_FILE = os.path.join(APP_DIR, 'database.json')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-ASSETS_FOLDER = os.path.join(_BACKEND_DIR, 'assets')
-NOTES_FOLDER = os.path.join(_BACKEND_DIR, 'notes')
+ASSETS_FOLDER = os.path.join(APP_DIR, 'assets')
+NOTES_FOLDER = os.path.join(APP_DIR, 'notes')
 
 # 艾宾浩斯遗忘曲线推荐复习间隔（天数）
 REVIEW_INTERVAL_DAYS: List[int] = [0, 1, 2, 4, 7, 15, 30, 60, 120, 240]

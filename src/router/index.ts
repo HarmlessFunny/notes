@@ -62,6 +62,17 @@ router.beforeEach(async (to, from) => {
     document.title = to.meta.title as string
   }
 
+  // 确保已加载 AI 状态（决定 AI 对话路由是否可访问）
+  const cacheStore = useCacheStore()
+  if (!cacheStore.aiStatusLoaded) {
+    await cacheStore.loadAiStatus()
+  }
+
+  // AI 不可用时，拦截 /ai 路由
+  if (to.name === 'aiReview' && !cacheStore.aiAvailable) {
+    return { name: 'view' }
+  }
+
   // 需要加载笔记数据的路由
   const routesNeedData = ['view', 'viewDetail', 'publish', 'aiReview']
 

@@ -15,7 +15,7 @@
         </el-icon>
         <span>查看笔记</span>
       </el-menu-item>
-      <el-menu-item index="aiReview">
+      <el-menu-item v-if="cacheStore.aiAvailable" index="aiReview">
         <el-icon>
           <ChatDotRound />
         </el-icon>
@@ -36,6 +36,7 @@
 </template>
 
 <script setup lang="ts" name="App">
+import { onMounted } from 'vue'
 import { Edit, Notebook, ChatDotRound } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { useNotesStore } from '@/stores/notes'
@@ -45,6 +46,11 @@ const notesStore = useNotesStore()
 const cacheStore = useCacheStore()
 
 const router = useRouter()
+
+// 启动时检查 AI 是否可用（决定是否展示 AI 对话菜单）
+onMounted(() => {
+  cacheStore.loadAiStatus()
+})
 
 function handleMenuSelect(index: string) {
   switch (index) {

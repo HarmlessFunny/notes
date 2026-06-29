@@ -24,27 +24,17 @@ else:
 # 初始化数据库
 init_database()
 
-# 检查环境变量
+# 检查 AI 相关环境变量（缺一不可，但不阻断启动 —— 笔记功能照常可用）
 api_key = os.getenv("API_KEY")
-if not api_key:
-    raise RuntimeError("请设置 API_KEY 环境变量")
-
 base_url = os.getenv("BASE_URL")
-if not base_url:
-    raise RuntimeError("请设置 BASE_URL 环境变量")
-
 model_name = os.getenv("MODEL_NAME")
-if not model_name:
-    raise RuntimeError("请设置 MODEL_NAME 环境变量")
+AI_AVAILABLE = bool(api_key and base_url and model_name)
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# 初始化 OpenAI 客户端
-client = OpenAI(
-    api_key=api_key,
-    base_url=base_url,
-)
+# 仅在三个变量都配置时才初始化 OpenAI 客户端
+client = OpenAI(api_key=api_key, base_url=base_url) if AI_AVAILABLE else None
 
 # ========== Flask 路由（使用装饰器优化）==========
 @app.route('/api/notes/<someday>', methods=['GET'])
@@ -175,10 +165,20 @@ def update_note_route(id: str) -> dict:
     return update_note(id, title, subject, content, saved_images)
 
 
+@app.route('/api/ai/status', methods=['GET'])
+@api_response
+def ai_status_route() -> dict:
+    """返回 AI 功能是否可用（取决于 API_KEY / BASE_URL / MODEL_NAME 是否配置）"""
+    return {'status': 'success', 'ai_available': AI_AVAILABLE}
+
+
 @app.route('/api/ai', methods=['POST'])
 @sse_stream
 def ai_chat_stream_route() -> Any:
     """与AI进行流式对话（SSE）"""
+    if not AI_AVAILABLE:
+        yield {'type': 'error', 'content': 'AI 功能未配置，请在 .env 中设置 API_KEY / BASE_URL / MODEL_NAME'}
+        return
     messages = request.json.get('messages', [])
     if not messages:
         return jsonify({'status': 'error', 'message': '请输入问题'}), 400
@@ -213,6 +213,9 @@ def del_ai_chat_route() -> dict:
 @sse_stream
 def ai_quiz_route() -> Any:
     """根据笔记内容流式生成练习题（SSE）"""
+    if not AI_AVAILABLE:
+        yield {'type': 'error', 'content': 'AI 功能未配置，请在 .env 中设置 API_KEY / BASE_URL / MODEL_NAME'}
+        return
     note_content = request.json.get('note_content', '')
     if not note_content.strip():
         return jsonify({'status': 'error', 'message': '笔记内容不能为空'}), 400
@@ -223,10 +226,13 @@ def ai_quiz_route() -> Any:
 @sse_stream
 def ai_grade_route() -> Any:
     """根据笔记内容和用户答案流式批改（SSE）"""
+    if not AI_AVAILABLE:
+        yield {'type': 'error', 'content': 'AI 功能未配置，请在 .env 中设置 API_KEY / BASE_URL / MODEL_NAME'}
+        return
     note_content = request.json.get('note_content', '')
     questions = request.json.get('questions', [])
     user_answers = request.json.get('user_answers', [])
-    
+
     if not note_content.strip() or not questions:
         return jsonify({'status': 'error', 'message': '参数不完整'}), 400
     yield from grade_quiz(client, model_name, note_content, questions, user_answers)

@@ -48,7 +48,7 @@ tools = [
         "type": "function",
         "function": {
             "name": "search_notes",
-            "description": "根据关键词搜索笔记，匹配标题、科目、内容（大小写不敏感），返回匹配的笔记ID、标题、科目列表（如果想查看详细内容，调用fetch_note_by_id工具）",
+            "description": "根据关键词搜索笔记，匹配标题、科目（大小写不敏感），返回匹配的笔记ID、标题、科目列表（如果想查看详细内容，调用fetch_note_by_id工具）",
             "parameters": {
                 "type": "object",
                 "properties": {

@@ -72,8 +72,9 @@ env/
 .env.*.local
 
 # Database
-database.json
-assets/
+backend/database.json
+backend/assets/
+backend/notes/
 
 # AI memory
 .workbuddy/

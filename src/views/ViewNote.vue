@@ -10,7 +10,7 @@
           <div class="card-header-right">
             <el-input
               v-model="searchQuery"
-              placeholder="搜索笔记标题/科目/内容..."
+              placeholder="搜索笔记标题/科目..."
               clearable
               class="search-input"
               :prefix-icon="Search"

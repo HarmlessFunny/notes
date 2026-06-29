@@ -8,7 +8,7 @@ from flask_cors import CORS
 from typing import Tuple, Any
 from backend_ai import ai_chat, generate_quiz, grade_quiz
 from openai import OpenAI
-from backend_tools import init_database, fetch_all_notes, fetch_notes_by_day, fetch_note_by_id, search_notes, fetch_notes_by_ids, add_note, update_note, delete_notes, save_images, fetch_ai_chat, save_ai_chat, delete_ai_chat, Note, DB_FILE, ASSETS_FOLDER, DIST_FOLDER, APP_DIR
+from backend_tools import init_database, fetch_all_notes, fetch_notes_by_day, search_notes, fetch_notes_by_ids, add_note, update_note, delete_notes, save_images, fetch_ai_chat, save_ai_chat, delete_ai_chat, Note, DB_FILE, ASSETS_FOLDER, DIST_FOLDER, APP_DIR
 from backend_utils import api_response, validate_required_fields, handle_api_error, sse_stream
 from dotenv import load_dotenv
 

@@ -1,7 +1,15 @@
 import json
 from openai import OpenAI
-from backend_tools import fetch_all_notes, fetch_notes_by_day, fetch_note_by_id, search_notes, add_note, update_note, delete_notes
+from backend_tools import fetch_all_notes, fetch_notes_by_day, fetch_notes_by_ids, search_notes, add_note, update_note, delete_notes
 from backend_utils import stream_ai_response
+
+
+def _fetch_note_by_id(id: str) -> dict:
+    """单条查询的薄包装：复用 fetch_notes_by_ids，返回 {note: {...}} 格式供 AI 工具使用"""
+    result = fetch_notes_by_ids([id])
+    if result['status'] == 'success' and result.get('notes'):
+        return {'status': 'success', 'note': result['notes'][0]}
+    return {'status': 'error', 'message': '笔记不存在'}
 
 tools = [
     {
@@ -110,7 +118,7 @@ tools = [
 ]
 
 TOOL_CALL_MAP = {
-    "fetch_note_by_id": fetch_note_by_id,
+    "fetch_note_by_id": _fetch_note_by_id,
     "fetch_all_notes": fetch_all_notes,
     "fetch_notes_by_day": fetch_notes_by_day,
     "search_notes": search_notes,

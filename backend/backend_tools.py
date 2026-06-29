@@ -238,20 +238,6 @@ def fetch_notes_by_day(someday: str) -> dict:
     except Exception as e:
         return {'status': 'error', 'message': f'加载数据失败: {str(e)}'}
 
-def fetch_note_by_id(id: str) -> dict:
-    """根据ID获取笔记（含正文 content 和 imgs，均从 md 文件读取）"""
-    try:
-        notes: List[Note] = load_database().get('notes', [])
-        note = next((n for n in notes if n['id'] == id), None)
-        if note:
-            note['content'] = read_note_file(id)
-            note['imgs'] = read_note_imgs(id)
-            return {'status': 'success', 'note': note}
-        else:
-            return {'status': 'error', 'message': '笔记不存在'}
-    except Exception as e:
-        return {'status': 'error', 'message': f'加载数据失败: {str(e)}'}
-
 def search_notes(keyword: str) -> dict:
     """根据关键词搜索笔记，返回匹配的笔记（精简字段：id/title/subject，仅匹配标题/科目，大小写不敏感）"""
     try:

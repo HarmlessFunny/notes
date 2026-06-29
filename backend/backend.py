@@ -1,10 +1,8 @@
 import os
 import json
-import subprocess
+import sys
 import time
 import re
-import threading
-import webbrowser
 from flask import Flask, request, jsonify, send_from_directory, send_file, stream_with_context
 from flask_cors import CORS
 from typing import Tuple, Any
@@ -14,8 +12,14 @@ from backend_tools import init_database, fetch_all_notes, fetch_notes_by_day, fe
 from backend_utils import api_response, validate_required_fields, handle_api_error, sse_stream
 from dotenv import load_dotenv
 
-# 加载环境变量（从 exe/脚本同级目录的 .env 读取）
-load_dotenv(os.path.join(APP_DIR, '.env'))
+
+# 加载环境变量
+if getattr(sys, 'frozen', False):
+    # 从 exe/脚本同级目录的 .env 读取
+    load_dotenv(os.path.join(APP_DIR, '.env'))
+else:
+    # 从当前脚本所在目录的 .env 读取
+    load_dotenv(os.path.join(APP_DIR, '..', '.env'))
 
 # 初始化数据库
 init_database()
@@ -239,14 +243,8 @@ def serve_static_route(path: str) -> Any:
 
 if __name__ == '__main__':
     if getattr(sys, 'frozen', False):
-        # 打包模式：后端直接 serve 前端，延迟打开浏览器
         backend_port = int(os.getenv('BACKEND_PORT', 5000))
-        threading.Timer(1.5, lambda: webbrowser.open(f'http://localhost:{backend_port}')).start()
         app.run(host='0.0.0.0', port=backend_port)
     else:
-        # 开发模式：非阻塞启动 vite，延迟打开浏览器，再启动后端
-        frontend_port = int(os.getenv('FRONTEND_PORT', 5173))
         backend_port = int(os.getenv('BACKEND_PORT', 5000))
-        subprocess.Popen(['npm', 'run', 'dev'], shell=True)
-        threading.Timer(3.0, lambda: webbrowser.open(f'http://localhost:{frontend_port}')).start()
         app.run(host='0.0.0.0', port=backend_port, debug=True)

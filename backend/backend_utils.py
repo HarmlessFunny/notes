@@ -1,6 +1,6 @@
 import json
 from functools import wraps
-from typing import Dict, Any, Callable, Generator
+from typing import Dict, Callable, Generator
 from flask import jsonify, request, Response, stream_with_context
 
 

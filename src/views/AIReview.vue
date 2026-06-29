@@ -127,6 +127,10 @@ onActivated(loadChat)
     border-radius: 12px 12px 0 12px;
 }
 
+.message-item:not(.user) .message-text {
+    color: var(--el-text-color-primary);
+}
+
 .avatar {
     flex-shrink: 0;
 }

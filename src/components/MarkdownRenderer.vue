@@ -129,7 +129,7 @@ const sanitizedHtml = computed(() => DOMPurify.sanitize(rawHtml.value, {
 </script>
 
 <style>
-@import 'github-markdown-css/github-markdown.css';
+@import 'github-markdown-css/github-markdown-light.css';
 
 .markdown-body {
     box-sizing: border-box;

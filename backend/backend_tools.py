@@ -16,18 +16,19 @@ NOTES_FOLDER = os.path.join(_BACKEND_DIR, 'notes')
 # 艾宾浩斯遗忘曲线推荐复习间隔（天数）
 REVIEW_INTERVAL_DAYS: List[int] = [0, 1, 2, 4, 7, 15, 30, 60, 120, 240]
 
-# 笔记正文中的图片引用格式：![图片](../assets/文件名)
-# 用于把图片引用拼接到 md 文件，以及读取时剥离
-_IMG_REF_PATTERN = re.compile(r'!\[图片\]\(\.\./assets/[^)]+\)')
+# 笔记正文中的图片引用格式：![任意内容](../assets/文件名)
+# [] 里的 alt 文本按不确定处理，写入时统一用"图片"，读取时兼容任意 alt
+_IMG_REF_PATTERN = re.compile(r'!\[[^\]]*\]\(\.\./assets/[^)]+\)')
+# 从图片引用中提取文件名：![任意内容](../assets/img1.png) → img1.png
+_IMG_NAME_PATTERN = re.compile(r'!\[[^\]]*\]\(\.\./assets/([^)]+)\)')
 
 
 class Note(TypedDict):
     title: str          # 笔记标题
     subject: str        # 科目，如 "英语"
     time: str           # 时间戳（字符串形式，如 "1780547279074"）
-    imgs: List[str]     # 关联的图片文件名列表
     id: str             # 笔记唯一ID（同时作为 md 文件名）
-    # content 不再存入 database.json，运行时从 notes/<id>.md 读取后动态注入
+    # content 和 imgs 不再存入 database.json，运行时从 notes/<id>.md 读取后动态注入
 
 class ChatMessage(TypedDict):
     role: str
@@ -178,19 +179,30 @@ def read_note_file(note_id: str) -> str:
     return _IMG_REF_PATTERN.sub('', raw)
 
 
+def read_note_imgs(note_id: str) -> List[str]:
+    """从 notes/<id>.md 中解析图片引用，返回图片文件名列表"""
+    path = os.path.join(NOTES_FOLDER, f'{note_id}.md')
+    if not os.path.exists(path):
+        return []
+    with open(path, 'r', encoding='utf-8') as f:
+        raw = f.read()
+    return _IMG_NAME_PATTERN.findall(raw)
+
+
 # ========== 纯数据访问函数（可被路由和AI工具复用）==========
 
 def fetch_notes_by_ids(ids: List[str]) -> dict:
-    """根据ID列表批量获取笔记（含正文 content，从 md 文件读取）"""
+    """根据ID列表批量获取笔记（含正文 content 和 imgs，均从 md 文件读取）"""
     try:
         if not ids:
             return {'status': 'success', 'notes': []}
         notes: List[Note] = load_database().get('notes', [])
         id_set = set(ids)
         matched = [n for n in notes if n['id'] in id_set]
-        # 为每条笔记补充正文 content
+        # 为每条笔记补充正文 content 和 imgs（均从 md 文件读取）
         for n in matched:
             n['content'] = read_note_file(n['id'])
+            n['imgs'] = read_note_imgs(n['id'])
         return {'status': 'success', 'notes': matched}
     except Exception as e:
         return {'status': 'error', 'message': f'批量获取笔记失败: {str(e)}'}
@@ -215,12 +227,13 @@ def fetch_notes_by_day(someday: str) -> dict:
         return {'status': 'error', 'message': f'加载数据失败: {str(e)}'}
 
 def fetch_note_by_id(id: str) -> dict:
-    """根据ID获取笔记（含正文 content）"""
+    """根据ID获取笔记（含正文 content 和 imgs，均从 md 文件读取）"""
     try:
         notes: List[Note] = load_database().get('notes', [])
         note = next((n for n in notes if n['id'] == id), None)
         if note:
             note['content'] = read_note_file(id)
+            note['imgs'] = read_note_imgs(id)
             return {'status': 'success', 'note': note}
         else:
             return {'status': 'error', 'message': '笔记不存在'}
@@ -245,7 +258,10 @@ def search_notes(keyword: str) -> dict:
         return {'status': 'error', 'message': f'搜索失败: {str(e)}'}
 
 def add_note(title: str, subject: str, content: str='', timestamp: str=None, imgs: List[str]=[], id: str=None) -> None:
-    """添加笔记到数据库，并把正文写入 notes/<id>.md"""
+    """添加笔记元信息到 database.json，并把正文+图片引用写入 notes/<id>.md
+
+    database.json 只存 title/subject/time/id；imgs 只存在于 md 文件中。
+    """
     if timestamp is None:
         timestamp = str(int(time.time() * 1000))
     if id is None:
@@ -257,18 +273,20 @@ def add_note(title: str, subject: str, content: str='', timestamp: str=None, img
         'title': title,
         'subject': subject,
         'time': timestamp,
-        'imgs': imgs,
         'id': id
     })
     db_data['notes'] = notes
     with open(DB_FILE, 'w', encoding='utf-8') as f:
         json.dump(db_data, f, ensure_ascii=False, indent=2)
 
-    # 正文写入 md 文件
+    # 正文 + 图片引用写入 md 文件
     save_note_file(id, title, subject, content, imgs)
 
 def update_note(id: str, title: str, subject: str, content: str='', imgs: List[str]=None) -> dict:
-    """更新笔记元信息到 database.json，并重写 notes/<id>.md（不修改时间戳）"""
+    """更新笔记元信息到 database.json，并重写 notes/<id>.md（不修改时间戳）
+
+    database.json 只更新 title/subject；imgs 只通过 md 文件保存。
+    """
     db_data = load_database()
     notes: List[Note] = db_data.get('notes', [])
 
@@ -279,20 +297,21 @@ def update_note(id: str, title: str, subject: str, content: str='', imgs: List[s
     updated_note = notes[note_index]
     updated_note['title'] = title
     updated_note['subject'] = subject
-    if imgs is not None:
-        updated_note['imgs'] = imgs
 
     with open(DB_FILE, 'w', encoding='utf-8') as f:
         json.dump(db_data, f, ensure_ascii=False, indent=2)
 
-    # 重写 md 文件（content + 当前 imgs）
-    final_imgs = updated_note['imgs']
+    # 重写 md 文件（content + imgs 引用）
+    final_imgs = imgs if imgs is not None else []
     save_note_file(id, title, subject, content, final_imgs)
 
     return {'status': 'success', 'message': '笔记更新成功', 'data': updated_note}
 
 def delete_notes(ids: List[str]) -> dict:
-    """根据ID列表批量删除笔记、关联的图片文件与 md 文件"""
+    """根据ID列表批量删除笔记、关联的图片文件与 md 文件
+
+    图片文件名从 md 文件中解析得出（database.json 不再存 imgs）。
+    """
     try:
         if not ids:
             return {'status': 'error', 'message': 'ID列表不能为空'}
@@ -303,8 +322,9 @@ def delete_notes(ids: List[str]) -> dict:
         # 先收集要删除的笔记
         to_delete = [n for n in notes if n['id'] in id_set]
         for note in to_delete:
-            # 删除关联图片
-            for img in note.get('imgs', []):
+            # 从 md 文件解析出图片列表，删除关联图片
+            imgs = read_note_imgs(note['id'])
+            for img in imgs:
                 img_path = os.path.join(ASSETS_FOLDER, img)
                 if os.path.exists(img_path):
                     os.remove(img_path)

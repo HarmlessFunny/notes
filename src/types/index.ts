@@ -25,6 +25,7 @@ export interface LightNote {
     id: string
     title: string
     subject: string
+    time: string
 }
 
 export interface SubmissionStatus {

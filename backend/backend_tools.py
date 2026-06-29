@@ -220,26 +220,24 @@ def fetch_notes_by_ids(ids: List[str]) -> dict:
         return {'status': 'error', 'message': f'批量获取笔记失败: {str(e)}'}
 
 def fetch_all_notes() -> dict:
-    """获取所有笔记（精简字段：id/title/subject）"""
+    """获取所有笔记（不含content和imgs，需调 fetch_notes_by_ids 从 md 文件读取）"""
     try:
         notes: List[Note] = load_database().get('notes', [])
-        light = [{'id': n['id'], 'title': n['title'], 'subject': n['subject']} for n in notes]
-        return {'status': 'success', 'notes': light}
+        return {'status': 'success', 'notes': notes}
     except Exception as e:
         return {'status': 'error', 'message': f'加载数据失败: {str(e)}'}
 
 def fetch_notes_by_day(someday: str) -> dict:
-    """根据时间戳获取指定天数差的笔记（精简字段：id/title/subject）"""
+    """根据时间戳获取指定天数差的笔记（不含content和imgs）"""
     try:
         notes = load_database()['notes']
         filtered = filter_by_days_difference(notes, someday, REVIEW_INTERVAL_DAYS)
-        light = [{'id': n['id'], 'title': n['title'], 'subject': n['subject']} for n in filtered]
-        return {'status': 'success', 'notes': light}
+        return {'status': 'success', 'notes': filtered}
     except Exception as e:
         return {'status': 'error', 'message': f'加载数据失败: {str(e)}'}
 
 def search_notes(keyword: str) -> dict:
-    """根据关键词搜索笔记，返回匹配的笔记（精简字段：id/title/subject，仅匹配标题/科目，大小写不敏感）"""
+    """根据关键词搜索笔记，返回匹配的笔记（仅匹配标题/科目，大小写不敏感，不含content和imgs）"""
     try:
         if not keyword.strip():
             return {'status': 'success', 'notes': []}
@@ -250,8 +248,7 @@ def search_notes(keyword: str) -> dict:
             if q in n['title'].lower()
             or q in n['subject'].lower()
         ]
-        light = [{'id': n['id'], 'title': n['title'], 'subject': n['subject']} for n in matched]
-        return {'status': 'success', 'notes': light}
+        return {'status': 'success', 'notes': matched}
     except Exception as e:
         return {'status': 'error', 'message': f'搜索失败: {str(e)}'}
 

@@ -35,7 +35,8 @@
   </div>
 </template>
 
-<script setup lang="ts" name="App">
+<script setup lang="ts">
+defineOptions({ name: 'App' })
 import { onMounted } from 'vue'
 import { Edit, Notebook, ChatDotRound } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'

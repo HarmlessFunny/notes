@@ -58,7 +58,8 @@
     </el-dialog>
 </template>
 
-<script setup lang="ts" name="NoteDetail">
+<script setup lang="ts">
+defineOptions({ name: 'NoteDetail' })
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Edit, Delete, ArrowLeft, ChatDotRound, Document } from '@element-plus/icons-vue'

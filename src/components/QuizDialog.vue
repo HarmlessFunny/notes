@@ -76,7 +76,8 @@
     </div>
 </template>
 
-<script setup lang="ts" name="QuizDialog">
+<script setup lang="ts">
+defineOptions({ name: 'QuizDialog' })
 import { useQuiz } from '@/hooks/useQuiz'
 import { Loading } from '@element-plus/icons-vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'

@@ -3,7 +3,6 @@ import { defineConfig, loadEnv } from 'vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
-import vueSetupExtend from 'vite-plugin-vue-setup-extend'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 
@@ -18,7 +17,6 @@ export default defineConfig(({ mode }) => {
     plugins: [
       vue(),
       vueDevTools(),
-      vueSetupExtend(),
       AutoImport({ resolvers: [ElementPlusResolver()] }),
       Components({ resolvers: [ElementPlusResolver()] }),
     ],

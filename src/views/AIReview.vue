@@ -42,7 +42,8 @@
     </div>
 </template>
 
-<script setup lang="ts" name="AIReview">
+<script setup lang="ts">
+defineOptions({ name: 'AIReview' })
 import { onMounted, onActivated } from 'vue'
 import { Top, Delete } from '@element-plus/icons-vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'

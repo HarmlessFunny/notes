@@ -43,7 +43,8 @@
     :initial-index="previewIndex" @close="closePreview" />
 </template>
 
-<script setup lang="ts" name="NoteForm">
+<script setup lang="ts">
+defineOptions({ name: 'NoteForm' })
 import { onMounted, watch, computed, ref } from 'vue'
 import { Plus, Paperclip } from '@element-plus/icons-vue'
 import type { FormData, UploadFile } from '@/types'

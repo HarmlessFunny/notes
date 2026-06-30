@@ -5,7 +5,8 @@
   </div>
 </template>
 
-<script setup lang="ts" name="PublishNote">
+<script setup lang="ts">
+defineOptions({ name: 'PublishNote' })
 import { ref } from 'vue'
 import NoteForm from '@/components/NoteForm.vue'
 import type { FormData, UploadFile } from '@/types'

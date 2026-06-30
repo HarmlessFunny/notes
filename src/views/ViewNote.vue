@@ -48,7 +48,8 @@
   </div>
 </template>
 
-<script setup lang="ts" name="ViewNote">
+<script setup lang="ts">
+defineOptions({ name: 'ViewNote' })
 import type { LightNote } from '@/types'
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { Search } from '@element-plus/icons-vue'

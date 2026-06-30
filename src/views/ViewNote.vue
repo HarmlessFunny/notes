@@ -35,11 +35,11 @@
               <span style="flex: 1; cursor: pointer;">{{ subject }}</span>
             </div>
           </template>
-          <template v-for="note in displayNotes" :key="note.id">
+          <template v-for="note in displayNotes" :key="note.title">
             <div v-if="note.subject === subject" style="display: flex; align-items: center;">
-              <el-checkbox v-if="selectedDate === null" :model-value="checkedNotes.includes(note.id)"
-                @change="handleNoteCheck(note.id, $event)" style="margin-right: 8px;" />
-              <el-link type="primary" @click="seeDetail(note.id)">{{ note.title }}</el-link>
+              <el-checkbox v-if="selectedDate === null" :model-value="checkedNotes.includes(note.title)"
+                @change="handleNoteCheck(note.title, $event)" style="margin-right: 8px;" />
+              <el-link type="primary" @click="seeDetail(note.title)">{{ note.title }}</el-link>
             </div>
           </template>
         </el-collapse-item>

@@ -10,6 +10,10 @@ def api_response(func: Callable) -> Callable:
     def wrapper(*args, **kwargs):
         try:
             result = func(*args, **kwargs)
+            # 支持 (dict, status_code) 形式
+            if isinstance(result, tuple) and len(result) == 2 and isinstance(result[0], dict):
+                body, status = result
+                return jsonify(body), status
             if isinstance(result, dict) and 'status' in result:
                 return jsonify(result)
             return jsonify({'status': 'success', 'data': result})

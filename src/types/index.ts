@@ -13,7 +13,6 @@ export interface UploadFile {
 }
 
 export interface Note {
-    id: string
     title: string
     subject: string
     content: string
@@ -22,7 +21,6 @@ export interface Note {
 }
 
 export interface LightNote {
-    id: string
     title: string
     subject: string
     time: string

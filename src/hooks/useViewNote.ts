@@ -57,8 +57,8 @@ export function useViewNote() {
     }
   }
 
-  const seeDetail = (id: string) => {
-    router.push(`/view/detail/${id}`)
+  const seeDetail = (title: string) => {
+    router.push(`/view/detail/${encodeURIComponent(title)}`)
   }
 
   watch(
@@ -88,32 +88,32 @@ export function useViewNote() {
 
   const isSubjectChecked = (subject: string) => {
     const list = subjectNotes(subject)
-    return list.length > 0 && list.every(note => checkedNotes.value.includes(note.id))
+    return list.length > 0 && list.every(note => checkedNotes.value.includes(note.title))
   }
 
   const isSubjectIndeterminate = (subject: string) => {
     const list = subjectNotes(subject)
     if (list.length === 0) return false
-    const checkedCount = list.filter(note => checkedNotes.value.includes(note.id)).length
+    const checkedCount = list.filter(note => checkedNotes.value.includes(note.title)).length
     return checkedCount > 0 && checkedCount < list.length
   }
 
   const handleSubjectCheck = (subject: string, checked: boolean) => {
-    const ids = subjectNotes(subject).map(note => note.id)
+    const titles = subjectNotes(subject).map(note => note.title)
     if (checked) {
-      checkedNotes.value = Array.from(new Set([...checkedNotes.value, ...ids]))
+      checkedNotes.value = Array.from(new Set([...checkedNotes.value, ...titles]))
     } else {
-      checkedNotes.value = checkedNotes.value.filter(id => !ids.includes(id))
+      checkedNotes.value = checkedNotes.value.filter(t => !titles.includes(t))
     }
   }
 
-  const handleNoteCheck = (noteId: string, checked: boolean) => {
+  const handleNoteCheck = (noteTitle: string, checked: boolean) => {
     if (checked) {
-      if (!checkedNotes.value.includes(noteId)) {
-        checkedNotes.value = [...checkedNotes.value, noteId]
+      if (!checkedNotes.value.includes(noteTitle)) {
+        checkedNotes.value = [...checkedNotes.value, noteTitle]
       }
     } else {
-      checkedNotes.value = checkedNotes.value.filter(id => id !== noteId)
+      checkedNotes.value = checkedNotes.value.filter(t => t !== noteTitle)
     }
   }
 

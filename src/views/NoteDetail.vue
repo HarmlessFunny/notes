@@ -96,10 +96,10 @@ const imagesList = computed(() => note.value?.imgs ?? [])
 const { itemStyles, onImageLoaded, resetLayout } = useWaterfallLayout(imagesRef, imagesList)
 
 // 根据路由参数拉取笔记
-watch(() => route.params.id, async (newId) => {
-    if (newId) {
+watch(() => route.params.title, async (newTitle) => {
+    if (newTitle) {
         resetLayout()
-        await getNote(newId as string)
+        await getNote(decodeURIComponent(newTitle as string))
     }
 }, { immediate: true })
 

@@ -15,8 +15,8 @@ export function useNoteDetail() {
     const editSubmitting = ref(false)
     const showQuizDialog = ref(false)
 
-    async function getNote(id: string) {
-        const found = await notesStore.getNote(id)
+    async function getNote(title: string) {
+        const found = await notesStore.getNote(title)
         if (found) {
             note.value = found
         } else {
@@ -28,14 +28,11 @@ export function useNoteDetail() {
         if (!note.value) return
         editSubmitting.value = true
 
-        // 构建提交表单数据
         const submitFormData = new FormData()
         submitFormData.append('title', formData.title)
         submitFormData.append('subject', formData.subject)
         submitFormData.append('content', formData.content)
-        submitFormData.append('id', note.value.id)
 
-        // 分离已有图片和新上传的图片
         const existingImages: string[] = []
         fileList.forEach((item) => {
             if (item.raw) {
@@ -46,20 +43,25 @@ export function useNoteDetail() {
         })
         submitFormData.append('existing_images', JSON.stringify(existingImages))
 
-        const success = await notesStore.updateNote(note.value.id, submitFormData)
+        const success = await notesStore.updateNote(note.value.title, submitFormData)
         editSubmitting.value = false
         if (success) {
             showEditForm.value = false
-            const updatedNote = await notesStore.getNote(note.value.id)
-            if (updatedNote) {
-                Object.assign(note.value, updatedNote)
+            // 如果标题改了，跳转到新标题的路由
+            if (formData.title !== note.value.title) {
+                router.replace(`/view/detail/${encodeURIComponent(formData.title)}`)
+            } else {
+                const updatedNote = await notesStore.getNote(note.value.title)
+                if (updatedNote) {
+                    Object.assign(note.value, updatedNote)
+                }
             }
         }
     }
 
     async function deleteCurrentNote(): Promise<void> {
         if (!note.value) return
-        const deleted = await notesStore.deleteNote([note.value.id])
+        const deleted = await notesStore.deleteNote([note.value.title])
         if (deleted) {
             router.replace('/view/notes/all')
         }
@@ -75,14 +77,12 @@ export function useNoteDetail() {
     }
 
     return {
-        // state
         note,
         showPreview,
         previewIndex,
         showEditForm,
         editSubmitting,
         showQuizDialog,
-        // methods
         getNote,
         handleEditSubmit,
         deleteCurrentNote,

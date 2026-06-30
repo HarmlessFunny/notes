@@ -1,5 +1,4 @@
 import { ref, computed } from 'vue'
-import { nanoid } from 'nanoid'
 import type { FormData, UploadFile } from '@/types'
 import { useNotesStore } from '@/stores/notes'
 
@@ -66,7 +65,6 @@ export function usePublishNote() {
             submitFormData.append('subject', formData.value.subject)
             submitFormData.append('content', formData.value.content)
             submitFormData.append('timestamp', Date.now().toString())
-            submitFormData.append('id', nanoid())
 
             fileList.value.forEach(item => {
                 if (item.raw) submitFormData.append('images', item.raw)

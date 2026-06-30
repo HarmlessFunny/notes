@@ -46,7 +46,6 @@
 <script setup lang="ts" name="NoteForm">
 import { onMounted, watch, computed, ref } from 'vue'
 import { Plus, Paperclip } from '@element-plus/icons-vue'
-import { nanoid } from 'nanoid'
 import type { FormData, UploadFile } from '@/types'
 import { useNotesStore } from '@/stores/notes'
 
@@ -140,7 +139,7 @@ const initForm = () => {
     clearFiles()
     props.initialImages.forEach((img: string) => {
       fileList.value.push({
-        uid: nanoid(),
+        uid: crypto.randomUUID(),
         name: img,
         url: `/assets/${img}`,
         status: 'success'

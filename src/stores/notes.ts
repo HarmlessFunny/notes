@@ -36,9 +36,9 @@ export const useNotesStore = defineStore('notes', () => {
         }
     }
 
-    async function getNote(id: string): Promise<Note | null> {
+    async function getNote(title: string): Promise<Note | null> {
         try {
-            const response = await axios.get(`/api/note/${id}`)
+            const response = await axios.get(`/api/note/${encodeURIComponent(title)}`)
             return response.data.note as Note
         } catch (error: any) {
             handleApiError(error, '获取笔记失败')
@@ -66,7 +66,7 @@ export const useNotesStore = defineStore('notes', () => {
         }
     }
 
-    async function deleteNote(ids: string[]) {
+    async function deleteNote(titles: string[]) {
         try {
             const ok = await ElMessageBox.confirm('确认删除笔记吗？', '警告', {
                 confirmButtonText: '确认',
@@ -78,10 +78,10 @@ export const useNotesStore = defineStore('notes', () => {
             return false
         }
         try {
-            const response = await axios.delete('/api/notes/delete', { data: { ids } })
+            const response = await axios.delete('/api/notes/delete', { data: { titles } })
             await updateAllNotes()
             const cacheStore = useCacheStore()
-            cacheStore.checkedNotes = cacheStore.checkedNotes.filter(id => !ids.includes(id))
+            cacheStore.checkedNotes = cacheStore.checkedNotes.filter(t => !titles.includes(t))
             handleApiSuccess(response.data.message)
             return true
         } catch (error: any) {
@@ -90,9 +90,9 @@ export const useNotesStore = defineStore('notes', () => {
         }
     }
 
-    async function updateNote(id: string, formData: FormData) {
+    async function updateNote(title: string, formData: FormData) {
         try {
-            await axios.put(`/api/note/${id}`, formData)
+            await axios.put(`/api/note/${encodeURIComponent(title)}`, formData)
             await updateAllNotes()
             handleApiSuccess('笔记更新成功')
             return true

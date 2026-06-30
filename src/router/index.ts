@@ -28,7 +28,7 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/view/detail/:id',
+    path: '/view/detail/:title',
     name: 'viewDetail',
     component: NoteDetail,
     meta: {

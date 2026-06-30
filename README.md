@@ -1,6 +1,11 @@
 # Notes - 智能笔记应用
 
-一个基于 Vue 3 + Flask 的智能笔记管理系统，主打**轻量化**设计，支持 Markdown 渲染、数学公式、AI 复习助手等功能。
+**你是不是也有这样的烦恼？**
+
+- 笔记写了一大堆，但从来不复习，等于白写。
+- 想按艾宾浩斯曲线复习，但手动算日期太麻烦。
+
+**Notes 帮你自动搞定这一切。** 写完笔记，系统自动帮你规划复习时间，到点提醒你——你只需要专注学习和创作。
 
 ## 功能特性
 
@@ -13,26 +18,13 @@
 - **响应式设计** - 适配桌面端和移动端
 - **单文件部署** - 后端可打包为单个 `.exe`，前端已内嵌，开箱即用
 
-## 技术栈
-
-### 前端
-- Vue 3 + TypeScript
-- Vite
-- Element Plus
-- Pinia (状态管理)
-- Vue Router
-- Marked + KaTeX (Markdown 渲染)
-- html2canvas + jsPDF (PDF 导出)
-
-### 后端
-- Python 3
-- Flask
-- OpenAI SDK
-- JSON 文件数据库 + Markdown 文件存储
-
 ## 快速开始
 
-### 开发模式
+### 普通用户
+
+[**点击下载 v1.0.1 (Windows-x64)**](https://github.com/HarmlessFunny/notes/releases/download/v1.0.1/Notes-v1.0.1-Windows-x64.zip)
+
+### 开发者
 
 #### 1. 克隆项目
 
@@ -75,11 +67,8 @@ python backend/backend.py
 项目支持一键打包为单个可执行文件（含前端 + 后端）：
 
 ```bash
-# 双击运行 build.bat（Windows）
-# 或手动执行：
-npm run build
-cd backend
-pyinstaller --onefile --noconfirm --name backend --distpath ../release --hidden-import nanoid --add-data "dist;dist" backend.py
+# 运行批处理（Windows）
+.\build.bat
 ```
 
 打包完成后，`release/backend.exe` 即为完整应用（约 30MB）。
@@ -98,9 +87,9 @@ MODEL_NAME=your_model_name
 
 | 变量名 | 说明 | 必填 |
 |--------|------|------|
-| `API_KEY` | API 密钥，用于 AI 功能 | 是 |
-| `BASE_URL` | API 基础 URL，用于 AI 功能，例如 'https://api.deepseek.com/' | 是 |
-| `MODEL_NAME` | 模型名称，用于 AI 功能，例如 'deepseek-v4-flash' | 是 |
+| `API_KEY` | API 密钥，用于 AI 功能 | 否 |
+| `BASE_URL` | API 基础 URL，用于 AI 功能，例如 'https://api.deepseek.com/' | 否 |
+| `MODEL_NAME` | 模型名称，用于 AI 功能，例如 'deepseek-v4-flash' | 否 |
 | `FRONTEND_PORT` | 前端开发服务器端口（仅开发模式），默认 5173 | 否 |
 | `BACKEND_PORT` | 后端服务端口，默认 5000 | 否 |
 
@@ -167,6 +156,23 @@ notes/
 | `/api/ai/quiz` | POST | 生成练习题 |
 | `/api/ai/grade` | POST | 批改练习题 |
 | `/api/ai/chat` | GET/POST/DELETE | AI 对话记录管理 |
+
+## 技术栈
+
+### 前端
+- Vue 3 + TypeScript
+- Vite
+- Element Plus
+- Pinia (状态管理)
+- Vue Router
+- Marked + KaTeX (Markdown 渲染)
+- html2canvas + jsPDF (PDF 导出)
+
+### 后端
+- Python 3
+- Flask
+- OpenAI SDK
+- JSON 文件数据库 + Markdown 文件存储
 
 ## 许可证
 

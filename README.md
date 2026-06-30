@@ -22,7 +22,7 @@
 
 ### 普通用户
 
-[**点击下载 v1.0.1 (Windows-x64)**](https://github.com/HarmlessFunny/notes/releases/download/v1.0.1/Notes-v1.0.1-Windows-x64.zip)
+[**点击下载 v1.1.0 (Windows-x64)**](https://github.com/HarmlessFunny/notes/releases/download/v1.1.0/Notes-v1.1.0-Windows-x64.zip)
 
 ### 开发者
 
@@ -99,9 +99,9 @@ MODEL_NAME=your_model_name
 
 ```
 backend/
-├── database.json          # 元信息：title / subject / time / id
+├── database.json          # 元信息：title / subject / time
 ├── notes/                 # 笔记正文（Markdown 文件）
-│   ├── <id>.md            # 格式：# subject/title\n正文+图片引用
+│   ├── <title>.md            # 格式：# subject/title\n正文+图片引用
 │   └── ...
 ├── assets/                # 上传的图片文件
 │   ├── xxx.png
@@ -109,8 +109,8 @@ backend/
 └── dist/                  # 前端构建产物（打包后内嵌于 exe）
 ```
 
-- `database.json` 只存笔记元信息（标题、科目、时间、ID），不存正文和图片列表
-- 每篇笔记正文存储在 `notes/<id>.md`，首行为 `# subject/title`，其余为正文 + 图片引用
+- `database.json` 只存笔记元信息（标题、科目、时间），不存正文和图片列表
+- 每篇笔记正文存储在 `notes/<title>.md`，首行为 `# subject/title`，其余为正文 + 图片引用
 - 图片引用格式：`![图片](../assets/文件名)`，运行时后端从 md 文件解析
 
 ## 项目结构
@@ -147,10 +147,10 @@ notes/
 | `/api/notes` | GET | 获取所有笔记（精简字段） |
 | `/api/notes/<someday>` | GET | 获取指定日期需复习的笔记 |
 | `/api/notes/search?q=` | GET | 搜索笔记（匹配标题/科目） |
-| `/api/note/<id>` | GET | 获取单篇笔记详情（含正文和图片） |
+| `/api/note/<title>` | GET | 获取单篇笔记详情（含正文和图片） |
 | `/api/notes/batch` | POST | 批量获取笔记 |
 | `/api/submit` | POST | 创建笔记 |
-| `/api/note/<id>` | PUT | 更新笔记 |
+| `/api/note/<title>` | PUT | 更新笔记 |
 | `/api/notes/delete` | DELETE | 批量删除笔记 |
 | `/api/ai` | POST | AI 流式对话 |
 | `/api/ai/quiz` | POST | 生成练习题 |

@@ -68,7 +68,7 @@ export const useNotesStore = defineStore('notes', () => {
 
     async function deleteNote(titles: string[]) {
         try {
-            const ok = await ElMessageBox.confirm('确认删除笔记吗？', '警告', {
+            const ok = await ElMessageBox.confirm(`确认删除"${titles.join('"、"')}"笔记吗？`, '警告', {
                 confirmButtonText: '确认',
                 cancelButtonText: '取消',
                 type: 'warning'

@@ -135,4 +135,36 @@ const sanitizedHtml = computed(() => DOMPurify.sanitize(rawHtml.value, {
     box-sizing: border-box;
     padding: 0;
 }
+
+/* 暗色模式覆盖 */
+.dark .markdown-body {
+    --color-canvas-default: transparent;
+}
+.dark .markdown-body table tr,
+.dark .markdown-body table th,
+.dark .markdown-body table td {
+    background-color: var(--el-bg-color) !important;
+    border-color: var(--el-border-color) !important;
+}
+.dark .markdown-body table tr:nth-child(2n) {
+    background-color: var(--el-fill-color-light) !important;
+}
+.dark .markdown-body pre,
+.dark .markdown-body code {
+    background-color: var(--el-fill-color) !important;
+    color: var(--el-text-color-primary) !important;
+}
+.dark .markdown-body pre code {
+    background-color: transparent !important;
+}
+.dark .markdown-body blockquote {
+    color: var(--el-text-color-secondary);
+    border-left-color: var(--el-border-color);
+}
+.dark .markdown-body hr {
+    background-color: var(--el-border-color);
+}
+.dark .markdown-body th {
+    font-weight: 600;
+}
 </style>

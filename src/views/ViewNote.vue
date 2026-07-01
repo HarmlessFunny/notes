@@ -9,6 +9,7 @@
           </div>
           <div class="card-header-right">
             <el-input
+              ref="searchInputRef"
               v-model="searchQuery"
               placeholder="搜索笔记标题/科目..."
               clearable
@@ -54,6 +55,7 @@ import { Search } from '@element-plus/icons-vue'
 import { useViewNote } from '@/hooks/useViewNote'
 import { useCacheStore } from '@/stores/cache'
 import { storeToRefs } from 'pinia'
+import { onMounted, onUnmounted, ref } from 'vue'
 
 const cacheStore = useCacheStore()
 const { openSubjects, checkedNotes } = storeToRefs(cacheStore)
@@ -72,6 +74,18 @@ const {
   handleNoteCheck,
   deleteChecked
 } = useViewNote()
+
+const searchInputRef = ref<{ focus: () => void } | null>(null)
+
+function handleGlobalKeydown(e: KeyboardEvent) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+    e.preventDefault()
+    searchInputRef.value?.focus()
+  }
+}
+
+onMounted(() => document.addEventListener('keydown', handleGlobalKeydown))
+onUnmounted(() => document.removeEventListener('keydown', handleGlobalKeydown))
 </script>
 
 <style scoped>

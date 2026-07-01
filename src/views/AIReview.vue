@@ -184,6 +184,14 @@ onActivated(loadChat)
     color: var(--el-color-danger);
 }
 
+.dark .assistant-avatar {
+    filter: brightness(0.75);
+}
+
+.dark .message-item.user .message-text {
+    filter: brightness(0.75);
+}
+
 .input-area {
     padding: 16px 20px;
     border-top: 1px solid var(--el-border-color-light);

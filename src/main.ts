@@ -45,5 +45,13 @@ style.textContent = `
     opacity: 1;
   }
 
+  /* 暗色模式下降低按钮亮度，避免在深色背景上刺眼 */
+  .dark .el-button--primary,
+  .dark .el-button--success,
+  .dark .el-button--warning,
+  .dark .el-button--danger {
+    filter: brightness(0.82);
+  }
+
 `
 document.head.appendChild(style)

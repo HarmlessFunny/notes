@@ -333,4 +333,8 @@ async function handleExportPdf() {
 :deep(.el-dialog__body) {
     padding: 20px 0;
 }
+
+.dark .title-row {
+    border-bottom-color: var(--el-border-color);
+}
 </style>

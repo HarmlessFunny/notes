@@ -1,5 +1,5 @@
 <template>
-  <el-card class="form-card" shadow="hover">
+  <el-card class="form-card" shadow="hover" @keydown.ctrl.s.prevent="handleSubmit" @keydown.meta.s.prevent="handleSubmit">
     <template #header>
       <span class="card-title">{{ title }}</span>
     </template>

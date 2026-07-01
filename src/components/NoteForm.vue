@@ -16,8 +16,13 @@
       </el-form-item>
 
       <el-form-item label="笔记内容">
-        <el-input v-model="formData.content" placeholder="输入笔记内容（可选）" type="textarea" :rows="1" show-word-limit
-          maxlength="50000" autosize />
+        <div class="editor-body split">
+          <el-input v-model="formData.content" placeholder="输入笔记内容（可选）" type="textarea" :rows="1" show-word-limit
+            maxlength="50000" autosize class="editor-input" />
+          <div class="preview-area">
+            <MarkdownRenderer v-if="formData.content" :content="formData.content" />
+          </div>
+        </div>
       </el-form-item>
 
       <el-form-item label="选择图片">
@@ -49,6 +54,7 @@ import { onMounted, watch, computed, ref } from 'vue'
 import { Plus, Paperclip } from '@element-plus/icons-vue'
 import type { FormData, UploadFile } from '@/types'
 import { useNotesStore } from '@/stores/notes'
+import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 
 const notesStore = useNotesStore()
 const subjectsList = computed(() => notesStore.subjectsList)
@@ -180,6 +186,40 @@ defineExpose({ resetForm, clearFiles })
   object-fit: cover;
 }
 
+.editor-body.split {
+  display: flex;
+  gap: 12px;
+  min-height: 200px;
+  width: 100%;
+}
+
+.editor-body.split .editor-input {
+  width: calc(50% - 6px);
+  min-width: 0;
+}
+
+.editor-body.split .preview-area {
+  width: calc(50% - 6px);
+  min-width: 0;
+}
+
+.editor-body :deep(.el-textarea__inner) {
+  min-height: 200px !important;
+}
+
+.preview-area {
+  padding: 12px 16px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 4px;
+  overflow-y: auto;
+  max-height: 600px;
+  background: var(--el-bg-color-page);
+}
+
+.preview-area :deep(.markdown-body) {
+  background-color: transparent !important;
+}
+
 @media (max-width: 768px) {
   :deep(.el-form-item) {
     flex-wrap: wrap;
@@ -193,6 +233,19 @@ defineExpose({ resetForm, clearFiles })
   :deep(.el-form-item__content) {
     margin-left: 0 !important;
     width: 100%;
+  }
+
+  .editor-body.split {
+    flex-direction: column;
+  }
+
+  .editor-body.split .editor-input,
+  .editor-body.split .preview-area {
+    width: 100%;
+  }
+
+  .editor-body.split .preview-area {
+    max-height: 400px;
   }
 }
 

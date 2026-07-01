@@ -2,22 +2,19 @@
   <div class="container">
     <el-card class="notes-card" shadow="hover">
       <template #header>
-        <div class="card-header">
-          <div class="card-header-top">
-            <span class="card-title">{{ humanDate }}</span>
-            <div class="header-actions" v-if="selectedDate === null && checkedNotes.length > 0">
-              <el-button type="warning" @click="handleExportChecked" :icon="Download">导出</el-button>
-              <el-button type="danger" @click="deleteChecked">删除</el-button>
-            </div>
-          </div>
-          <div class="card-header-bottom">
-            <el-input ref="searchInputRef" v-model="searchQuery" placeholder="搜索笔记标题/科目..." clearable
-              class="search-input" :prefix-icon="Search" />
-            <el-date-picker v-model="selectedDate" type="date" placeholder="选择日期" format="YYYY年MM月DD日" value-format="x"
-              @change="handleDateChange(selectedDate)" />
-          </div>
-        </div>
+        <span class="card-title">笔记列表：{{ humanDate }}</span>
       </template>
+
+      <div class="notes-toolbar">
+        <el-input ref="searchInputRef" v-model="searchQuery" placeholder="搜索笔记标题/科目..." clearable class="search-input"
+          :prefix-icon="Search" />
+        <el-date-picker v-model="selectedDate" type="date" placeholder="选择日期" format="YYYY年MM月DD日" value-format="x"
+          @change="handleDateChange(selectedDate)" />
+        <div class="toolbar-actions" v-if="selectedDate === null && checkedNotes.length > 0">
+          <el-button type="warning" @click="handleExportChecked" :icon="Download">导出</el-button>
+          <el-button type="danger" @click="deleteChecked">删除</el-button>
+        </div>
+      </div>
 
       <!-- 搜索无结果提示 -->
       <el-empty v-if="searchQuery && displayNotes.length === 0" description="没有找到匹配的笔记" />
@@ -109,29 +106,29 @@ onUnmounted(() => document.removeEventListener('keydown', handleGlobalKeydown))
   margin-bottom: 20px;
 }
 
-.card-header {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.card-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
+  white-space: nowrap;
 }
 
-.card-header-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 40px;
-}
-
-.card-header-bottom {
+.notes-toolbar {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+  margin-bottom: 16px;
 }
 
-.header-actions {
+.toolbar-actions {
   display: flex;
   gap: 8px;
+  margin-left: auto;
+}
+
+.search-input {
+  width: 220px;
 }
 
 .note-item {
@@ -159,10 +156,9 @@ onUnmounted(() => document.removeEventListener('keydown', handleGlobalKeydown))
 }
 
 .card-title {
-  font-size: 24px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 600;
   color: var(--el-text-color-primary);
-  white-space: nowrap;
 }
 
 .search-input {
@@ -170,7 +166,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleGlobalKeydown))
 }
 
 @media (max-width: 768px) {
-  .card-header-bottom {
+  .notes-toolbar {
     flex-direction: column;
     align-items: stretch;
   }
@@ -179,8 +175,12 @@ onUnmounted(() => document.removeEventListener('keydown', handleGlobalKeydown))
     width: 100%;
   }
 
-  .card-header-bottom .el-date-picker {
+  .notes-toolbar .el-date-picker {
     width: 100%;
+  }
+
+  .toolbar-actions {
+    margin-left: 0;
   }
 
   .card-title {

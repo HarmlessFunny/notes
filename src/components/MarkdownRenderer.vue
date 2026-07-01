@@ -139,6 +139,8 @@ const sanitizedHtml = computed(() => DOMPurify.sanitize(rawHtml.value, {
 /* 暗色模式覆盖 */
 .dark .markdown-body {
     --color-canvas-default: transparent;
+    color-scheme: dark;
+    color: var(--el-text-color-primary) !important;
 }
 .dark .markdown-body table tr,
 .dark .markdown-body table th,

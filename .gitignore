@@ -81,3 +81,7 @@ backend/notes/
 .workbuddy/
 .trae/
 .uploads/
+
+# Auto import
+auto-imports.d.ts
+components.d.ts

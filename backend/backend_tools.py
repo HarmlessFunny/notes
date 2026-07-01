@@ -34,6 +34,20 @@ _IMG_NAME_PATTERN = re.compile(r'!\[[^\]]*\]\(\.\./assets/([^)]+)\)')
 # title 中不允许出现的字符（Windows 文件名非法字符）
 _ILLEGAL_TITLE_CHARS = re.compile(r'[\\/:*?"<>|]')
 
+# 内存内容缓存：title -> 纯正文 content（不含标题行和图片引用）
+_content_cache: dict[str, str] = {}
+
+
+def _refresh_content_cache() -> None:
+    """清空并重新加载所有笔记正文到内存缓存"""
+    _content_cache.clear()
+    try:
+        notes = load_database().get('notes', [])
+        for note in notes:
+            _content_cache[note['title']] = read_note_file(note['title'])
+    except Exception:
+        pass
+
 
 class Note(TypedDict):
     title: str          # 笔记标题（唯一标识，同时作为 md 文件名）
@@ -69,6 +83,8 @@ def init_database()->None:
     if not os.path.exists(DB_FILE):
         with open(DB_FILE, 'w', encoding='utf-8') as f:
             json.dump({'notes': [], 'ai_chat': []}, f, ensure_ascii=False, indent=2)
+
+    _refresh_content_cache()
 
 def days_difference(later_timestamp: str, earlier_timestamp: str) -> int:
     sec1 = int(later_timestamp) / 1000.0
@@ -163,6 +179,8 @@ def save_note_file(title: str, subject: str, content: str, imgs: List[str]) -> N
     file_content = header + '\n' + ''.join(parts)
     with open(os.path.join(NOTES_FOLDER, f'{title}.md'), 'w', encoding='utf-8') as f:
         f.write(file_content)
+    # 同步更新内存缓存（去掉标题行和图片引用，只存纯正文）
+    _content_cache[title] = _IMG_REF_PATTERN.sub('', content) if content else ''
 
 def read_note_file(title: str) -> str:
     """读取 notes/<title>.md，去掉第一行标题行和图片引用，返回纯正文 content"""
@@ -223,13 +241,18 @@ def fetch_notes_by_day(someday: str) -> dict:
         return {'status': 'error', 'message': f'加载数据失败: {str(e)}'}
 
 def search_notes(keyword: str) -> dict:
-    """根据关键词搜索笔记（仅匹配标题/科目，大小写不敏感）"""
+    """根据关键词搜索笔记（匹配标题/科目/正文，大小写不敏感），正文使用内存缓存"""
     try:
         if not keyword.strip():
             return {'status': 'success', 'notes': []}
         notes: List[Note] = load_database().get('notes', [])
         q = keyword.strip().lower()
-        matched = [n for n in notes if q in n['title'].lower() or q in n['subject'].lower()]
+        matched: List[Note] = []
+        for n in notes:
+            if q in n['title'].lower() or q in n['subject'].lower():
+                matched.append(n)
+            elif q in _content_cache.get(n['title'], '').lower():
+                matched.append(n)
         return {'status': 'success', 'notes': matched}
     except Exception as e:
         return {'status': 'error', 'message': f'搜索失败: {str(e)}'}
@@ -286,8 +309,9 @@ def update_note(old_title: str, new_title: str, subject: str, content: str='', i
     final_imgs = imgs if imgs is not None else []
     save_note_file(new_title, subject, content, final_imgs)
 
-    # 改名时删除旧 md 文件
+    # 改名时删除旧 md 文件并清理缓存
     if title_changed:
+        _content_cache.pop(old_title, None)
         old_md = os.path.join(NOTES_FOLDER, f'{old_title}.md')
         if os.path.exists(old_md):
             os.remove(old_md)
@@ -305,6 +329,7 @@ def delete_notes(titles: List[str]) -> dict:
 
         to_delete = [n for n in notes if n['title'] in title_set]
         for note in to_delete:
+            _content_cache.pop(note['title'], None)
             imgs = read_note_imgs(note['title'])
             for img in imgs:
                 img_path = os.path.join(ASSETS_FOLDER, img)

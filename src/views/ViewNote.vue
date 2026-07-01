@@ -3,21 +3,18 @@
     <el-card class="notes-card" shadow="hover">
       <template #header>
         <div class="card-header">
-          <div class="card-header-left">
-            <el-button type="danger" @click="deleteChecked" v-if="selectedDate === null && checkedNotes.length > 0">删除</el-button>
-            <span class="card-title">笔记列表：{{ humanDate }}</span>
+          <div class="card-header-top">
+            <span class="card-title">{{ humanDate }}</span>
+            <div class="header-actions" v-if="selectedDate === null && checkedNotes.length > 0">
+              <el-button type="warning" @click="handleExportChecked" :icon="Download">导出</el-button>
+              <el-button type="danger" @click="deleteChecked">删除</el-button>
+            </div>
           </div>
-          <div class="card-header-right">
-            <el-input
-              ref="searchInputRef"
-              v-model="searchQuery"
-              placeholder="搜索笔记标题/科目..."
-              clearable
-              class="search-input"
-              :prefix-icon="Search"
-            />
-            <el-date-picker v-model="selectedDate" type="date" placeholder="选择日期" format="YYYY年MM月DD日"
-              value-format="x" @change="handleDateChange(selectedDate)" />
+          <div class="card-header-bottom">
+            <el-input ref="searchInputRef" v-model="searchQuery" placeholder="搜索笔记标题/科目..." clearable
+              class="search-input" :prefix-icon="Search" />
+            <el-date-picker v-model="selectedDate" type="date" placeholder="选择日期" format="YYYY年MM月DD日" value-format="x"
+              @change="handleDateChange(selectedDate)" />
           </div>
         </div>
       </template>
@@ -31,16 +28,16 @@
           <template #title>
             <div style="display: flex; align-items: center;">
               <el-checkbox v-if="selectedDate === null" :model-value="isSubjectChecked(subject)"
-                :indeterminate="isSubjectIndeterminate(subject)"
-                @change="handleSubjectCheck(subject, $event)" style="margin-right: 8px;" @click.stop />
-              <span style="flex: 1; cursor: pointer;">{{ subject }}</span>
+                :indeterminate="isSubjectIndeterminate(subject)" @change="handleSubjectCheck(subject, $event)"
+                @click.stop />
+              <span style="margin-left: 8px; flex: 1; cursor: pointer;">{{ subject }}</span>
             </div>
           </template>
           <template v-for="note in displayNotes" :key="note.title">
-            <div v-if="note.subject === subject" style="display: flex; align-items: center;">
+            <div v-if="note.subject === subject" class="note-item">
               <el-checkbox v-if="selectedDate === null" :model-value="checkedNotes.includes(note.title)"
-                @change="handleNoteCheck(note.title, $event)" style="margin-right: 8px;" />
-              <el-link type="primary" @click="seeDetail(note.title)">{{ note.title }}</el-link>
+                @change="handleNoteCheck(note.title, $event)" />
+              <span class="note-link" @click="seeDetail(note.title)">{{ note.title }}</span>
             </div>
           </template>
         </el-collapse-item>
@@ -51,13 +48,17 @@
 
 <script setup lang="ts">
 defineOptions({ name: 'ViewNote' })
-import { Search } from '@element-plus/icons-vue'
+import { Search, Download } from '@element-plus/icons-vue'
 import { useViewNote } from '@/hooks/useViewNote'
 import { useCacheStore } from '@/stores/cache'
+import { useNotesStore } from '@/stores/notes'
 import { storeToRefs } from 'pinia'
 import { onMounted, onUnmounted, ref } from 'vue'
+import { exportNotesToZip } from '@/utils/export'
+import type { Note } from '@/types'
 
 const cacheStore = useCacheStore()
+const notesStore = useNotesStore()
 const { openSubjects, checkedNotes } = storeToRefs(cacheStore)
 
 const {
@@ -84,6 +85,14 @@ function handleGlobalKeydown(e: KeyboardEvent) {
   }
 }
 
+async function handleExportChecked() {
+  const titles = [...checkedNotes.value]
+  if (titles.length === 0) return
+  const notes = (await Promise.all(titles.map(t => notesStore.getNote(t)))).filter(Boolean) as Note[]
+  if (notes.length === 0) return
+  await exportNotesToZip(notes)
+}
+
 onMounted(() => document.addEventListener('keydown', handleGlobalKeydown))
 onUnmounted(() => document.removeEventListener('keydown', handleGlobalKeydown))
 </script>
@@ -102,28 +111,56 @@ onUnmounted(() => document.removeEventListener('keydown', handleGlobalKeydown))
 
 .card-header {
   display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card-header-top {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
+  min-height: 40px;
 }
 
-.card-header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.card-header-right {
+.card-header-bottom {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.note-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.note-item:hover {
+  background-color: var(--el-fill-color-light);
+}
+
+.note-link {
+  color: var(--el-text-color-regular);
+  font-size: 15px;
+  margin-left: 8px;
+  transition: color 0.2s;
+}
+
+.note-item:hover .note-link {
+  color: var(--el-color-primary);
 }
 
 .card-title {
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
   color: var(--el-text-color-primary);
   white-space: nowrap;
 }
@@ -133,21 +170,16 @@ onUnmounted(() => document.removeEventListener('keydown', handleGlobalKeydown))
 }
 
 @media (max-width: 768px) {
-  .card-header {
+  .card-header-bottom {
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .card-header-left,
-  .card-header-right {
-    width: 100%;
   }
 
   .search-input {
     width: 100%;
   }
 
-  .card-header-right .el-date-picker {
+  .card-header-bottom .el-date-picker {
     width: 100%;
   }
 
@@ -163,11 +195,6 @@ onUnmounted(() => document.removeEventListener('keydown', handleGlobalKeydown))
 
   .card-title {
     font-size: 15px;
-  }
-
-  .card-header-left .el-button {
-    font-size: 12px;
-    padding: 7px 12px;
   }
 }
 </style>

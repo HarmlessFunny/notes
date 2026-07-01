@@ -16,8 +16,8 @@
                     <el-button type="success" @click="handleOpenQuiz" :icon="ChatDotRound">
                         生成复习题
                     </el-button>
-                    <el-button type="warning" @click="handleExportPdf" :icon="Document">
-                        导出 PDF
+                    <el-button type="warning" @click="handleExportZip" :icon="Document">
+                        导出笔记
                     </el-button>
                     <el-button type="primary" @click="showEditForm = true" :icon="Edit">
                         编辑笔记
@@ -28,7 +28,7 @@
                 </div>
             </div>
         </div>
-        <div ref="contentRef">
+        <div>
             <MarkdownRenderer v-if="note.content" class="page-content" :content="note.content" />
         </div>
         <div v-if="note.imgs.length > 0" class="image-container" ref="imagesRef">
@@ -67,7 +67,7 @@ import NoteForm from '@/components/NoteForm.vue'
 import QuizDialog from '@/components/QuizDialog.vue'
 import { useNoteDetail } from '@/hooks/useNoteDetail'
 import { useWaterfallLayout } from '@/hooks/useWaterfallLayout'
-import { exportNoteToPdf } from '@/utils/pdf'
+import { exportNoteToZip } from '@/utils/export'
 
 const router = useRouter()
 const route = useRoute()
@@ -89,7 +89,6 @@ const {
 } = useNoteDetail()
 
 const quizDialogRef = ref<InstanceType<typeof QuizDialog> | null>(null)
-const contentRef = ref<HTMLElement | null>(null)
 const imagesRef = ref<HTMLElement | null>(null)
 
 const imagesList = computed(() => note.value?.imgs ?? [])
@@ -111,9 +110,9 @@ async function handleOpenQuiz() {
     quizDialogRef.value?.startQuiz()
 }
 
-async function handleExportPdf() {
+async function handleExportZip() {
     if (!note.value) return
-    await exportNoteToPdf(note.value, contentRef.value, imagesRef.value)
+    await exportNoteToZip(note.value)
 }
 </script>
 

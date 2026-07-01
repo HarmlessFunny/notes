@@ -34,7 +34,8 @@
             <div class="input-area">
                 <el-input v-model="inputMessage" :rows="3" placeholder="输入您的问题..." class="message-input"
                     @keydown.enter="sendMessage" />
-                <el-button type="primary" class="send-btn" :icon="Top" @click="sendMessage" :loading="sending">
+                <el-button type="primary" class="send-btn" :icon="Top" @click="sendMessage" :loading="sending"
+                    :disabled="!inputMessage.trim()">
                     发送
                 </el-button>
             </div>

@@ -1,27 +1,31 @@
 <template>
   <div id="app">
     <!-- 导航栏 -->
-    <el-menu mode="horizontal" :default-active="$route.name as string" class="navbar" background-color="#409EFF"
-      text-color="#fff" active-text-color="#ffd04b" @select="handleMenuSelect">
-      <el-menu-item index="publish">
-        <el-icon>
-          <Edit />
-        </el-icon>
-        <span>发布笔记</span>
-      </el-menu-item>
-      <el-menu-item index="view">
-        <el-icon>
-          <Notebook />
-        </el-icon>
-        <span>查看笔记</span>
-      </el-menu-item>
-      <el-menu-item v-if="cacheStore.aiAvailable" index="aiReview">
-        <el-icon>
-          <ChatDotRound />
-        </el-icon>
-        <span>AI 对话</span>
-      </el-menu-item>
-    </el-menu>
+    <div class="navbar-wrapper">
+      <el-menu mode="horizontal" :default-active="$route.name as string" class="navbar" @select="handleMenuSelect">
+        <el-menu-item index="publish">
+          <el-icon>
+            <Edit />
+          </el-icon>
+          <span>发布笔记</span>
+        </el-menu-item>
+        <el-menu-item index="view">
+          <el-icon>
+            <Notebook />
+          </el-icon>
+          <span>查看笔记</span>
+        </el-menu-item>
+        <el-menu-item v-if="cacheStore.aiAvailable" index="aiReview">
+          <el-icon>
+            <ChatDotRound />
+          </el-icon>
+          <span>AI 对话</span>
+        </el-menu-item>
+      </el-menu>
+      <div class="dark-switch">
+        <el-switch v-model="cacheStore.darkMode" :active-action-icon="Moon" :inactive-action-icon="Sunny" />
+      </div>
+    </div>
 
     <!-- 路由出口 -->
     <main class="main-content">
@@ -38,7 +42,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'App' })
 import { onMounted } from 'vue'
-import { Edit, Notebook, ChatDotRound } from '@element-plus/icons-vue'
+import { Edit, Notebook, ChatDotRound, Moon, Sunny } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { useNotesStore } from '@/stores/notes'
 import { useCacheStore } from '@/stores/cache'
@@ -74,16 +78,36 @@ function handleMenuSelect(index: string) {
 #app {
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--el-bg-color-page);
+}
+
+.navbar-wrapper * {
+  user-select: none;
+}
+
+.navbar-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 .navbar {
   margin: 0;
   border-radius: 0;
-  position: sticky;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
+  background-color: var(--el-bg-color) !important;
+  border-bottom: 1px solid var(--el-border-color-light);
+}
+
+.dark-switch {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  line-height: 1;
 }
 
 .main-content {

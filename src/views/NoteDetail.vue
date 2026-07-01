@@ -123,14 +123,14 @@ async function handleExportPdf() {
     padding: 40px 20px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.8;
-    color: #333;
+    color: var(--el-text-color-primary);
 }
 
 .title-row {
     display: flex;
     align-items: center;
     padding-bottom: 15px;
-    border-bottom: 3px solid #3498db;
+    border-bottom: 3px solid var(--el-color-primary);
     gap: 12px;
 }
 
@@ -138,7 +138,7 @@ async function handleExportPdf() {
     flex-shrink: 0;
     font-size: 1rem !important;
     font-weight: normal !important;
-    color: #3498db !important;
+    color: var(--el-color-primary) !important;
 }
 
 .back-button :deep(.el-icon) {
@@ -148,28 +148,28 @@ async function handleExportPdf() {
 .header-section :deep(.el-breadcrumb) {
     font-size: 1.8rem;
     font-weight: 700;
-    color: #2c3e50;
+    color: var(--el-text-color-primary);
     word-break: break-all;
 }
 
 .header-section :deep(.el-breadcrumb__inner) {
-    color: #2c3e50;
+    color: var(--el-text-color-primary);
     font-weight: 700;
 }
 
 .header-section :deep(.el-breadcrumb__inner):hover {
-    color: #2c3e50;
+    color: var(--el-text-color-primary);
     font-weight: 700;
 }
 
 .page-content {
     font-size: 1.1rem;
-    color: #4a4a4a;
+    color: var(--el-text-color-primary);
     margin-bottom: 40px;
     padding: 25px;
-    background-color: #f8f9fa;
+    background-color: var(--el-bg-color);
+    border: 1px solid var(--el-border-color-light);
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     word-break: break-word;
 }
 
@@ -185,6 +185,7 @@ async function handleExportPdf() {
     cursor: zoom-in;
     transition: all 0.3s ease;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: var(--el-fill-color);
 }
 
 .image-item:hover {

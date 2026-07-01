@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <div class="card-header-left">
-            <el-button type="danger" @click="deleteChecked" v-if="selectedDate === null">删除</el-button>
+            <el-button type="danger" @click="deleteChecked" v-if="selectedDate === null && checkedNotes.length > 0">删除</el-button>
             <span class="card-title">笔记列表：{{ humanDate }}</span>
           </div>
           <div class="card-header-right">

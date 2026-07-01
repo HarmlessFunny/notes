@@ -23,7 +23,7 @@
 
 ### 普通用户
 
-[**点击下载 v1.2.0 (Windows-x64)**](https://github.com/HarmlessFunny/notes/releases/download/v1.2.0/Notes-v1.2.0-Windows-x64.zip)
+[**点击下载 v1.2.1 (Windows-x64)**](https://github.com/HarmlessFunny/notes/releases/download/v1.2.1/Notes-v1.2.1-Windows-x64.zip)
 
 ### 开发者
 

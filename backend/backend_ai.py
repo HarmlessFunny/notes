@@ -129,14 +129,15 @@ TOOL_CALL_MAP = {
 
 
 
-def ai_chat(client: OpenAI, model_name: str, messages: list):
+def ai_chat(client: OpenAI, model_name: str, messages: list, reasoning_effort: str = None):
     """流式版本：使用 SSE 逐块返回 AI 回复内容，Function Calling 在服务端透明处理"""
     yield from stream_ai_response(
         client,
         model_name,
         messages,
         tools=tools,
-        tool_call_map=TOOL_CALL_MAP
+        tool_call_map=TOOL_CALL_MAP,
+        reasoning_effort=reasoning_effort,
     )
 
 
@@ -212,7 +213,7 @@ GRADE_SYSTEM_PROMPT = """
 """
 
 
-def generate_quiz(client: OpenAI, model_name: str, note_content: str):
+def generate_quiz(client: OpenAI, model_name: str, note_content: str, reasoning_effort: str = None):
     """根据笔记内容生成练习题（流式输出 JSON）。"""
     user_prompt = "以下是笔记内容，请据此出一套练习题：\n\n" + note_content
     
@@ -223,11 +224,12 @@ def generate_quiz(client: OpenAI, model_name: str, note_content: str):
             {"role": "system", "content": QUIZ_SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
         ],
-        response_format={"type": "json_object"}
+        response_format={"type": "json_object"},
+        reasoning_effort=reasoning_effort,
     )
 
 
-def grade_quiz(client: OpenAI, model_name: str, note_content: str, questions: list, user_answers: list):
+def grade_quiz(client: OpenAI, model_name: str, note_content: str, questions: list, user_answers: list, reasoning_effort: str = None):
     """根据笔记内容批改用户答案（流式输出 JSON）。"""
     user_prompt = json.dumps({
         "note_content": note_content,
@@ -242,5 +244,6 @@ def grade_quiz(client: OpenAI, model_name: str, note_content: str, questions: li
             {"role": "system", "content": GRADE_SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
         ],
-        response_format={"type": "json_object"}
+        response_format={"type": "json_object"},
+        reasoning_effort=reasoning_effort,
     )

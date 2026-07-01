@@ -140,7 +140,7 @@ const initForm = () => {
     clearFiles()
     props.initialImages.forEach((img: string) => {
       fileList.value.push({
-        uid: crypto.randomUUID(),
+        uid: Date.now() + Math.floor(Math.random() * 10000),
         name: img,
         url: `/assets/${img}`,
         status: 'success'

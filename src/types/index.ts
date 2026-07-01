@@ -5,7 +5,7 @@ export interface FormData {
 }
 
 export interface UploadFile {
-    uid: string
+    uid: number
     name: string
     status: 'success' | 'error' | 'loading' | 'ready'
     url?: string

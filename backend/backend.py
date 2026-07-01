@@ -24,6 +24,7 @@ init_database()
 api_key = os.getenv("API_KEY")
 base_url = os.getenv("BASE_URL")
 model_name = os.getenv("MODEL_NAME")
+reasoning_effort = os.getenv("REASONING_EFFORT") or None
 AI_AVAILABLE = bool(api_key and base_url and model_name)
 
 app = Flask(__name__)
@@ -136,18 +137,23 @@ def update_note_route(title: str) -> dict:
     safe_title = re.sub(r'[\\/:*?"<>|]', '_', new_title)[:30] or f"note_{int(time.time())}"
     saved_images = existing_images + save_images(images, safe_title)
 
-    # 获取旧笔记的图片列表，删除被移除的图片
+    # 先记录旧图片（用于更新成功后清理），必须在 update_note 之前获取
     old_note_result = fetch_notes_by_titles([title])
+    old_imgs = []
     if old_note_result['status'] == 'success' and old_note_result.get('notes'):
-        for img in old_note_result['notes'][0].get('imgs', []):
-            if img not in saved_images:
-                img_path = os.path.join(ASSETS_FOLDER, img)
-                if os.path.exists(img_path):
-                    os.remove(img_path)
+        old_imgs = old_note_result['notes'][0].get('imgs', [])
 
     result = update_note(title, new_title, subject, content, saved_images)
     if result['status'] == 'error':
         return result, 400
+
+    # 数据库更新成功后，删除被移除的旧图片
+    for img in old_imgs:
+        if img not in saved_images:
+            img_path = os.path.join(ASSETS_FOLDER, img)
+            if os.path.exists(img_path):
+                os.remove(img_path)
+
     return result
 
 
@@ -167,8 +173,9 @@ def ai_chat_stream_route() -> Any:
         return
     messages = request.json.get('messages', [])
     if not messages:
-        return jsonify({'status': 'error', 'message': '请输入问题'}), 400
-    yield from ai_chat(client, model_name, messages)
+        yield {'type': 'error', 'content': '请输入问题'}
+        return
+    yield from ai_chat(client, model_name, messages, reasoning_effort)
 
 
 @app.route('/api/ai/chat', methods=['GET'])
@@ -198,8 +205,9 @@ def ai_quiz_route() -> Any:
         return
     note_content = request.json.get('note_content', '')
     if not note_content.strip():
-        return jsonify({'status': 'error', 'message': '笔记内容不能为空'}), 400
-    yield from generate_quiz(client, model_name, note_content)
+        yield {'type': 'error', 'content': '笔记内容不能为空'}
+        return
+    yield from generate_quiz(client, model_name, note_content, reasoning_effort)
 
 
 @app.route('/api/ai/grade', methods=['POST'])
@@ -212,8 +220,9 @@ def ai_grade_route() -> Any:
     questions = request.json.get('questions', [])
     user_answers = request.json.get('user_answers', [])
     if not note_content.strip() or not questions:
-        return jsonify({'status': 'error', 'message': '参数不完整'}), 400
-    yield from grade_quiz(client, model_name, note_content, questions, user_answers)
+        yield {'type': 'error', 'content': '参数不完整'}
+        return
+    yield from grade_quiz(client, model_name, note_content, questions, user_answers, reasoning_effort)
 
 
 @app.route('/', defaults={'path': ''})

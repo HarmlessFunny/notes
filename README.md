@@ -77,8 +77,12 @@ python backend/backend.py
 
 ```env
 API_KEY=your_api_key
-BASE_URL=https://api.example.com/
+BASE_URL=your_base_url
 MODEL_NAME=your_model_name
+# REASONING_EFFORT=high    # 可选，仅部分模型支持
+
+FRONTEND_PORT=5173
+BACKEND_PORT=5000
 ```
 
 首次运行会自动创建 `database.json`、`assets/`、`notes/`。
@@ -90,6 +94,7 @@ MODEL_NAME=your_model_name
 | `API_KEY` | API 密钥，用于 AI 功能 | 否 |
 | `BASE_URL` | API 基础 URL，用于 AI 功能，例如 'https://api.deepseek.com/' | 否 |
 | `MODEL_NAME` | 模型名称，用于 AI 功能，例如 'deepseek-v4-flash' | 否 |
+| `REASONING_EFFORT` | 推理努力程度（支持该参数的模型：o1/o3/deepseek-reasoner 等），留空则不传 | 否 |
 | `FRONTEND_PORT` | 前端开发服务器端口（仅开发模式），默认 5173 | 否 |
 | `BACKEND_PORT` | 后端服务端口，默认 5000 | 否 |
 

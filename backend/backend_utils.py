@@ -29,7 +29,13 @@ def validate_required_fields(fields: list):
         def wrapper(*args, **kwargs):
             missing = []
             if request.method in ['POST', 'PUT']:
-                data = request.form if request.content_type and 'multipart/form-data' in request.content_type else (request.json or {})
+                if request.content_type and 'multipart/form-data' in request.content_type:
+                    data = request.form
+                else:
+                    try:
+                        data = request.json or {}
+                    except Exception:
+                        data = {}
                 for field in fields:
                     if field not in data or (data[field] is None or str(data[field]).strip() == ''):
                         missing.append(field)
@@ -98,7 +104,7 @@ def stream_ai_response(
     response_format: Dict[str, str] = None,
     tools: list = None,
     tool_call_map: Dict[str, Callable] = None,
-    reasoning_effort: str = "high"
+    reasoning_effort: str = None
 ):
     """
     通用流式AI响应生成器。
@@ -110,7 +116,7 @@ def stream_ai_response(
         response_format: 响应格式（如 {"type": "json_object"}）
         tools: 工具定义列表（用于function calling）
         tool_call_map: 工具函数映射（用于function calling）
-        reasoning_effort: 推理努力程度
+        reasoning_effort: 推理努力程度（仅部分模型支持，默认 None 表示不传）
     
     Yields:
         dict: {"type": "content", "content": "..."} 或 {"type": "done", "raw_json": "..."}
@@ -123,8 +129,10 @@ def stream_ai_response(
             "messages": current_messages,
             "stream": True,
             "stream_options": {"include_usage": True},
-            "reasoning_effort": reasoning_effort,
         }
+        
+        if reasoning_effort:
+            params["reasoning_effort"] = reasoning_effort
         
         if response_format:
             params["response_format"] = response_format
@@ -205,4 +213,10 @@ def stream_ai_response(
                         "role": "tool",
                         "tool_call_id": tc["id"],
                         "content": json.dumps(result, ensure_ascii=False),
+                    })
+                else:
+                    current_messages.append({
+                        "role": "tool",
+                        "tool_call_id": tc["id"],
+                        "content": json.dumps({"status": "error", "message": f"未知工具: {func_name}"}, ensure_ascii=False),
                     })

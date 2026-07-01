@@ -1,4 +1,4 @@
-import { ref, computed, watch, type Ref } from 'vue'
+import { ref, computed, watch, onUnmounted, type Ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import type { LightNote } from '@/types'
@@ -18,6 +18,48 @@ export function useViewNote() {
   // null = 所有笔记；number = 具体日期的时间戳（毫秒）
   const selectedDate = ref<number | null>(null)
   const time = route.params.time as string
+
+  // ===== 搜索 =====
+  const searchQuery = ref('')
+  const searchResults = ref<LightNote[]>([])
+  const searching = ref(false)
+  let searchTimer: ReturnType<typeof setTimeout> | null = null
+
+  const displayNotes = computed(() => {
+    if (searchQuery.value.trim()) {
+      // 防抖期间且无旧结果时回退到全部笔记，避免闪烁"暂无笔记"
+      if (searching.value && searchResults.value.length === 0) return notes.value
+      return searchResults.value
+    }
+    return notes.value
+  })
+
+  const filteredSubjects = computed(() => {
+    const subjectsSet = new Set<string>()
+    displayNotes.value.forEach(note => {
+      if (note.subject) subjectsSet.add(note.subject)
+    })
+    return Array.from(subjectsSet)
+  })
+
+  watch(searchQuery, (newQuery) => {
+    if (searchTimer) clearTimeout(searchTimer)
+    const query = newQuery.trim()
+    if (!query) {
+      searchResults.value = []
+      searching.value = false
+      return
+    }
+    searching.value = true
+    searchTimer = setTimeout(async () => {
+      searchResults.value = await notesStore.searchNotes(query)
+      searching.value = false
+    }, 300)
+  })
+
+  onUnmounted(() => {
+    if (searchTimer) clearTimeout(searchTimer)
+  })
 
   const humanDate = computed(() => {
     if (selectedDate.value === null) return '所有笔记'
@@ -84,7 +126,7 @@ export function useViewNote() {
 
   // ===== 多选删除（原 useDelete，内部共享 notes）=====
   const subjectNotes = (subject: string) =>
-    notes.value.filter(note => note.subject === subject)
+    displayNotes.value.filter(note => note.subject === subject)
 
   const isSubjectChecked = (subject: string) => {
     const list = subjectNotes(subject)
@@ -119,8 +161,17 @@ export function useViewNote() {
 
   const deleteChecked = async () => {
     if (checkedNotes.value.length === 0) return false
-    const ok = await notesStore.deleteNote([...checkedNotes.value])
-    if (ok) checkedNotes.value = []
+    const ok = await notesStore.deleteNotes([...checkedNotes.value])
+    if (ok) {
+      checkedNotes.value = []
+      if (searchQuery.value.trim()) {
+        if (searchTimer) clearTimeout(searchTimer)
+        searchResults.value = await notesStore.searchNotes(searchQuery.value.trim())
+        searching.value = false
+      } else {
+        await loadByTime(route.params.time as string)
+      }
+    }
     return ok
   }
 
@@ -129,6 +180,9 @@ export function useViewNote() {
     selectedDate,
     time,
     humanDate,
+    searchQuery,
+    displayNotes,
+    filteredSubjects,
     handleDateChange,
     seeDetail,
     isSubjectChecked,

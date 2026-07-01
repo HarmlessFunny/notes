@@ -81,7 +81,7 @@ router.beforeEach(async (to, from) => {
     const notesStore = useNotesStore()
     if (notesStore.allNotes.length === 0) {
       try {
-        await notesStore.updateAllNotes()
+        await notesStore.flashAllNotes()
       } catch (error) {
         handleApiError(error, '加载笔记数据失败')
       }

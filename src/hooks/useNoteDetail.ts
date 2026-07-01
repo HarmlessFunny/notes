@@ -61,7 +61,7 @@ export function useNoteDetail() {
 
     async function deleteCurrentNote(): Promise<void> {
         if (!note.value) return
-        const deleted = await notesStore.deleteNote([note.value.title])
+        const deleted = await notesStore.deleteNotes([note.value.title])
         if (deleted) {
             router.replace('/view/notes/all')
         }

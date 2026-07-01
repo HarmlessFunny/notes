@@ -15,19 +15,19 @@ export const useNotesStore = defineStore('notes', () => {
         return Array.from(set)
     })
 
-    async function updateAllNotes() {
+    async function flashAllNotes() {
         try {
             const response = await axios.get('/api/notes')
             allNotes.value = response.data?.notes ?? []
         } catch (error: any) {
-            handleApiError(error, '更新笔记失败')
+            handleApiError(error, '刷新笔记数据失败')
         }
     }
 
     async function publishNote(formData: FormData) {
         try {
             await axios.post('/api/submit', formData)
-            await updateAllNotes()
+            await flashAllNotes()
             handleApiSuccess('发布笔记成功')
             return true
         } catch (error: any) {
@@ -66,7 +66,7 @@ export const useNotesStore = defineStore('notes', () => {
         }
     }
 
-    async function deleteNote(titles: string[]) {
+    async function deleteNotes(titles: string[]) {
         try {
             const ok = await ElMessageBox.confirm(`确认删除"${titles.join('"、"')}"笔记吗？`, '警告', {
                 confirmButtonText: '确认',
@@ -79,7 +79,7 @@ export const useNotesStore = defineStore('notes', () => {
         }
         try {
             const response = await axios.delete('/api/notes/delete', { data: { titles } })
-            await updateAllNotes()
+            await flashAllNotes()
             const cacheStore = useCacheStore()
             cacheStore.checkedNotes = cacheStore.checkedNotes.filter(t => !titles.includes(t))
             handleApiSuccess(response.data.message)
@@ -93,7 +93,7 @@ export const useNotesStore = defineStore('notes', () => {
     async function updateNote(title: string, formData: FormData) {
         try {
             await axios.put(`/api/note/${encodeURIComponent(title)}`, formData)
-            await updateAllNotes()
+            await flashAllNotes()
             handleApiSuccess('笔记更新成功')
             return true
         } catch (error: any) {
@@ -142,11 +142,11 @@ export const useNotesStore = defineStore('notes', () => {
         allNotes,
         subjectsList,
         publishNote,
-        updateAllNotes,
+        flashAllNotes,
         getNote,
         getFilteredNotes,
         searchNotes,
-        deleteNote,
+        deleteNotes,
         updateNote,
         generateQuiz,
         gradeQuiz,

@@ -50,21 +50,18 @@
 
 <script setup lang="ts">
 defineOptions({ name: 'ViewNote' })
-import type { LightNote } from '@/types'
-import { ref, computed, watch, onUnmounted } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { useViewNote } from '@/hooks/useViewNote'
 import { useCacheStore } from '@/stores/cache'
-import { useNotesStore } from '@/stores/notes'
 import { storeToRefs } from 'pinia'
 
 const cacheStore = useCacheStore()
-const notesStore = useNotesStore()
 const { openSubjects, checkedNotes } = storeToRefs(cacheStore)
-const { subjectsList } = notesStore
 
 const {
-  notes,
+  searchQuery,
+  displayNotes,
+  filteredSubjects,
   selectedDate,
   humanDate,
   handleDateChange,
@@ -75,40 +72,6 @@ const {
   handleNoteCheck,
   deleteChecked
 } = useViewNote()
-
-  // 搜索
-const searchQuery = ref('')
-const searchResults = ref<LightNote[]>([])
-let searchTimer: ReturnType<typeof setTimeout> | null = null
-
-watch(searchQuery, (newQuery) => {
-  if (searchTimer) clearTimeout(searchTimer)
-  const query = newQuery.trim()
-  if (!query) {
-    searchResults.value = []
-    return
-  }
-  searchTimer = setTimeout(async () => {
-    searchResults.value = await notesStore.searchNotes(query)
-  }, 300)
-})
-
-onUnmounted(() => {
-  if (searchTimer) clearTimeout(searchTimer)
-})
-
-const displayNotes = computed(() => {
-  if (searchQuery.value.trim()) return searchResults.value
-  return notes.value
-})
-
-const filteredSubjects = computed(() => {
-  const subjectsSet = new Set<string>()
-  displayNotes.value.forEach(note => {
-    if (note.subject) subjectsSet.add(note.subject)
-  })
-  return Array.from(subjectsSet)
-})
 </script>
 
 <style scoped>

@@ -14,6 +14,7 @@
 - **Markdown 渲染** - 支持代码高亮、数学公式（KaTeX）
 - **艾宾浩斯复习** - 根据遗忘曲线智能推荐复习计划
 - **AI 复习助手** - 与 AI 对话复习笔记内容，自动生成练习题并批改
+- **暗色模式** - 支持深浅色主题切换，自动保存偏好
 - **PDF 导出** - 将笔记导出为 PDF 文件
 - **响应式设计** - 适配桌面端和移动端
 - **单文件部署** - 后端可打包为单个 `.exe`，前端已内嵌，开箱即用
@@ -22,7 +23,7 @@
 
 ### 普通用户
 
-[**点击下载 v1.1.0 (Windows-x64)**](https://github.com/HarmlessFunny/notes/releases/download/v1.1.0/Notes-v1.1.0-Windows-x64.zip)
+[**点击下载 v1.2.0 (Windows-x64)**](https://github.com/HarmlessFunny/notes/releases/download/v1.2.0/Notes-v1.2.0-Windows-x64.zip)
 
 ### 开发者
 

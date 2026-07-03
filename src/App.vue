@@ -113,6 +113,8 @@ function handleMenuSelect(index: string) {
 .main-content {
   flex: 1;
   padding: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 @media (max-width: 768px) {

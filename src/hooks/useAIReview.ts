@@ -1,5 +1,5 @@
 import { handleApiError } from '@/utils/error'
-import { ref, watch, nextTick, onUnmounted, onDeactivated } from 'vue'
+import { ref, onUnmounted, onDeactivated } from 'vue'
 import { createAbortableStream } from '@/utils/stream'
 
 export interface ChatMsg {
@@ -12,17 +12,12 @@ export function useAIReview() {
     const inputMessage = ref('')
     const sending = ref(false)
 
-    const messageListRef = ref<HTMLElement | null>(null)
-    const streamTick = ref(0)
     let currentStream: { abort: () => void } | null = null
 
     let chatLoaded = false
 
     async function loadChat() {
-        if (chatLoaded) {
-            scrollToBottom()
-            return
-        }
+        if (chatLoaded) return
         try {
             const res = await fetch('/api/ai/chat')
             const data = await res.json()
@@ -31,7 +26,6 @@ export function useAIReview() {
             }
             chatLoaded = true
         } catch { /* ignore */ }
-        scrollToBottom()
     }
 
     async function saveChat() {
@@ -42,16 +36,6 @@ export function useAIReview() {
                 body: JSON.stringify({ messages: chatMessages.value })
             })
         } catch { /* ignore */ }
-    }
-
-    watch([() => chatMessages.value.length, streamTick], scrollToBottom)
-
-    function scrollToBottom() {
-        nextTick(() => {
-            if (messageListRef.value) {
-                messageListRef.value.scrollTop = messageListRef.value.scrollHeight
-            }
-        })
     }
 
     function abortChat() {
@@ -99,7 +83,6 @@ export function useAIReview() {
         }, {
             onContent: (content) => {
                 chatMessages.value[aiIndex]!.content += content
-                streamTick.value++
             },
             onError: (error) => {
                 chatMessages.value[aiIndex]!.content = `抱歉，出错了: ${error.message}`
@@ -122,6 +105,10 @@ export function useAIReview() {
     }
 
     async function truncateMessages(index: number) {
+        const msg = chatMessages.value[index]
+        if (msg?.role === 'user') {
+            inputMessage.value = msg.content
+        }
         chatMessages.value.splice(index)
         await saveChat()
     }

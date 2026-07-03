@@ -1,15 +1,19 @@
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import type { FormData, UploadFile } from '@/types'
 import { useNotesStore } from '@/stores/notes'
+import { useCacheStore } from '@/stores/cache'
 
 export function usePublishNote() {
     const notesStore = useNotesStore()
-
-    const formData = ref<FormData>({
-        title: '',
-        subject: '',
-        content: ''
-    })
+    const cache = useCacheStore()
+    const {
+        publishFormData: formData,
+        publishFileList: fileList,
+        publishPreviewIndex: previewIndex,
+        publishShowPreview: showPreview,
+        publishSubmitting: submitting,
+    } = storeToRefs(cache)
 
     const canSubmit = computed(() => {
         const hasTitle = !!formData.value.title.trim()
@@ -18,12 +22,8 @@ export function usePublishNote() {
     })
 
     const resetForm = () => {
-        formData.value = { title: '', subject: '', content: '' }
+        cache.resetPublishForm()
     }
-
-    const fileList = ref<UploadFile[]>([])
-    const previewIndex = ref(0)
-    const showPreview = ref(false)
 
     const handleFileChange = (file: UploadFile, newFileList: UploadFile[]) => {
         fileList.value = newFileList
@@ -52,8 +52,6 @@ export function usePublishNote() {
     const closePreview = () => {
         showPreview.value = false
     }
-
-    const submitting = ref(false)
 
     const submitForm = async (): Promise<boolean> => {
         if (!canSubmit.value) return false

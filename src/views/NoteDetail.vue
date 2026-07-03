@@ -1,42 +1,48 @@
 <template>
     <div v-if="note" class="container">
-        <!-- 内容区域 -->
-        <div class="header-section">
-            <div class="title-row">
-                <el-button text @click="router.back()" :icon="ArrowLeft" class="back-button">
-                    返回
-                </el-button>
-                <el-breadcrumb separator="/">
-                    <el-breadcrumb-item>{{ note.subject }}</el-breadcrumb-item>
-                    <el-breadcrumb-item>{{ note.title }}</el-breadcrumb-item>
-                </el-breadcrumb>
-            </div>
-            <div class="header-row">
-                <div class="buttons">
-                    <el-button type="success" @click="handleOpenQuiz" :icon="ChatDotRound">
-                        生成复习题
+        <template v-if="!showEditForm">
+            <div class="header-section">
+                <div class="title-row">
+                    <el-button text @click="router.back()" :icon="ArrowLeft" class="back-button">
+                        返回
                     </el-button>
-                    <el-button type="warning" @click="handleExportZip" :icon="Document">
-                        导出笔记
-                    </el-button>
-                    <el-button type="primary" @click="showEditForm = true" :icon="Edit">
-                        编辑笔记
-                    </el-button>
-                    <el-button type="danger" @click="deleteCurrentNote" :icon="Delete">
-                        删除笔记
-                    </el-button>
+                    <el-breadcrumb separator="/">
+                        <el-breadcrumb-item>{{ note.subject }}</el-breadcrumb-item>
+                        <el-breadcrumb-item>{{ note.title }}</el-breadcrumb-item>
+                    </el-breadcrumb>
+                </div>
+                <div class="header-row">
+                    <div class="buttons">
+                        <el-button type="success" @click="handleOpenQuiz" :icon="ChatDotRound">
+                            生成复习题
+                        </el-button>
+                        <el-button type="warning" @click="handleExportZip" :icon="Document">
+                            导出笔记
+                        </el-button>
+                        <el-button type="primary" @click="showEditForm = true" :icon="Edit">
+                            编辑笔记
+                        </el-button>
+                        <el-button type="danger" @click="deleteCurrentNote" :icon="Delete">
+                            删除笔记
+                        </el-button>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div>
-            <MarkdownRenderer v-if="note.content" class="page-content" :content="note.content" />
-        </div>
-        <div v-if="note.imgs.length > 0" class="image-container" ref="imagesRef">
-            <div v-for="(img, index) in note.imgs" :key="img" class="image-item" :style="itemStyles[index]">
-                <el-image :src="`${baseUrl}/assets/${img}`" alt="Note Image" :initial-index="index"
-                    @click="showPreview = true; previewIndex = index" @load="onImageLoaded(index, $event)" />
+            <div>
+                <MarkdownRenderer v-if="note.content" class="page-content" :content="note.content" />
             </div>
-        </div>
+            <div v-if="note.imgs.length > 0" class="image-container" ref="imagesRef">
+                <div v-for="(img, index) in note.imgs" :key="img" class="image-item" :style="itemStyles[index]">
+                    <el-image :src="`${baseUrl}/assets/${img}`" alt="Note Image" :initial-index="index"
+                        @click="showPreview = true; previewIndex = index" @load="onImageLoaded(index, $event)" />
+                </div>
+            </div>
+        </template>
+        <NoteForm v-else title="编辑笔记" submit-button-text="保存修改" show-cancel-button :loading="editSubmitting" :initial-data="{
+            title: note!.title,
+            subject: note!.subject,
+            content: note!.content,
+        }" :initial-images="note!.imgs" @submit="handleEditSubmit" @cancel="showEditForm = false" />
     </div>
     <div v-else class="container">
         <el-empty description="笔记不存在，正在跳转..." />
@@ -44,14 +50,6 @@
     <el-image-viewer v-if="showPreview" :url-list="note!.imgs.map(item => `${baseUrl}/assets/${item}`)" show-progress
         hide-on-click-modal :max-scale="7" :min-scale="0.2" :initial-index="previewIndex" @close="showPreview = false"
         :infinite="false" />
-    <!-- 编辑表单弹窗 -->
-    <el-dialog v-model="showEditForm" title="编辑笔记" append-to-body width="900px" class="edit-dialog">
-        <NoteForm title="编辑笔记" submit-button-text="保存修改" show-cancel-button :loading="editSubmitting" :initial-data="{
-            title: note!.title,
-            subject: note!.subject,
-            content: note!.content,
-        }" :initial-images="note!.imgs" @submit="handleEditSubmit" @cancel="showEditForm = false" />
-    </el-dialog>
     <!-- 复习题对话框 -->
     <el-dialog v-model="showQuizDialog" title="AI 复习题" append-to-body width="900px" class="quiz-dialog">
         <QuizDialog :note-content="note?.content ?? ''" ref="quizDialogRef" />
@@ -278,14 +276,11 @@ async function handleExportZip() {
     }
 }
 
-:deep(.edit-dialog),
 :deep(.quiz-dialog) {
     width: 900px;
 }
 
 @media (max-width: 768px) {
-
-    :deep(.edit-dialog),
     :deep(.quiz-dialog) {
         width: 90%;
         max-width: 600px;
@@ -293,8 +288,6 @@ async function handleExportZip() {
 }
 
 @media (max-width: 480px) {
-
-    :deep(.edit-dialog),
     :deep(.quiz-dialog) {
         width: 95%;
         max-width: 100%;
@@ -323,14 +316,6 @@ async function handleExportZip() {
 
 .buttons .el-button {
     margin: auto;
-}
-
-:deep(.form-card) {
-    margin-bottom: 0;
-}
-
-:deep(.el-dialog__body) {
-    padding: 20px 0;
 }
 
 .dark .title-row {

@@ -11,14 +11,7 @@
                 <div ref="messageListRef" class="message-list">
                     <template v-for="(message, index) in chatMessages" :key="index">
                         <div v-if="message.role !== 'system'" :class="['message-item', message.role]">
-                            <div class="avatar">
-                                <el-avatar v-if="message.role === 'user'" icon="User" :size="40" />
-                                <el-avatar v-else icon="Bot" :size="40" class="assistant-avatar" />
-                            </div>
                             <div class="message-content">
-                                <div class="message-name">
-                                    {{ message.role === 'user' ? '我' : 'AI助手' }}
-                                </div>
                                 <MarkdownRenderer class="message-text" :content="message.content" />
                                 <div class="message-actions">
                                     <el-icon class="delete-btn" title="删除该对话及之后" @click.stop="truncateMessages(index)">
@@ -30,16 +23,16 @@
                     </template>
                 </div>
             </div>
-
-            <div class="input-area">
-                <el-input v-model="inputMessage" :rows="3" placeholder="输入您的问题..." class="message-input"
-                    @keydown.enter="sendMessage" />
-                <el-button type="primary" class="send-btn" :icon="Top" @click="sendMessage" :loading="sending"
-                    :disabled="!inputMessage.trim()">
-                    发送
-                </el-button>
-            </div>
         </el-card>
+
+        <div class="input-area">
+            <el-input v-model="inputMessage" :rows="3" placeholder="输入您的问题..." class="message-input"
+                @keydown.enter="sendMessage" />
+            <el-button type="primary" class="send-btn" :icon="Top" @click="sendMessage" :loading="sending"
+                :disabled="!inputMessage.trim()">
+                发送
+            </el-button>
+        </div>
     </div>
 </template>
 
@@ -65,17 +58,22 @@ onActivated(loadChat)
 
 <style scoped>
 .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 30px 10px;
+    margin: 0;
+    padding: 0 0 100px;
     font-family: var(--el-font-family);
 }
 
 .ai-card {
-    margin-bottom: 20px;
+    margin: 0;
     display: flex;
     flex-direction: column;
     position: relative;
+    border: none;
+    box-shadow: none;
+}
+
+.ai-card :deep(.el-card__body) {
+    padding: 0;
 }
 
 .card-header {
@@ -94,16 +92,13 @@ onActivated(loadChat)
 }
 
 .chat-container {
-    flex: 1;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    height: 500px;
+    min-height: 300px;
 }
 
 .message-list {
-    flex: 1;
-    overflow-y: auto;
     padding: 20px;
     display: flex;
     flex-direction: column;
@@ -112,11 +107,15 @@ onActivated(loadChat)
 
 .message-item {
     display: flex;
-    gap: 12px;
+    flex-direction: column;
 }
 
 .message-item.user {
-    flex-direction: row-reverse;
+    align-items: flex-end;
+}
+
+.message-item:not(.user) {
+    align-items: flex-start;
 }
 
 .message-item.user .message-content {
@@ -133,24 +132,11 @@ onActivated(loadChat)
     color: var(--el-text-color-primary);
 }
 
-.avatar {
-    flex-shrink: 0;
-}
-
-.assistant-avatar {
-    background: var(--el-color-primary);
-}
-
 .message-content {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    max-width: 70%;
-}
-
-.message-name {
-    font-size: 12px;
-    color: var(--el-text-color-placeholder);
+    max-width: 100%;
 }
 
 .message-text {
@@ -184,8 +170,10 @@ onActivated(loadChat)
     color: var(--el-color-danger);
 }
 
-.dark .assistant-avatar {
-    filter: brightness(0.75);
+.message-text :deep(img) {
+    max-height: 300px;
+    width: auto;
+    object-fit: contain;
 }
 
 .dark .message-item.user .message-text {
@@ -194,13 +182,14 @@ onActivated(loadChat)
 
 .input-area {
     padding: 16px 20px;
-    border-top: 1px solid var(--el-border-color-light);
     display: flex;
     gap: 12px;
+    position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     background: var(--el-bg-color);
+    border-top: 1px solid var(--el-border-color-light);
 }
 
 .message-input {
@@ -218,36 +207,19 @@ onActivated(loadChat)
         align-items: stretch;
     }
 
-    .message-content {
-        max-width: 85%;
-    }
-
-    .chat-container {
-        height: 400px;
-    }
-
     .input-area {
         padding: 12px 16px;
     }
 }
 
 @media (max-width: 480px) {
-    .container {
-        padding: 12px 6px;
-    }
-
     .chat-container {
-        height: calc(100vh - 220px);
         min-height: 300px;
     }
 
     .message-list {
         padding: 12px;
         gap: 14px;
-    }
-
-    .message-content {
-        max-width: 90%;
     }
 
     .message-text {

@@ -44,6 +44,9 @@ style.textContent = `
   .dark img:hover {
     opacity: 1;
   }
+  .dark .el-image-viewer__img {
+    opacity: 1;
+  }
 
   /* 暗色模式下降低按钮亮度，避免在深色背景上刺眼 */
   .dark .el-button--primary,

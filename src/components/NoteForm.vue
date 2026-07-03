@@ -166,7 +166,15 @@ const handleCancel = () => {
   clearFiles()
 }
 
-onMounted(() => initForm())
+onMounted(() => {
+  initForm()
+  fileList.value.forEach(item => {
+    if (item.raw) {
+      if (item.url) URL.revokeObjectURL(item.url)
+      item.url = URL.createObjectURL(item.raw)
+    }
+  })
+})
 
 watch(() => [props.initialData, props.initialImages], () => initForm(), { deep: true })
 

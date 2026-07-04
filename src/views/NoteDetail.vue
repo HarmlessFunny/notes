@@ -13,9 +13,6 @@
                 </div>
                 <div class="header-row">
                     <div class="buttons">
-                        <el-button type="success" @click="handleOpenQuiz" :icon="ChatDotRound">
-                            生成复习题
-                        </el-button>
                         <el-button type="warning" @click="handleExportZip" :icon="Document">
                             导出笔记
                         </el-button>
@@ -50,19 +47,14 @@
     <el-image-viewer v-if="showPreview" :url-list="note!.imgs.map(item => `${baseUrl}/assets/${item}`)" show-progress
         hide-on-click-modal :max-scale="7" :min-scale="0.2" :initial-index="previewIndex" @close="showPreview = false"
         :infinite="false" />
-    <!-- 复习题对话框 -->
-    <el-dialog v-model="showQuizDialog" title="AI 复习题" append-to-body width="900px" class="quiz-dialog">
-        <QuizDialog :note-content="note?.content ?? ''" ref="quizDialogRef" />
-    </el-dialog>
 </template>
 
 <script setup lang="ts">
 defineOptions({ name: 'NoteDetail' })
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Edit, Delete, ArrowLeft, ChatDotRound, Document } from '@element-plus/icons-vue'
+import { Edit, Delete, ArrowLeft, Document } from '@element-plus/icons-vue'
 import NoteForm from '@/components/NoteForm.vue'
-import QuizDialog from '@/components/QuizDialog.vue'
 import { useNoteDetail } from '@/hooks/useNoteDetail'
 import { useWaterfallLayout } from '@/hooks/useWaterfallLayout'
 import { exportNoteToZip } from '@/utils/export'
@@ -79,14 +71,11 @@ const {
     previewIndex,
     showEditForm,
     editSubmitting,
-    showQuizDialog,
     getNote,
     handleEditSubmit,
     deleteCurrentNote,
-    openQuiz,
 } = useNoteDetail()
 
-const quizDialogRef = ref<InstanceType<typeof QuizDialog> | null>(null)
 const imagesRef = ref<HTMLElement | null>(null)
 
 const imagesList = computed(() => note.value?.imgs ?? [])
@@ -100,13 +89,6 @@ watch(() => route.params.title, async (newTitle) => {
         await getNote(decodeURIComponent(newTitle as string))
     }
 }, { immediate: true })
-
-async function handleOpenQuiz() {
-    const ok = openQuiz()
-    if (!ok) return
-    await nextTick()
-    quizDialogRef.value?.startQuiz()
-}
 
 async function handleExportZip() {
     if (!note.value) return
@@ -273,24 +255,6 @@ async function handleExportZip() {
 
     .header-section :deep(.el-breadcrumb) {
         font-size: 1.1rem;
-    }
-}
-
-:deep(.quiz-dialog) {
-    width: 900px;
-}
-
-@media (max-width: 768px) {
-    :deep(.quiz-dialog) {
-        width: 90%;
-        max-width: 600px;
-    }
-}
-
-@media (max-width: 480px) {
-    :deep(.quiz-dialog) {
-        width: 95%;
-        max-width: 100%;
     }
 }
 

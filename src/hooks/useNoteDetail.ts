@@ -2,7 +2,6 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Note, FormData, UploadFile } from '@/types'
 import { useNotesStore } from '@/stores/notes'
-import { handleApiWarning } from '@/utils/error'
 
 export function useNoteDetail() {
     const notesStore = useNotesStore()
@@ -13,7 +12,6 @@ export function useNoteDetail() {
     const previewIndex = ref(0)
     const showEditForm = ref(false)
     const editSubmitting = ref(false)
-    const showQuizDialog = ref(false)
 
     async function getNote(title: string) {
         const found = await notesStore.getNote(title)
@@ -67,25 +65,14 @@ export function useNoteDetail() {
         }
     }
 
-    function openQuiz(): boolean {
-        if (!note.value?.content) {
-            handleApiWarning('笔记没有正文内容，无法生成复习题')
-            return false
-        }
-        showQuizDialog.value = true
-        return true
-    }
-
     return {
         note,
         showPreview,
         previewIndex,
         showEditForm,
         editSubmitting,
-        showQuizDialog,
         getNote,
         handleEditSubmit,
         deleteCurrentNote,
-        openQuiz,
     }
 }

@@ -142,6 +142,10 @@ def delete_ai_chat() -> dict:
         return {'status': 'error', 'message': str(e)}
 
 
+# ========== AI OCR ==========
+
+
+
 # ========== 图片保存 ==========
 
 def allowed_file(filename: str) -> bool:

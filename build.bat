@@ -53,7 +53,7 @@ echo Output: release\
 echo   backend.exe        - backend executable (frontend embedded)
 if exist "release\.env.example" (
     echo Deploy: put .env next to backend.exe with:
-    echo   API_KEY / BASE_URL / MODEL_NAME
+    echo   CHAT_API_KEY / CHAT_BASE_URL / CHAT_MODEL_NAME
 )
 echo.
 echo   (database.json / assets\ / notes\ auto-created on first run)

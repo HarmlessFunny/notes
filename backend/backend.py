@@ -220,8 +220,6 @@ def serve_static_route(path: str) -> Any:
 
 if __name__ == '__main__':
     if getattr(sys, 'frozen', False):
-        backend_port = int(os.getenv('BACKEND_PORT', 5000))
-        app.run(host='0.0.0.0', port=backend_port)
+        app.run(host='0.0.0.0', port=5000)
     else:
-        backend_port = int(os.getenv('BACKEND_PORT', 5000))
-        app.run(host='0.0.0.0', port=backend_port, debug=True)
+        app.run(host='0.0.0.0', port=5000, debug=True)

@@ -1,7 +1,10 @@
 import json
+import base64
+import os
 from functools import wraps
 from typing import Dict, Callable, Generator
 from flask import jsonify, request, Response, stream_with_context
+from backend_tools import ASSETS_FOLDER
 
 
 def api_response(func: Callable) -> Callable:
@@ -97,6 +100,33 @@ def sse_stream(func: Callable = None, *, event_generator: Callable[..., Generato
     return decorate
 
 
+def _prepare_messages_for_api(messages: list) -> list:
+    prepared = []
+    for msg in messages:
+        content = msg.get('content')
+        if isinstance(content, list):
+            new_content = []
+            for part in content:
+                if isinstance(part, dict) and part.get('type') == 'image_url':
+                    url = part['image_url']['url']
+                    if url.startswith('/assets/'):
+                        filename = os.path.basename(url)
+                        filepath = os.path.join(ASSETS_FOLDER, filename)
+                        if os.path.exists(filepath):
+                            with open(filepath, 'rb') as f:
+                                img_data = f.read()
+                            ext = os.path.splitext(filename)[1].lower().lstrip('.')
+                            mime = {'jpg': 'jpeg', 'jpeg': 'jpeg', 'png': 'png', 'gif': 'gif', 'webp': 'webp'}.get(ext, 'png')
+                            b64 = base64.b64encode(img_data).decode('utf-8')
+                            part['image_url']['url'] = f"data:image/{mime};base64,{b64}"
+                    new_content.append(part)
+                else:
+                    new_content.append(part)
+            msg['content'] = new_content
+        prepared.append(msg)
+    return prepared
+
+
 def stream_ai_response(
     client,
     model: str,
@@ -121,7 +151,7 @@ def stream_ai_response(
     Yields:
         dict: {"type": "content", "content": "..."} 或 {"type": "done", "raw_json": "..."}
     """
-    current_messages = messages.copy()
+    current_messages = _prepare_messages_for_api(messages.copy())
     
     while True:
         params = {

@@ -26,6 +26,7 @@ chat_base_url = os.getenv("CHAT_BASE_URL")
 chat_model_name = os.getenv("CHAT_MODEL_NAME")
 reasoning_effort = os.getenv("REASONING_EFFORT") or None
 AI_AVAILABLE = bool(chat_api_key and chat_base_url and chat_model_name)
+vision_enabled = os.getenv("CHAT_VISION_ENABLED", "true").lower() not in ("false", "0", "no")
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -159,10 +160,21 @@ def update_note_route(title: str) -> dict:
 
 # ========== AI 路由 ==========
 
+@app.route('/api/ai/upload', methods=['POST'])
+@api_response
+def upload_ai_image_route() -> dict:
+    images = request.files.getlist('images')
+    if not images:
+        return {'status': 'error', 'message': '请选择图片'}
+    saved = save_images(images, f"ai_{int(time.time())}")
+    urls = [f'/assets/{f}' for f in saved]
+    return {'status': 'success', 'urls': urls}
+
+
 @app.route('/api/ai/status', methods=['GET'])
 @api_response
 def ai_status_route() -> dict:
-    return {'status': 'success', 'ai_available': AI_AVAILABLE}
+    return {'status': 'success', 'ai_available': AI_AVAILABLE, 'vision_enabled': vision_enabled}
 
 
 @app.route('/api/ai', methods=['POST'])

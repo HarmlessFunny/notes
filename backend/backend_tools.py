@@ -57,7 +57,7 @@ class Note(TypedDict):
 
 class ChatMessage(TypedDict):
     role: str
-    content: str
+    content: str | list
 
 class Data(TypedDict):
     notes: List[Note]

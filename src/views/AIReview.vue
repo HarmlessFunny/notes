@@ -16,8 +16,13 @@
                                     </template>
                                 </template>
                                 <div v-if="message.role === 'user'" class="message-actions">
-                                    <el-icon class="delete-btn" title="删除该对话及之后" @click.stop="truncateMessages(index)">
+                                    <el-icon class="action-btn delete-btn" title="删除该对话及之后" @click.stop="truncateMessages(index)">
                                         <Delete />
+                                    </el-icon>
+                                </div>
+                                <div v-if="message.role === 'assistant' && !sending" class="message-actions">
+                                    <el-icon class="action-btn" title="重新生成" @click.stop="retryMessage(index)">
+                                        <Refresh />
                                     </el-icon>
                                 </div>
                             </div>
@@ -51,7 +56,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'AIReview' })
 import { ref, computed, onMounted, onActivated } from 'vue'
-import { Top, Delete, Picture, Close } from '@element-plus/icons-vue'
+import { Top, Delete, Picture, Close, Refresh } from '@element-plus/icons-vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import { useAIReview } from '@/hooks/useAIReview'
 import { useCacheStore } from '@/stores/cache'
@@ -68,6 +73,7 @@ const {
     loadChat,
     sendMessage,
     truncateMessages,
+    retryMessage,
     addImages,
     removeImage,
 } = useAIReview()
@@ -191,13 +197,17 @@ onActivated(loadChat)
     opacity: 1;
 }
 
-.delete-btn {
+.action-btn {
     font-size: 14px;
     color: var(--el-text-color-placeholder);
     cursor: pointer;
 }
 
-.delete-btn:hover {
+.action-btn:hover {
+    color: var(--el-color-primary);
+}
+
+.action-btn.delete-btn:hover {
     color: var(--el-color-danger);
 }
 

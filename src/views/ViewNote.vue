@@ -96,8 +96,6 @@ onUnmounted(() => document.removeEventListener('keydown', handleGlobalKeydown))
 
 <style scoped>
 .container {
-  max-width: 1200px;
-  margin: 0 auto;
   padding: 30px 10px;
   font-family: var(--el-font-family);
 }

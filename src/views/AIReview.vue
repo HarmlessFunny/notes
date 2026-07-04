@@ -1,19 +1,13 @@
 <template>
     <div class="container">
         <el-card class="ai-card" shadow="hover">
-            <template #header>
-                <div class="card-header">
-                    <span class="card-title">AI 复习</span>
-                </div>
-            </template>
-
             <div class="chat-container">
-                <div ref="messageListRef" class="message-list">
+                <div class="message-list">
                     <template v-for="(message, index) in chatMessages" :key="index">
                         <div v-if="message.role !== 'system'" :class="['message-item', message.role]">
                             <div class="message-content">
                                 <MarkdownRenderer class="message-text" :content="message.content" />
-                                <div class="message-actions">
+                                <div v-if="message.role === 'user'" class="message-actions">
                                     <el-icon class="delete-btn" title="删除该对话及之后" @click.stop="truncateMessages(index)">
                                         <Delete />
                                     </el-icon>
@@ -59,47 +53,41 @@ onActivated(loadChat)
 <style scoped>
 .container {
     margin: 0;
-    padding: 0 0 100px;
+    padding: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     font-family: var(--el-font-family);
 }
 
 .ai-card {
     margin: 0;
+    flex: 1;
     display: flex;
     flex-direction: column;
-    position: relative;
     border: none;
     box-shadow: none;
 }
 
 .ai-card :deep(.el-card__body) {
     padding: 0;
-}
-
-.card-header {
+    flex: 1;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-.card-title {
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
-    white-space: nowrap;
+    flex-direction: column;
 }
 
 .chat-container {
+    flex: 1;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    min-height: 300px;
+    min-height: 0;
 }
 
 .message-list {
-    padding: 20px;
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 20px 120px;
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -176,10 +164,6 @@ onActivated(loadChat)
     object-fit: contain;
 }
 
-.dark .message-item.user .message-text {
-    filter: brightness(0.75);
-}
-
 .input-area {
     padding: 16px 20px;
     display: flex;
@@ -202,23 +186,14 @@ onActivated(loadChat)
 }
 
 @media (max-width: 768px) {
-    .card-header {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
     .input-area {
         padding: 12px 16px;
     }
 }
 
 @media (max-width: 480px) {
-    .chat-container {
-        min-height: 300px;
-    }
-
     .message-list {
-        padding: 12px;
+        padding: 12px 12px 110px;
         gap: 14px;
     }
 

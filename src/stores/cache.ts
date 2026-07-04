@@ -9,6 +9,7 @@ export const useCacheStore = defineStore('cache', () => {
     const openSubjects: Ref<string[]> = ref([])
     const checkedNotes: Ref<string[]> = ref([])
     const aiAvailable: Ref<boolean> = ref(false)
+    const visionEnabled: Ref<boolean> = ref(true)
     const aiStatusLoaded: Ref<boolean> = ref(false)
     const darkMode = ref(localStorage.getItem(DARK_KEY) === 'true')
 
@@ -47,6 +48,7 @@ export const useCacheStore = defineStore('cache', () => {
         try {
             const res = await axios.get('/api/ai/status')
             aiAvailable.value = res.data?.ai_available ?? false
+            visionEnabled.value = res.data?.vision_enabled ?? true
         } catch {
             aiAvailable.value = false
         } finally {
@@ -58,6 +60,7 @@ export const useCacheStore = defineStore('cache', () => {
         openSubjects,
         checkedNotes,
         aiAvailable,
+        visionEnabled,
         aiStatusLoaded,
         darkMode,
         toggleDarkMode,

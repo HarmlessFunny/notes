@@ -6,7 +6,7 @@ import re
 from flask import Flask, request, jsonify, send_from_directory, send_file, stream_with_context
 from flask_cors import CORS
 from typing import Tuple, Any
-from backend_ai import ai_chat, generate_quiz, grade_quiz
+from backend_ai import ai_chat
 from openai import OpenAI
 from backend_tools import init_database, fetch_all_notes, fetch_notes_by_day, search_notes, fetch_notes_by_titles, add_note, update_note, delete_notes, save_images, fetch_ai_chat, save_ai_chat, delete_ai_chat, Note, ASSETS_FOLDER, DIST_FOLDER, APP_DIR, validate_title
 from backend_utils import api_response, validate_required_fields, handle_api_error, sse_stream
@@ -21,16 +21,17 @@ else:
 
 init_database()
 
-api_key = os.getenv("API_KEY")
-base_url = os.getenv("BASE_URL")
-model_name = os.getenv("MODEL_NAME")
+chat_api_key = os.getenv("CHAT_API_KEY")
+chat_base_url = os.getenv("CHAT_BASE_URL")
+chat_model_name = os.getenv("CHAT_MODEL_NAME")
 reasoning_effort = os.getenv("REASONING_EFFORT") or None
-AI_AVAILABLE = bool(api_key and base_url and model_name)
+AI_AVAILABLE = bool(chat_api_key and chat_base_url and chat_model_name)
+vision_enabled = os.getenv("CHAT_VISION_ENABLED", "true").lower() not in ("false", "0", "no")
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-client = OpenAI(api_key=api_key, base_url=base_url) if AI_AVAILABLE else None
+client = OpenAI(api_key=chat_api_key, base_url=chat_base_url) if AI_AVAILABLE else None
 
 # ========== 笔记路由 ==========
 
@@ -159,23 +160,34 @@ def update_note_route(title: str) -> dict:
 
 # ========== AI 路由 ==========
 
+@app.route('/api/ai/upload', methods=['POST'])
+@api_response
+def upload_ai_image_route() -> dict:
+    images = request.files.getlist('images')
+    if not images:
+        return {'status': 'error', 'message': '请选择图片'}
+    saved = save_images(images, f"ai_{int(time.time())}")
+    urls = [f'/assets/{f}' for f in saved]
+    return {'status': 'success', 'urls': urls}
+
+
 @app.route('/api/ai/status', methods=['GET'])
 @api_response
 def ai_status_route() -> dict:
-    return {'status': 'success', 'ai_available': AI_AVAILABLE}
+    return {'status': 'success', 'ai_available': AI_AVAILABLE, 'vision_enabled': vision_enabled}
 
 
 @app.route('/api/ai', methods=['POST'])
 @sse_stream
 def ai_chat_stream_route() -> Any:
     if not AI_AVAILABLE:
-        yield {'type': 'error', 'content': 'AI 功能未配置，请在 .env 中设置 API_KEY / BASE_URL / MODEL_NAME'}
+        yield {'type': 'error', 'content': 'AI 功能未配置，请在 .env 中设置 CHAT_API_KEY / CHAT_BASE_URL / CHAT_MODEL_NAME'}
         return
     messages = request.json.get('messages', [])
     if not messages:
         yield {'type': 'error', 'content': '请输入问题'}
         return
-    yield from ai_chat(client, model_name, messages, reasoning_effort)
+    yield from ai_chat(client, chat_model_name, messages, reasoning_effort)
 
 
 @app.route('/api/ai/chat', methods=['GET'])
@@ -197,34 +209,6 @@ def del_ai_chat_route() -> dict:
     return delete_ai_chat()
 
 
-@app.route('/api/ai/quiz', methods=['POST'])
-@sse_stream
-def ai_quiz_route() -> Any:
-    if not AI_AVAILABLE:
-        yield {'type': 'error', 'content': 'AI 功能未配置'}
-        return
-    note_content = request.json.get('note_content', '')
-    if not note_content.strip():
-        yield {'type': 'error', 'content': '笔记内容不能为空'}
-        return
-    yield from generate_quiz(client, model_name, note_content, reasoning_effort)
-
-
-@app.route('/api/ai/grade', methods=['POST'])
-@sse_stream
-def ai_grade_route() -> Any:
-    if not AI_AVAILABLE:
-        yield {'type': 'error', 'content': 'AI 功能未配置'}
-        return
-    note_content = request.json.get('note_content', '')
-    questions = request.json.get('questions', [])
-    user_answers = request.json.get('user_answers', [])
-    if not note_content.strip() or not questions:
-        yield {'type': 'error', 'content': '参数不完整'}
-        return
-    yield from grade_quiz(client, model_name, note_content, questions, user_answers, reasoning_effort)
-
-
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_static_route(path: str) -> Any:
@@ -236,8 +220,6 @@ def serve_static_route(path: str) -> Any:
 
 if __name__ == '__main__':
     if getattr(sys, 'frozen', False):
-        backend_port = int(os.getenv('BACKEND_PORT', 5000))
-        app.run(host='0.0.0.0', port=backend_port)
+        app.run(host='0.0.0.0', port=5000)
     else:
-        backend_port = int(os.getenv('BACKEND_PORT', 5000))
-        app.run(host='0.0.0.0', port=backend_port, debug=True)
+        app.run(host='0.0.0.0', port=5000, debug=True)

@@ -1,10 +1,9 @@
-import type { Note, LightNote, QuizData, GradeResponse, QuizQuestion, UserAnswer } from '@/types'
+import type { Note, LightNote } from '@/types'
 import axios from 'axios'
 import { defineStore } from 'pinia'
 import { computed, ref, type Ref } from 'vue'
 import { useCacheStore } from '@/stores/cache'
 import { handleApiError, handleApiSuccess } from '@/utils/error'
-import { streamFetch } from '@/utils/stream'
 
 export const useNotesStore = defineStore('notes', () => {
     const allNotes: Ref<LightNote[]> = ref([])
@@ -102,42 +101,6 @@ export const useNotesStore = defineStore('notes', () => {
         }
     }
 
-    async function streamSse(url: string, body: object): Promise<any> {
-        const result = await streamFetch(url, body)
-        if (!result.data) {
-            throw result.error || new Error('Stream request failed')
-        }
-        return result.data
-    }
-
-    async function generateQuiz(noteContent: string): Promise<QuizData | null> {
-        try {
-            const data = await streamSse('/api/ai/quiz', { note_content: noteContent })
-            return data as QuizData
-        } catch (error: any) {
-            handleApiError(error, '生成复习题失败')
-            return null
-        }
-    }
-
-    async function gradeQuiz(
-        noteContent: string,
-        questions: QuizQuestion[],
-        userAnswers: UserAnswer[]
-    ): Promise<GradeResponse | null> {
-        try {
-            const data = await streamSse('/api/ai/grade', {
-                note_content: noteContent,
-                questions,
-                user_answers: userAnswers,
-            })
-            return data as GradeResponse
-        } catch (error: any) {
-            handleApiError(error, '批改答案失败')
-            return null
-        }
-    }
-
     return {
         allNotes,
         subjectsList,
@@ -148,7 +111,5 @@ export const useNotesStore = defineStore('notes', () => {
         searchNotes,
         deleteNotes,
         updateNote,
-        generateQuiz,
-        gradeQuiz,
     }
 })

@@ -57,7 +57,7 @@ class Note(TypedDict):
 
 class ChatMessage(TypedDict):
     role: str
-    content: str
+    content: str | list
 
 class Data(TypedDict):
     notes: List[Note]
@@ -140,6 +140,10 @@ def delete_ai_chat() -> dict:
         return {'status': 'success'}
     except Exception as e:
         return {'status': 'error', 'message': str(e)}
+
+
+# ========== AI OCR ==========
+
 
 
 # ========== 图片保存 ==========

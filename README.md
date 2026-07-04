@@ -53,7 +53,7 @@ pip install -r requirements.txt
 
 # 配置环境变量
 cp .env.example .env
-# 编辑 .env 文件，填入你的 API_KEY、BASE_URL 和 MODEL_NAME
+# 编辑 .env 文件，填入你的 CHAT_API_KEY、CHAT_BASE_URL 和 CHAT_MODEL_NAME
 
 # 启动后端服务
 python backend/backend.py
@@ -78,9 +78,9 @@ python backend/backend.py
 **部署时**，将 `backend.exe` 放到任意目录，同级放一个 `.env` 文件：
 
 ```env
-API_KEY=your_api_key
-BASE_URL=your_base_url
-MODEL_NAME=your_model_name
+CHAT_API_KEY=your_api_key
+CHAT_BASE_URL=your_base_url
+CHAT_MODEL_NAME=your_model_name
 # REASONING_EFFORT=high    # 可选，仅部分模型支持
 
 FRONTEND_PORT=5173
@@ -93,9 +93,9 @@ BACKEND_PORT=5000
 
 | 变量名 | 说明 | 必填 |
 |--------|------|------|
-| `API_KEY` | API 密钥，用于 AI 功能 | 否 |
-| `BASE_URL` | API 基础 URL，用于 AI 功能，例如 'https://api.deepseek.com/' | 否 |
-| `MODEL_NAME` | 模型名称，用于 AI 功能，例如 'deepseek-v4-flash' | 否 |
+| `CHAT_API_KEY` | API 密钥，用于 AI 功能 | 否 |
+| `CHAT_BASE_URL` | API 基础 URL，用于 AI 功能，例如 'https://api.deepseek.com/' | 否 |
+| `CHAT_MODEL_NAME` | 模型名称，用于 AI 功能，例如 'deepseek-v4-flash' | 否 |
 | `REASONING_EFFORT` | 推理努力程度（支持该参数的模型：o1/o3/deepseek-reasoner 等），留空则不传 | 否 |
 | `FRONTEND_PORT` | 前端开发服务器端口（仅开发模式），默认 5173 | 否 |
 | `BACKEND_PORT` | 后端服务端口，默认 5000 | 否 |

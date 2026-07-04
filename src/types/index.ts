@@ -37,37 +37,6 @@ export interface ChatMessage {
     content: string
 }
 
-export type QuizQuestionType = 'single_choice' | 'fill_blank' | 'short_answer'
-
-export interface QuizQuestion {
-    type: QuizQuestionType
-    question: string
-    options?: string[]
-    blank_count?: number
-}
-
-export interface QuizData {
-    questions: QuizQuestion[]
-}
-
-export interface UserAnswer {
-    question_index: number
-    answer: string | string[]
-}
-
-export interface GradeResultItem {
-    question_index: number
-    is_correct: boolean
-    correct_answer: string | string[]
-    feedback: string
-}
-
-export interface GradeResponse {
-    results: GradeResultItem[]
-    score: string
-    summary: string
-}
-
 export interface ApiResponse<T = any> {
     status: 'success' | 'error'
     message?: string

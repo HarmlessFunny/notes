@@ -6,10 +6,23 @@
                     <template v-for="(message, index) in chatMessages" :key="index">
                         <div v-if="message.role !== 'system'" :class="['message-item', message.role]">
                             <div class="message-content">
-                                <MarkdownRenderer class="message-text" :content="message.content" />
+                                <template v-if="typeof message.content === 'string'">
+                                    <MarkdownRenderer class="message-text" :content="message.content" />
+                                </template>
+                                <template v-else>
+                                    <template v-for="(part, pi) in message.content" :key="pi">
+                                        <MarkdownRenderer v-if="part.type === 'text'" class="message-text" :content="part.text" />
+                                        <el-image v-else-if="part.type === 'image_url'" :src="part.image_url.url" class="chat-image" :preview-src-list="[part.image_url.url]" preview-teleported />
+                                    </template>
+                                </template>
                                 <div v-if="message.role === 'user'" class="message-actions">
-                                    <el-icon class="delete-btn" title="删除该对话及之后" @click.stop="truncateMessages(index)">
+                                    <el-icon class="action-btn delete-btn" title="删除该对话及之后" @click.stop="truncateMessages(index)">
                                         <Delete />
+                                    </el-icon>
+                                </div>
+                                <div v-if="message.role === 'assistant' && !sending" class="message-actions">
+                                    <el-icon class="action-btn" title="重新生成" @click.stop="retryMessage(index)">
+                                        <Refresh />
                                     </el-icon>
                                 </div>
                             </div>
@@ -20,33 +33,69 @@
         </el-card>
 
         <div class="input-area">
-            <el-input v-model="inputMessage" :rows="3" placeholder="输入您的问题..." class="message-input"
-                @keydown.enter="sendMessage" />
-            <el-button type="primary" class="send-btn" :icon="Top" @click="sendMessage" :loading="sending"
-                :disabled="!inputMessage.trim()">
-                发送
-            </el-button>
+            <div v-if="selectedImages.length" class="image-preview-list">
+                <div v-for="(img, idx) in selectedImages" :key="idx" class="image-preview-item">
+                    <el-image :src="img.preview" class="image-preview-thumb" :preview-src-list="[img.preview]" preview-teleported />
+                    <el-icon class="remove-image-btn" @click="removeImage(idx)"><Close /></el-icon>
+                </div>
+            </div>
+            <div class="input-row">
+                <el-button v-if="visionEnabled" :icon="Picture" circle @click="triggerUpload" :disabled="sending || uploading" />
+                <input v-if="visionEnabled" ref="fileInputRef" type="file" multiple accept="image/*" class="hidden-input" @change="onFileChange" />
+                <el-input v-model="inputMessage" :rows="1" placeholder="输入您的问题..." class="message-input"
+                    @keydown.enter="sendMessage" />
+                <el-button type="primary" class="send-btn" :icon="Top" @click="sendMessage" :loading="sending"
+                    :disabled="(!inputMessage.trim() && !selectedImages.length) || sending || uploading">
+                    {{ uploading ? '上传中...' : '发送' }}
+                </el-button>
+            </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
 defineOptions({ name: 'AIReview' })
-import { onMounted, onActivated } from 'vue'
-import { Top, Delete } from '@element-plus/icons-vue'
+import { ref, computed, onMounted, onActivated } from 'vue'
+import { Top, Delete, Picture, Close, Refresh } from '@element-plus/icons-vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import { useAIReview } from '@/hooks/useAIReview'
+import { useCacheStore } from '@/stores/cache'
+
+const store = useCacheStore()
+const visionEnabled = computed(() => store.visionEnabled)
 
 const {
     chatMessages,
     inputMessage,
     sending,
+    selectedImages,
+    uploading,
     loadChat,
     sendMessage,
     truncateMessages,
+    retryMessage,
+    addImages,
+    removeImage,
 } = useAIReview()
 
-onMounted(loadChat)
+const fileInputRef = ref<HTMLInputElement>()
+
+function triggerUpload() {
+    fileInputRef.value?.click()
+}
+
+function onFileChange(e: Event) {
+    const input = e.target as HTMLInputElement
+    if (input.files?.length) {
+        addImages(input.files)
+        input.value = ''
+    }
+}
+
+onMounted(() => {
+    store.loadAiStatus()
+    loadChat()
+})
 onActivated(loadChat)
 </script>
 
@@ -87,7 +136,7 @@ onActivated(loadChat)
 .message-list {
     flex: 1;
     overflow-y: auto;
-    padding: 20px 20px 120px;
+    padding: 20px 20px 160px;
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -148,13 +197,17 @@ onActivated(loadChat)
     opacity: 1;
 }
 
-.delete-btn {
+.action-btn {
     font-size: 14px;
     color: var(--el-text-color-placeholder);
     cursor: pointer;
 }
 
-.delete-btn:hover {
+.action-btn:hover {
+    color: var(--el-color-primary);
+}
+
+.action-btn.delete-btn:hover {
     color: var(--el-color-danger);
 }
 
@@ -164,16 +217,73 @@ onActivated(loadChat)
     object-fit: contain;
 }
 
+.chat-image {
+    max-width: 300px;
+    max-height: 300px;
+    border-radius: 8px;
+    margin-top: 4px;
+    cursor: zoom-in;
+    overflow: hidden;
+}
+
+.chat-image :deep(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    max-height: 300px;
+}
+
 .input-area {
-    padding: 16px 20px;
-    display: flex;
-    gap: 12px;
+    padding: 12px 20px;
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     background: var(--el-bg-color);
     border-top: 1px solid var(--el-border-color-light);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.image-preview-list {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.image-preview-item {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--el-border-color-light);
+    flex-shrink: 0;
+}
+
+.image-preview-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.remove-image-btn {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 12px;
+    color: white;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    padding: 2px;
+    cursor: pointer;
 }
 
 .message-input {
@@ -181,8 +291,11 @@ onActivated(loadChat)
 }
 
 .send-btn {
-    align-self: flex-end;
-    padding: 0 24px;
+    padding: 0 20px;
+}
+
+.hidden-input {
+    display: none;
 }
 
 @media (max-width: 768px) {
@@ -204,7 +317,10 @@ onActivated(loadChat)
 
     .input-area {
         padding: 10px 12px;
-        gap: 8px;
+    }
+
+    .input-actions {
+        gap: 6px;
     }
 
     .send-btn {

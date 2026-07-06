@@ -38,10 +38,11 @@ echo [3/3] Copy .env to release (frontend is embedded in exe).
 if exist "..\.env" (
     copy ..\.env ..\release\.env
     echo [OK] .env copied to release\env
-) else (
-    copy ..\.env.example ..\release\.env.example
-    echo [OK] .env.example copied to release\env.example
 )
+
+copy ..\.env.example ..\release\.env.example
+echo [OK] .env.example copied to release\env.example
+
 cd ..
 echo.
 

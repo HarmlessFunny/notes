@@ -1,16 +1,16 @@
 <template>
     <el-dialog v-model="visible" title="AI 配置" width="480px" :close-on-click-modal="false">
         <el-form label-position="top">
-            <el-form-item label="API Key">
-                <el-input v-model="form.apiKey" type="password" show-password placeholder="请输入 API Key" />
-            </el-form-item>
             <el-form-item label="Base URL">
                 <el-input v-model="form.baseUrl" placeholder="https://open.bigmodel.cn/api/paas/v4" />
             </el-form-item>
-            <el-form-item label="Model Name">
+            <el-form-item label="模型名">
                 <el-input v-model="form.modelName" placeholder="glm-4v-flash" />
             </el-form-item>
-            <el-form-item label="Vision Enabled">
+            <el-form-item label="API Key">
+                <el-input v-model="form.apiKey" type="password" show-password placeholder="请输入 API Key" />
+            </el-form-item>
+            <el-form-item label="启用识图">
                 <el-switch v-model="form.visionEnabled" />
             </el-form-item>
         </el-form>

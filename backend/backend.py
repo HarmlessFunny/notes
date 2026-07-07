@@ -3,6 +3,8 @@ import json
 import sys
 import time
 import re
+import webbrowser
+import threading
 from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
 from typing import Tuple, Any
@@ -216,6 +218,12 @@ def serve_static_route(path: str) -> Any:
 
 if __name__ == '__main__':
     if getattr(sys, 'frozen', False):
-        app.run(host='0.0.0.0', port=5000)
+        for port in range(5000, 5100):
+            try:
+                threading.Timer(1.0, lambda p=port: webbrowser.open(f'http://localhost:{p}')).start()
+                app.run(host='0.0.0.0', port=port, debug=False)
+            except OSError:
+                continue
+            break
     else:
         app.run(host='0.0.0.0', port=5000, debug=True)

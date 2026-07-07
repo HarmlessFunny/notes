@@ -70,12 +70,13 @@ async function executeStreamRequest<T>(
     url: string,
     body: object,
     callback?: StreamCallback,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    headers?: Record<string, string>
 ): Promise<StreamResult<T>> {
     try {
         const response = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...headers },
             signal,
             body: JSON.stringify(body),
         })
@@ -103,19 +104,21 @@ async function executeStreamRequest<T>(
 export async function streamFetch<T>(
     url: string,
     body: object,
-    callback?: StreamCallback
+    callback?: StreamCallback,
+    headers?: Record<string, string>
 ): Promise<StreamResult<T>> {
     const controller = new AbortController()
-    return executeStreamRequest<T>(url, body, callback, controller.signal)
+    return executeStreamRequest<T>(url, body, callback, controller.signal, headers)
 }
 
 export function createAbortableStream<T>(
     url: string,
     body: object,
-    callback?: StreamCallback
+    callback?: StreamCallback,
+    headers?: Record<string, string>
 ): { promise: Promise<StreamResult<T>>; abort: () => void } {
     const controller = new AbortController()
-    const promise = executeStreamRequest<T>(url, body, callback, controller.signal)
+    const promise = executeStreamRequest<T>(url, body, callback, controller.signal, headers)
     return {
         promise,
         abort: () => controller.abort(),

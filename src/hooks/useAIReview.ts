@@ -1,6 +1,8 @@
 import { handleApiError } from '@/utils/error'
 import { ref, onUnmounted, onDeactivated } from 'vue'
 import { createAbortableStream } from '@/utils/stream'
+import { useCacheStore } from '@/stores/cache'
+import { getAiConfigHeaders } from '@/types'
 
 export type ContentPart =
     | { type: 'text'; text: string }
@@ -25,6 +27,11 @@ export function useAIReview() {
     let currentStream: { abort: () => void } | null = null
 
     let chatLoaded = false
+
+    function getHeaders() {
+        const store = useCacheStore()
+        return getAiConfigHeaders(store.aiConfig)
+    }
 
     async function loadChat() {
         if (chatLoaded) return
@@ -166,7 +173,7 @@ export function useAIReview() {
             onError: (error) => {
                 chatMessages.value[aiIndex]!.content = `抱歉，出错了: ${error.message}`
             },
-        })
+        }, getHeaders())
 
         currentStream = { abort }
 
@@ -223,7 +230,7 @@ export function useAIReview() {
             onError: (error) => {
                 chatMessages.value[aiIndex]!.content = `抱歉，出错了: ${error.message}`
             },
-        })
+        }, getHeaders())
 
         currentStream = { abort }
 

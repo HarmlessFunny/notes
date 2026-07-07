@@ -3,35 +3,27 @@ import json
 import sys
 import time
 import re
-from flask import Flask, request, jsonify, send_from_directory, send_file, stream_with_context
+from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
 from typing import Tuple, Any
 from backend_ai import ai_chat
 from openai import OpenAI
 from backend_tools import init_database, fetch_all_notes, fetch_notes_by_day, search_notes, fetch_notes_by_titles, add_note, update_note, delete_notes, save_images, fetch_ai_chat, save_ai_chat, delete_ai_chat, Note, ASSETS_FOLDER, DIST_FOLDER, APP_DIR, validate_title
 from backend_utils import api_response, validate_required_fields, handle_api_error, sse_stream
-from dotenv import load_dotenv
-
-
-# 加载环境变量
-if getattr(sys, 'frozen', False):
-    load_dotenv(os.path.join(APP_DIR, '.env'))
-else:
-    load_dotenv(os.path.join(APP_DIR, '..', '.env'))
 
 init_database()
-
-chat_api_key = os.getenv("CHAT_API_KEY")
-chat_base_url = os.getenv("CHAT_BASE_URL")
-chat_model_name = os.getenv("CHAT_MODEL_NAME")
-reasoning_effort = os.getenv("REASONING_EFFORT") or None
-AI_AVAILABLE = bool(chat_api_key and chat_base_url and chat_model_name)
-vision_enabled = os.getenv("CHAT_VISION_ENABLED", "true").lower() not in ("false", "0", "no")
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-client = OpenAI(api_key=chat_api_key, base_url=chat_base_url) if AI_AVAILABLE else None
+
+def get_ai_config_from_headers() -> dict:
+    return {
+        'api_key': request.headers.get('X-Chat-Api-Key', ''),
+        'base_url': request.headers.get('X-Chat-Base-Url', ''),
+        'model_name': request.headers.get('X-Chat-Model-Name', ''),
+        'vision_enabled': request.headers.get('X-Vision-Enabled', 'true').lower() not in ('false', '0', 'no'),
+    }
 
 # ========== 笔记路由 ==========
 
@@ -174,20 +166,24 @@ def upload_ai_image_route() -> dict:
 @app.route('/api/ai/status', methods=['GET'])
 @api_response
 def ai_status_route() -> dict:
-    return {'status': 'success', 'ai_available': AI_AVAILABLE, 'vision_enabled': vision_enabled}
+    config = get_ai_config_from_headers()
+    available = bool(config['api_key'] and config['base_url'] and config['model_name'])
+    return {'status': 'success', 'ai_available': available, 'vision_enabled': config['vision_enabled']}
 
 
 @app.route('/api/ai', methods=['POST'])
 @sse_stream
 def ai_chat_stream_route() -> Any:
-    if not AI_AVAILABLE:
-        yield {'type': 'error', 'content': 'AI 功能未配置，请在 .env 中设置 CHAT_API_KEY / CHAT_BASE_URL / CHAT_MODEL_NAME'}
+    config = get_ai_config_from_headers()
+    if not config['api_key'] or not config['base_url'] or not config['model_name']:
+        yield {'type': 'error', 'content': 'AI 功能未配置，请先设置 API 配置'}
         return
+    client = OpenAI(api_key=config['api_key'], base_url=config['base_url'])
     messages = request.json.get('messages', [])
     if not messages:
         yield {'type': 'error', 'content': '请输入问题'}
         return
-    yield from ai_chat(client, chat_model_name, messages, reasoning_effort)
+    yield from ai_chat(client, config['model_name'], messages)
 
 
 @app.route('/api/ai/chat', methods=['GET'])

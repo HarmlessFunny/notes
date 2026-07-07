@@ -33,16 +33,6 @@ del backend.spec 2>nul
 echo [OK] Executable output to release\backend.exe
 echo.
 
-echo [3/3] Copy .env to release (frontend is embedded in exe).
-
-if exist "..\.env" (
-    copy ..\.env ..\release\.env
-    echo [OK] .env copied to release\env
-)
-
-copy ..\.env.example ..\release\.env.example
-echo [OK] .env.example copied to release\env.example
-
 cd ..
 echo.
 
@@ -52,10 +42,9 @@ echo ========================================
 echo.
 echo Output: release\
 echo   backend.exe        - backend executable (frontend embedded)
-if exist "release\.env.example" (
-    echo Deploy: put .env next to backend.exe with:
-    echo   CHAT_API_KEY / CHAT_BASE_URL / CHAT_MODEL_NAME
-)
+echo.
+echo Note: AI config (API Key / Base URL / Model) is set in the app UI
+echo and saved to localStorage. No .env file needed.
 echo.
 echo   (database.json / assets\ / notes\ auto-created on first run)
 echo.

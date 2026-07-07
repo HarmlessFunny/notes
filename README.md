@@ -51,13 +51,11 @@ npm run dev
 # 安装 Python 依赖
 pip install -r requirements.txt
 
-# 配置环境变量
-cp .env.example .env
-# 编辑 .env 文件，填入你的 CHAT_API_KEY、CHAT_BASE_URL 和 CHAT_MODEL_NAME
-
 # 启动后端服务
 python backend/backend.py
 ```
+
+AI 配置（API Key / Base URL / Model）在网页右上角 ⚙️ 设置，保存到浏览器 localStorage。
 
 #### 4. 访问应用
 
@@ -75,30 +73,22 @@ python backend/backend.py
 
 打包完成后，`release/backend.exe` 即为完整应用（约 30MB）。
 
-**部署时**，将 `backend.exe` 放到任意目录，同级放一个 `.env` 文件：
-
-```env
-CHAT_API_KEY=your_api_key
-CHAT_BASE_URL=your_base_url
-CHAT_MODEL_NAME=your_model_name
-# REASONING_EFFORT=high    # 可选，仅部分模型支持
-
-FRONTEND_PORT=5173
-BACKEND_PORT=5000
-```
+**部署时**，将 `backend.exe` 放到任意目录直接运行，AI 配置在网页内设置（保存到浏览器 localStorage），无需 `.env` 文件。
 
 首次运行会自动创建 `database.json`、`assets/`、`notes/`。
 
-## 环境变量
+## AI 配置
 
-| 变量名 | 说明 | 必填 |
-|--------|------|------|
-| `CHAT_API_KEY` | API 密钥，用于 AI 功能 | 否 |
-| `CHAT_BASE_URL` | API 基础 URL，用于 AI 功能，例如 'https://api.deepseek.com/' | 否 |
-| `CHAT_MODEL_NAME` | 模型名称，用于 AI 功能，例如 'deepseek-v4-flash' | 否 |
-| `REASONING_EFFORT` | 推理努力程度（支持该参数的模型：o1/o3/deepseek-reasoner 等），留空则不传 | 否 |
-| `FRONTEND_PORT` | 前端开发服务器端口（仅开发模式），默认 5173 | 否 |
-| `BACKEND_PORT` | 后端服务端口，默认 5000 | 否 |
+AI 功能（对话复习）的 API 配置在网页右上角 ⚙️ 设置：
+
+| 配置项 | 示例 |
+|--------|------|
+| Base URL | `https://api.deepseek.com/v4` |
+| 模型名 | `deepseek-v4-flash` |
+| API Key |  |
+| 启用识图 | `false` |
+
+配置保存到浏览器 `localStorage`，无需环境变量。
 
 ## 数据存储
 

@@ -1,5 +1,11 @@
 <template>
     <div class="container">
+        <div v-if="!configured" class="unconfigured-hint">
+            <el-icon :size="48" color="var(--el-text-color-placeholder)"><ChatDotRound /></el-icon>
+            <h3>AI 功能未配置</h3>
+            <p>请点击右上角 <el-icon><Setting /></el-icon> 按钮设置 API 配置</p>
+        </div>
+        <template v-else>
         <el-card class="ai-card" shadow="hover">
             <div class="chat-container">
                 <div class="message-list">
@@ -50,19 +56,21 @@
                 </el-button>
             </div>
         </div>
+        </template>
     </div>
 </template>
 
 <script setup lang="ts">
 defineOptions({ name: 'AIReview' })
 import { ref, computed, onMounted, onActivated } from 'vue'
-import { Top, Delete, Picture, Close, Refresh } from '@element-plus/icons-vue'
+import { Top, Delete, Picture, Close, Refresh, ChatDotRound, Setting } from '@element-plus/icons-vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import { useAIReview } from '@/hooks/useAIReview'
 import { useCacheStore } from '@/stores/cache'
 
 const store = useCacheStore()
 const visionEnabled = computed(() => store.visionEnabled)
+const configured = computed(() => !!store.aiConfig.apiKey && !!store.aiConfig.baseUrl && !!store.aiConfig.modelName)
 
 const {
     chatMessages,
@@ -123,6 +131,30 @@ onActivated(loadChat)
     flex: 1;
     display: flex;
     flex-direction: column;
+}
+
+.unconfigured-hint {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--el-text-color-placeholder);
+}
+
+.unconfigured-hint h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.unconfigured-hint p {
+    margin: 0;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .chat-container {

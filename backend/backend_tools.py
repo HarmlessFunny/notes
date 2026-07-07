@@ -8,7 +8,7 @@ import time
 
 # 路径处理：PyInstaller 打包后 __file__ 指向临时解压目录 _MEIPASS，
 # 而 sys.executable 指向 exe 实际位置。
-# - 外部资源（需运行时读写）：database.json / assets / notes / .env → exe 同级目录
+# - 外部资源（需运行时读写）：database.json / assets / notes → exe 同级目录
 # - 内部资源（只读，打包进 exe）：dist（前端构建产物）→ _MEIPASS/dist
 if getattr(sys, 'frozen', False):
     # 打包环境

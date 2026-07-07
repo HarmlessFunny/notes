@@ -22,7 +22,10 @@
           <span>AI 对话</span>
         </el-menu-item>
       </el-menu>
-      <div class="dark-switch">
+      <div class="navbar-actions">
+        <el-tooltip content="AI 设置" placement="bottom">
+          <el-button class="action-icon-btn" :icon="Setting" text @click="showSettings = true" />
+        </el-tooltip>
         <el-switch v-model="cacheStore.darkMode" :active-action-icon="Moon" :inactive-action-icon="Sunny" />
       </div>
     </div>
@@ -36,19 +39,22 @@
       </router-view>
     </main>
     <el-backtop :right="100" :bottom="100" />
+    <SettingsDialog v-model:visible="showSettings" />
   </div>
 </template>
 
 <script setup lang="ts">
 defineOptions({ name: 'App' })
-import { onMounted } from 'vue'
-import { Edit, Notebook, ChatDotRound, Moon, Sunny } from '@element-plus/icons-vue'
+import { ref, onMounted } from 'vue'
+import { Edit, Notebook, ChatDotRound, Moon, Sunny, Setting } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { useNotesStore } from '@/stores/notes'
 import { useCacheStore } from '@/stores/cache'
+import SettingsDialog from '@/components/SettingsDialog.vue'
 
 const notesStore = useNotesStore()
 const cacheStore = useCacheStore()
+const showSettings = ref(false)
 
 const router = useRouter()
 
@@ -99,7 +105,7 @@ function handleMenuSelect(index: string) {
   border-bottom: 1px solid var(--el-border-color-light);
 }
 
-.dark-switch {
+.navbar-actions {
   position: absolute;
   right: 16px;
   top: 50%;
@@ -107,7 +113,13 @@ function handleMenuSelect(index: string) {
   z-index: 10;
   display: flex;
   align-items: center;
+  gap: 8px;
   line-height: 1;
+}
+
+.action-icon-btn {
+  font-size: 18px;
+  color: var(--el-text-color-secondary);
 }
 
 .main-content {

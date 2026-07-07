@@ -1,3 +1,33 @@
+export interface AiConfig {
+    apiKey: string
+    baseUrl: string
+    modelName: string
+    visionEnabled: boolean
+}
+
+export const AI_CONFIG_KEY = 'notes-ai-config'
+
+export function loadAiConfig(): AiConfig {
+    try {
+        const raw = localStorage.getItem(AI_CONFIG_KEY)
+        if (raw) return JSON.parse(raw) as AiConfig
+    } catch { /* ignore */ }
+    return { apiKey: '', baseUrl: '', modelName: '', visionEnabled: true }
+}
+
+export function saveAiConfig(config: AiConfig) {
+    localStorage.setItem(AI_CONFIG_KEY, JSON.stringify(config))
+}
+
+export function getAiConfigHeaders(config: AiConfig): Record<string, string> {
+    return {
+        'X-Chat-Api-Key': config.apiKey,
+        'X-Chat-Base-Url': config.baseUrl,
+        'X-Chat-Model-Name': config.modelName,
+        'X-Vision-Enabled': String(config.visionEnabled),
+    }
+}
+
 export interface FormData {
     title: string
     subject: string

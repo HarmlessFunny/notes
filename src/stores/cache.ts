@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, watch, type Ref } from 'vue'
 import axios from 'axios'
-import type { FormData, UploadFile } from '@/types'
+import type { FormData, UploadFile, AiConfig } from '@/types'
+import { loadAiConfig, saveAiConfig as saveAiConfigToStorage, getAiConfigHeaders, AI_CONFIG_KEY } from '@/types'
 
 const DARK_KEY = 'notes-dark-mode'
 
@@ -12,6 +13,8 @@ export const useCacheStore = defineStore('cache', () => {
     const visionEnabled: Ref<boolean> = ref(true)
     const aiStatusLoaded: Ref<boolean> = ref(false)
     const darkMode = ref(localStorage.getItem(DARK_KEY) === 'true')
+
+    const aiConfig = ref<AiConfig>(loadAiConfig())
 
     // 发布笔记表单数据（跨路由持久化）
     const publishFormData = ref<FormData>({ title: '', subject: '', content: '' })
@@ -43,16 +46,36 @@ export const useCacheStore = defineStore('cache', () => {
         darkMode.value = !darkMode.value
     }
 
+    function updateAiConfig(config: AiConfig) {
+        aiConfig.value = config
+        saveAiConfigToStorage(config)
+        visionEnabled.value = config.visionEnabled
+    }
+
     async function loadAiStatus() {
         if (aiStatusLoaded.value) return
         try {
-            const res = await axios.get('/api/ai/status')
+            const headers = getAiConfigHeaders(aiConfig.value)
+            const res = await axios.get('/api/ai/status', { headers })
             aiAvailable.value = res.data?.ai_available ?? false
             visionEnabled.value = res.data?.vision_enabled ?? true
+            if (!aiAvailable.value && aiConfig.value.apiKey) {
+                aiAvailable.value = true
+            }
         } catch {
-            aiAvailable.value = false
+            aiAvailable.value = !!aiConfig.value.apiKey
         } finally {
             aiStatusLoaded.value = true
+        }
+    }
+
+    async function testAiConfig(config: AiConfig): Promise<boolean> {
+        try {
+            const headers = getAiConfigHeaders(config)
+            const res = await axios.get('/api/ai/status', { headers })
+            return res.data?.ai_available ?? false
+        } catch {
+            return false
         }
     }
 
@@ -63,8 +86,11 @@ export const useCacheStore = defineStore('cache', () => {
         visionEnabled,
         aiStatusLoaded,
         darkMode,
+        aiConfig,
         toggleDarkMode,
         loadAiStatus,
+        updateAiConfig,
+        testAiConfig,
         publishFormData,
         publishFileList,
         publishPreviewIndex,

@@ -23,7 +23,7 @@ export async function exportNotesToZip(notes: Note[]): Promise<void> {
     for (const img of note.imgs) {
       const uniqueName = multiple ? `${safeName}_${img}` : img
       lines.push(`\n![${img}](images/${uniqueName})`)
-      const blob = await fetchImageAsBlob(`/assets/${img}`)
+      const blob = await fetchImageAsBlob(`/uploads/images/${img}`)
       if (blob) imagesFolder?.file(uniqueName, blob)
     }
     zip.file(`${safeName}.md`, lines.join('\n'), { binary: false })

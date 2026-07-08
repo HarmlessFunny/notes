@@ -4,7 +4,7 @@ import os
 from functools import wraps
 from typing import Dict, Callable, Generator
 from flask import jsonify, request, Response, stream_with_context
-from backend_tools import ASSETS_FOLDER
+from backend_tools import UPLOADS_FOLDER
 
 
 def api_response(func: Callable) -> Callable:
@@ -109,9 +109,9 @@ def _prepare_messages_for_api(messages: list) -> list:
             for part in content:
                 if isinstance(part, dict) and part.get('type') == 'image_url':
                     url = part['image_url']['url']
-                    if url.startswith('/assets/'):
+                    if url.startswith('/uploads/images/'):
                         filename = os.path.basename(url)
-                        filepath = os.path.join(ASSETS_FOLDER, filename)
+                        filepath = os.path.join(UPLOADS_FOLDER, filename)
                         if os.path.exists(filepath):
                             with open(filepath, 'rb') as f:
                                 img_data = f.read()

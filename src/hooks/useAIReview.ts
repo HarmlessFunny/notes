@@ -158,7 +158,7 @@ export function useAIReview() {
 ## 可用格式
 - Markdown 语法：表格、列表、引用等
 - 数学公式：$行内$ 或 $$块级$$
-- 图片引用：<img src="/assets/<图片名>" style="..." />（style中，如果你想缩放图片，必须额外填写max-height:none）
+- 图片引用：<img src="/uploads/images/<图片名>" style="..." />（style中，如果你想缩放图片，必须额外填写max-height:none）
 
 ## 特殊说明
 - 如果用户想删除笔记，先向用户确认再执行删除
@@ -215,7 +215,7 @@ export function useAIReview() {
 ## 可用格式
 - Markdown 语法：表格、列表、引用等
 - 数学公式：$行内$ 或 $$块级$$
-- 图片引用：<img src="/assets/<图片名>" style="..." />（style中，如果你想缩放图片，必须额外填写max-height:none）
+- 图片引用：<img src="/uploads/images/<图片名>" style="..." />（style中，如果你想缩放图片，必须额外填写max-height:none）
 
 ## 特殊说明
 - 如果用户想删除笔记，先向用户确认再执行删除

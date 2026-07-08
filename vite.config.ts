@@ -28,7 +28,7 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
-      '/assets': {
+      '/uploads': {
         target: 'http://localhost:5000',
         changeOrigin: true,
       }

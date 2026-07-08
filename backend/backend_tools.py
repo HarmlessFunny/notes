@@ -8,28 +8,29 @@ import time
 
 # 路径处理：PyInstaller 打包后 __file__ 指向临时解压目录 _MEIPASS，
 # 而 sys.executable 指向 exe 实际位置。
-# - 外部资源（需运行时读写）：database.json / assets / notes → exe 同级目录
+# - 外部资源（需运行时读写）：database.json / uploads/images / notes → exe 同级目录
 # - 内部资源（只读，打包进 exe）：dist（前端构建产物）→ _MEIPASS/dist
-if getattr(sys, 'frozen', False):
-    # 打包环境
+if os.environ.get('ANDROID_APP_DIR'):
+    APP_DIR = os.environ['ANDROID_APP_DIR']
+    DIST_FOLDER = os.environ.get('ANDROID_DIST_DIR', os.path.join(APP_DIR, 'dist'))
+elif getattr(sys, 'frozen', False):
     APP_DIR = os.path.dirname(sys.executable)
     DIST_FOLDER = os.path.join(sys._MEIPASS, 'dist')
 else:
-    # 开发环境
     APP_DIR = os.path.dirname(os.path.abspath(__file__))
     DIST_FOLDER = os.path.join(APP_DIR, 'dist')
 
 DB_FILE = os.path.join(APP_DIR, 'database.json')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-ASSETS_FOLDER = os.path.join(APP_DIR, 'assets')
+UPLOADS_FOLDER = os.path.join(APP_DIR, 'uploads', 'images')
 NOTES_FOLDER = os.path.join(APP_DIR, 'notes')
 
 # 艾宾浩斯遗忘曲线推荐复习间隔（天数）
 REVIEW_INTERVAL_DAYS: List[int] = [0, 1, 2, 4, 7, 15, 30, 60, 120, 240]
 
-# 笔记正文中的图片引用格式：![任意内容](../assets/文件名)
-_IMG_REF_PATTERN = re.compile(r'!\[[^\]]*\]\(\.\./assets/[^)]+\)')
-_IMG_NAME_PATTERN = re.compile(r'!\[[^\]]*\]\(\.\./assets/([^)]+)\)')
+# 笔记正文中的图片引用格式：![任意内容](../uploads/images/文件名)
+_IMG_REF_PATTERN = re.compile(r'!\[[^\]]*\]\(\.\./uploads/images/[^)]+\)')
+_IMG_NAME_PATTERN = re.compile(r'!\[[^\]]*\]\(\.\./uploads/images/([^)]+)\)')
 
 # title 中不允许出现的字符（Windows 文件名非法字符）
 _ILLEGAL_TITLE_CHARS = re.compile(r'[\\/:*?"<>|]')
@@ -77,7 +78,7 @@ def validate_title(title: str) -> str | None:
 
 def init_database()->None:
     """初始化数据库与笔记目录"""
-    os.makedirs(ASSETS_FOLDER, exist_ok=True)
+    os.makedirs(UPLOADS_FOLDER, exist_ok=True)
     os.makedirs(NOTES_FOLDER, exist_ok=True)
 
     if not os.path.exists(DB_FILE):
@@ -152,7 +153,7 @@ def allowed_file(filename: str) -> bool:
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def save_images(images: List, safe_title: str) -> List[str]:
-    """把上传的图片保存到 assets 目录，返回文件名列表。自动处理重名。"""
+    """把上传的图片保存到 uploads/images 目录，返回文件名列表。自动处理重名。"""
     saved: List[str] = []
     for idx, file in enumerate(images):
         if not file or not allowed_file(file.filename):
@@ -161,11 +162,11 @@ def save_images(images: List, safe_title: str) -> List[str]:
         filename = f"{safe_title}{ext}" if len(images) == 1 else f"{safe_title}_{idx + 1}{ext}"
         counter = 1
         original = filename
-        while os.path.exists(os.path.join(ASSETS_FOLDER, filename)):
+        while os.path.exists(os.path.join(UPLOADS_FOLDER, filename)):
             name, ext = os.path.splitext(original)
             filename = f"{name}_{counter}_{int(time.time() * 1000)}{ext}"
             counter += 1
-        file.save(os.path.join(ASSETS_FOLDER, filename))
+        file.save(os.path.join(UPLOADS_FOLDER, filename))
         saved.append(filename)
     return saved
 
@@ -179,7 +180,7 @@ def save_note_file(title: str, subject: str, content: str, imgs: List[str]) -> N
     if content:
         parts.append(content)
     for img in imgs:
-        parts.append(f'![图片](../assets/{img})')
+        parts.append(f'![图片](../uploads/images/{img})')
     file_content = header + '\n' + ''.join(parts)
     with open(os.path.join(NOTES_FOLDER, f'{title}.md'), 'w', encoding='utf-8') as f:
         f.write(file_content)
@@ -336,7 +337,7 @@ def delete_notes(titles: List[str]) -> dict:
             _content_cache.pop(note['title'], None)
             imgs = read_note_imgs(note['title'])
             for img in imgs:
-                img_path = os.path.join(ASSETS_FOLDER, img)
+                img_path = os.path.join(UPLOADS_FOLDER, img)
                 if os.path.exists(img_path):
                     os.remove(img_path)
             md_path = os.path.join(NOTES_FOLDER, f"{note['title']}.md")

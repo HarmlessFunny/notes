@@ -19,7 +19,7 @@ echo.
 echo [2/3] Building backend executable (PyInstaller)...
 cd backend
 
-pyinstaller --onefile --noconfirm --name Notes --distpath ..\release --hidden-import nanoid --add-data "dist;dist" backend.py
+pyinstaller --onefile --noconfirm --name Notes --distpath ..\release --hidden-import nanoid --add-data "dist;dist" main.py
 
 if errorlevel 1 (
     echo [ERROR] PyInstaller build failed
@@ -46,6 +46,6 @@ echo.
 echo Note: AI config (API Key / Base URL / Model) is set in the app UI
 echo and saved to localStorage. No .env file needed.
 echo.
-echo   (database.json / assets\ / notes\ auto-created on first run)
+echo   (database.json / uploads\images\ / notes\ auto-created on first run)
 echo.
 pause

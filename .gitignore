@@ -16,6 +16,8 @@ dist-ssr
 release
 coverage
 *.local
+*.spec
+.buildozer
 
 # Editor directories and files
 .vscode/*
@@ -74,7 +76,7 @@ env/
 
 # Database
 backend/database.json
-backend/assets/
+backend/uploads/
 backend/notes/
 
 # AI memory

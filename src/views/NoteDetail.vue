@@ -30,7 +30,7 @@
             </div>
             <div v-if="note.imgs.length > 0" class="image-container" ref="imagesRef">
                 <div v-for="(img, index) in note.imgs" :key="img" class="image-item" :style="itemStyles[index]">
-                    <el-image :src="`${baseUrl}/assets/${img}`" alt="Note Image" :initial-index="index"
+                    <el-image :src="`${baseUrl}/uploads/images/${img}`" alt="Note Image" :initial-index="index"
                         @click="showPreview = true; previewIndex = index" @load="onImageLoaded(index, $event)" />
                 </div>
             </div>
@@ -44,7 +44,7 @@
     <div v-else class="container">
         <el-empty description="笔记不存在，正在跳转..." />
     </div>
-    <el-image-viewer v-if="showPreview" :url-list="note!.imgs.map(item => `${baseUrl}/assets/${item}`)" show-progress
+    <el-image-viewer v-if="showPreview" :url-list="note!.imgs.map(item => `${baseUrl}/uploads/images/${item}`)" show-progress
         hide-on-click-modal :max-scale="7" :min-scale="0.2" :initial-index="previewIndex" @close="showPreview = false"
         :infinite="false" />
 </template>
@@ -98,7 +98,6 @@ async function handleExportZip() {
 
 <style scoped>
 .container {
-    margin: 0 auto;
     padding: 40px 20px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.8;

@@ -52,7 +52,7 @@
 defineOptions({ name: 'NoteForm' })
 import { onMounted, watch, computed, ref } from 'vue'
 import { Plus, Paperclip } from '@element-plus/icons-vue'
-import type { FormData, UploadFile } from '@/types'
+import type { NoteFormData, UploadFile } from '@/types'
 import { useNotesStore } from '@/stores/notes'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 
@@ -63,7 +63,7 @@ interface Props {
   title?: string
   submitButtonText?: string
   showCancelButton?: boolean
-  initialData?: Partial<FormData>
+  initialData?: Partial<NoteFormData>
   initialImages?: string[]
   loading?: boolean
   // 外部传入的 hook，用于共享状态
@@ -71,7 +71,7 @@ interface Props {
 }
 
 interface Emits {
-  (e: 'submit', formData: FormData, fileList: UploadFile[]): void
+  (e: 'submit', formData: NoteFormData, fileList: UploadFile[]): void
   (e: 'cancel'): void
 }
 
@@ -89,7 +89,7 @@ const emit = defineEmits<Emits>()
 const hook = props.usePublishNote
 
 // 表单数据
-const formData = hook?.formData ?? ref<FormData>({
+const formData = hook?.formData ?? ref<NoteFormData>({
   title: '',
   subject: '',
   content: ''

@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import type { Note, FormData, UploadFile } from '@/types'
+import type { Note, NoteFormData, UploadFile } from '@/types'
 import { useNotesStore } from '@/stores/notes'
 
 export function useNoteDetail() {
@@ -22,7 +22,7 @@ export function useNoteDetail() {
         }
     }
 
-    async function handleEditSubmit(formData: FormData, fileList: UploadFile[]): Promise<void> {
+    async function handleEditSubmit(formData: NoteFormData, fileList: UploadFile[]): Promise<void> {
         if (!note.value) return
         editSubmitting.value = true
 

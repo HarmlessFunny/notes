@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, watch, type Ref } from 'vue'
 import axios from 'axios'
-import type { FormData, UploadFile, AiConfig } from '@/types'
+import type { NoteFormData, UploadFile, AiConfig } from '@/types'
 import { loadAiConfig, saveAiConfig as saveAiConfigToStorage, getAiConfigHeaders, AI_CONFIG_KEY } from '@/types'
 
 const DARK_KEY = 'notes-dark-mode'
@@ -17,7 +17,7 @@ export const useCacheStore = defineStore('cache', () => {
     const aiConfig = ref<AiConfig>(loadAiConfig())
 
     // 发布笔记表单数据（跨路由持久化）
-    const publishFormData = ref<FormData>({ title: '', subject: '', content: '' })
+    const publishFormData = ref<NoteFormData>({ title: '', subject: '', content: '' })
     const publishFileList = ref<UploadFile[]>([])
     const publishPreviewIndex = ref(0)
     const publishShowPreview = ref(false)

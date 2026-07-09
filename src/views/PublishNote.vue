@@ -9,13 +9,13 @@
 defineOptions({ name: 'PublishNote' })
 import { ref } from 'vue'
 import NoteForm from '@/components/NoteForm.vue'
-import type { FormData, UploadFile } from '@/types'
+import type { NoteFormData, UploadFile } from '@/types'
 import { usePublishNote } from '@/hooks/usePublishNote'
 
 const publishNoteHook = usePublishNote()
 const noteFormRef = ref<InstanceType<typeof NoteForm> | null>(null)
 
-const handleFormSubmit = async (_formData: FormData, _fileList: UploadFile[]) => {
+const handleFormSubmit = async (_formData: NoteFormData, _fileList: UploadFile[]) => {
   const success = await publishNoteHook.submitForm()
   if (success && noteFormRef.value) {
     noteFormRef.value.resetForm?.()

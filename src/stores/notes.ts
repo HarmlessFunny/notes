@@ -1,4 +1,4 @@
-import type { Note, LightNote } from '@/types'
+import type { Note, LightNote, NoteFormData } from '@/types'
 import axios from 'axios'
 import { defineStore } from 'pinia'
 import { computed, ref, type Ref } from 'vue'
@@ -23,7 +23,7 @@ export const useNotesStore = defineStore('notes', () => {
         }
     }
 
-    async function publishNote(formData: FormData) {
+    async function publishNote(formData: FormData | NoteFormData) {
         try {
             await axios.post('/api/submit', formData)
             await flashAllNotes()
@@ -89,7 +89,7 @@ export const useNotesStore = defineStore('notes', () => {
         }
     }
 
-    async function updateNote(title: string, formData: FormData) {
+    async function updateNote(title: string, formData: FormData | NoteFormData) {
         try {
             await axios.put(`/api/note/${encodeURIComponent(title)}`, formData)
             await flashAllNotes()

@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import type { FormData, UploadFile } from '@/types'
+import type { UploadFile } from '@/types'
 import { useNotesStore } from '@/stores/notes'
 import { useCacheStore } from '@/stores/cache'
 

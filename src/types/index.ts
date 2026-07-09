@@ -28,7 +28,7 @@ export function getAiConfigHeaders(config: AiConfig): Record<string, string> {
     }
 }
 
-export interface FormData {
+export interface NoteFormData {
     title: string
     subject: string
     content: string

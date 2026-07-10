@@ -349,6 +349,7 @@ def delete_notes(titles: List[str]) -> dict:
         with open(DB_FILE, 'w', encoding='utf-8') as f:
             json.dump(db_data, f, ensure_ascii=False, indent=2)
 
+        _refresh_content_cache()
         return {'status': 'success', 'message': f'已删除 {len(to_delete)} 篇笔记', 'deleted_count': len(to_delete)}
     except Exception as e:
         return {'status': 'error', 'message': f'删除笔记失败: {str(e)}'}

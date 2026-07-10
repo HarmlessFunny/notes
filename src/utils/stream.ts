@@ -9,12 +9,6 @@ export interface StreamResult<T> {
     error: Error | null
 }
 
-interface SSEEvent {
-    type: string
-    content?: string
-    raw_json?: string
-}
-
 async function processSSEStream(
     response: Response,
     callback?: StreamCallback
@@ -35,7 +29,7 @@ async function processSSEStream(
         for (const line of lines) {
             if (!line.startsWith('data: ')) continue
             try {
-                const data: SSEEvent = JSON.parse(line.slice(6))
+                const data: { type: string; content?: string; raw_json?: string } = JSON.parse(line.slice(6))
                 if (data.type === 'content' && typeof data.content === 'string') {
                     fullText += data.content
                     callback?.onContent(data.content)

@@ -100,6 +100,20 @@ def sse_stream(func: Callable = None, *, event_generator: Callable[..., Generato
     return decorate
 
 
+def _convert_image_url_to_base64(url: str) -> str:
+    """将 /uploads/images/xxx 本地图片转为 data:image/xxx;base64,xxx 格式"""
+    filename = os.path.basename(url)
+    filepath = os.path.join(UPLOADS_FOLDER, filename)
+    if not os.path.exists(filepath):
+        return url
+    with open(filepath, 'rb') as f:
+        img_data = f.read()
+    ext = os.path.splitext(filename)[1].lower().lstrip('.')
+    mime = {'jpg': 'jpeg', 'jpeg': 'jpeg', 'png': 'png', 'gif': 'gif', 'webp': 'webp'}.get(ext, 'png')
+    b64 = base64.b64encode(img_data).decode('utf-8')
+    return f"data:image/{mime};base64,{b64}"
+
+
 def _prepare_messages_for_api(messages: list) -> list:
     prepared = []
     for msg in messages:
@@ -110,15 +124,7 @@ def _prepare_messages_for_api(messages: list) -> list:
                 if isinstance(part, dict) and part.get('type') == 'image_url':
                     url = part['image_url']['url']
                     if url.startswith('/uploads/images/'):
-                        filename = os.path.basename(url)
-                        filepath = os.path.join(UPLOADS_FOLDER, filename)
-                        if os.path.exists(filepath):
-                            with open(filepath, 'rb') as f:
-                                img_data = f.read()
-                            ext = os.path.splitext(filename)[1].lower().lstrip('.')
-                            mime = {'jpg': 'jpeg', 'jpeg': 'jpeg', 'png': 'png', 'gif': 'gif', 'webp': 'webp'}.get(ext, 'png')
-                            b64 = base64.b64encode(img_data).decode('utf-8')
-                            part['image_url']['url'] = f"data:image/{mime};base64,{b64}"
+                        part['image_url']['url'] = _convert_image_url_to_base64(url)
                     new_content.append(part)
                 else:
                     new_content.append(part)
@@ -151,7 +157,7 @@ def stream_ai_response(
     Yields:
         dict: {"type": "content", "content": "..."} 或 {"type": "done", "raw_json": "..."}
     """
-    current_messages = _prepare_messages_for_api(messages.copy())
+    current_messages = _prepare_messages_for_api(json.loads(json.dumps(messages)))
     
     while True:
         params = {

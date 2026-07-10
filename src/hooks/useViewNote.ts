@@ -82,7 +82,7 @@ export function useViewNote() {
   const handleDateChange = (date: number | null) => {
     // 只做路由跳转，数据加载完全交给路由 watcher
     // 避免同一次操作触发两次相同的 API 请求
-    if (date === null || date === 0 || date == null) {
+    if (date == null) {
       router.replace('/view/notes/all')
       return
     }

@@ -73,7 +73,6 @@ export function usePublishNote() {
 
             if (success) {
                 resetForm()
-                clearFiles()
                 return true
             }
             return false

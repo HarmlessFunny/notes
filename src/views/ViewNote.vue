@@ -104,13 +104,6 @@ onUnmounted(() => document.removeEventListener('keydown', handleGlobalKeydown))
   margin-bottom: 20px;
 }
 
-.card-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--el-text-color-primary);
-  white-space: nowrap;
-}
-
 .notes-toolbar {
   display: flex;
   align-items: center;
@@ -151,16 +144,6 @@ onUnmounted(() => document.removeEventListener('keydown', handleGlobalKeydown))
 
 .note-item:hover .note-link {
   color: var(--el-color-primary);
-}
-
-.card-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
-
-.search-input {
-  width: 220px;
 }
 
 @media (max-width: 768px) {

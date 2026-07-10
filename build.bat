@@ -19,7 +19,7 @@ echo.
 echo [2/3] Building backend executable (PyInstaller)...
 cd backend
 
-pyinstaller --onefile --noconfirm --name Notes --distpath ..\release --hidden-import nanoid --add-data "dist;dist" main.py
+pyinstaller --onefile --noconfirm --name Notes --distpath ..\release --add-data "dist;dist" main.py
 
 if errorlevel 1 (
     echo [ERROR] PyInstaller build failed

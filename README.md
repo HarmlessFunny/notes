@@ -24,7 +24,7 @@
 ### 普通用户
 
 点击下载最新版
-[**Windows-x64**](https://github.com/HarmlessFunny/notes/releases/latest/download/Notes.exe)
+[**Windows-x64**](https://github.com/HarmlessFunny/notes/releases/latest/download/Notes-Windows-x64.zip)
 
 ### 开发者
 

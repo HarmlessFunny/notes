@@ -19,7 +19,7 @@ echo.
 echo [2/3] Building backend executable (PyInstaller)...
 cd backend
 
-pyinstaller --onefile --windowed --noconfirm --name Notes --distpath ..\release --add-data "dist;dist" ^
+pyinstaller --onedir --windowed --noconfirm --name Notes --distpath ..\release --add-data "dist;dist" ^
     --hidden-import webview.platforms.edgechromium ^
     --collect-all pywebview main.py
 

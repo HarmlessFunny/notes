@@ -4,8 +4,6 @@ import time
 import re
 from flask import request, jsonify, send_from_directory, send_file
 from typing import Tuple, Any
-from backend_ai import ai_chat
-from openai import OpenAI
 from backend_tools import fetch_all_notes, fetch_notes_by_day, search_notes, fetch_notes_by_titles, add_note, update_note, delete_notes, save_images, fetch_ai_chat, save_ai_chat, delete_ai_chat, Note, UPLOADS_FOLDER, DIST_FOLDER, APP_DIR, validate_title
 from backend_utils import api_response, validate_required_fields, handle_api_error, sse_stream
 
@@ -146,6 +144,8 @@ def register_routes(app):
     @app.route('/api/ai', methods=['POST'])
     @sse_stream
     def ai_chat_stream_route() -> Any:
+        from openai import OpenAI
+        from backend_ai import ai_chat
         config = get_ai_config_from_headers()
         if not config['api_key'] or not config['base_url'] or not config['model_name']:
             yield {'type': 'error', 'content': 'AI 功能未配置，请先设置 API 配置'}

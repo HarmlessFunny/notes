@@ -1,4 +1,4 @@
-from openai import OpenAI
+from __future__ import annotations
 from backend_tools import fetch_all_notes, fetch_notes_by_day, fetch_notes_by_titles, search_notes, add_note, update_note, delete_notes
 from backend_utils import stream_ai_response
 

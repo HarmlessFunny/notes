@@ -173,6 +173,37 @@ def register_routes(app):
     def del_ai_chat_route() -> dict:
         return delete_ai_chat()
 
+    @app.route('/api/export', methods=['GET'])
+    def export_notes_route():
+        import io, zipfile
+        titles = request.args.getlist('titles')
+        if not titles:
+            return jsonify({'status': 'error', 'message': '请选择要导出的笔记'}), 400
+
+        result = fetch_notes_by_titles(titles)
+        if result['status'] != 'success' or not result.get('notes'):
+            return jsonify({'status': 'error', 'message': '笔记不存在'}), 404
+
+        notes = result['notes']
+        multiple = len(notes) > 1
+        label = 'notes' if multiple else re.sub(r'[\\/:*?"<>|]', '_', notes[0]['title'])[:50]
+        buf = io.BytesIO()
+
+        with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
+            for note in notes:
+                safe_name = re.sub(r'[\\/:*?"<>|]', '_', note['title'])[:30] or 'note'
+                lines = [note.get('content', '')]
+                for img in note.get('imgs', []):
+                    unique_name = f'{safe_name}_{img}' if multiple else img
+                    lines.append(f'\n![{img}](images/{unique_name})')
+                    img_path = os.path.join(UPLOADS_FOLDER, img)
+                    if os.path.exists(img_path):
+                        zf.write(img_path, f'images/{unique_name}')
+                zf.writestr(f'{safe_name}.md', '\n'.join(lines))
+
+        buf.seek(0)
+        return send_file(buf, mimetype='application/zip', as_attachment=True, download_name=f'{label}.zip')
+
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
     def serve_static_route(path: str) -> Any:

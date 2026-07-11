@@ -1,11 +1,34 @@
 import os
 import sys
+import base64
 import webbrowser
 import threading
 import webview
 from flask import Flask
 from flask_cors import CORS
 from backend_tools import init_database
+
+
+class Api:
+    def download(self, filename: str, data: str) -> bool:
+        import tkinter as tk
+        from tkinter import filedialog
+        try:
+            root = tk.Tk()
+            root.withdraw()
+            path = filedialog.asksaveasfilename(
+                defaultextension=".zip",
+                filetypes=[("ZIP files", "*.zip")],
+                initialfile=filename
+            )
+            root.destroy()
+            if not path:
+                return False
+            with open(path, 'wb') as f:
+                f.write(base64.b64decode(data))
+            return True
+        except Exception:
+            return False
 
 init_database()
 
@@ -38,6 +61,7 @@ if __name__ == '__main__':
             height=800,
             resizable=True,
             min_size=(800, 600),
+            js_api=Api(),
         )
         webview.start(private_mode=False)
     else:

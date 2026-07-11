@@ -1,46 +1,36 @@
-import JSZip from 'jszip'
-import type { Note } from '@/types'
+export async function exportNotesToZip(titles: string[]): Promise<void> {
+  if (titles.length === 0) return
+  const params = new URLSearchParams(titles.map(t => ['titles', t]))
+  const url = `/api/export?${params}`
 
-async function fetchImageAsBlob(url: string): Promise<Blob | null> {
-  try {
-    const res = await fetch(url)
-    if (!res.ok) return null
-    return await res.blob()
-  } catch {
-    return null
+  const response = await fetch(url)
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}))
+    ElMessage.error(err.message || '导出失败')
+    return
   }
-}
 
-export async function exportNotesToZip(notes: Note[]): Promise<void> {
-  if (notes.length === 0) return
-  const zip = new JSZip()
-  const imagesFolder = zip.folder('images')
-  const multiple = notes.length > 1
+  const blob = await response.blob()
+  const blobUrl = URL.createObjectURL(blob)
 
-  for (const note of notes) {
-    const safeName = note.title.replace(/[\\/:*?"<>|]/g, '_') || 'note'
-    const lines: string[] = [note.content]
-    for (const img of note.imgs) {
-      const uniqueName = multiple ? `${safeName}_${img}` : img
-      lines.push(`\n![${img}](images/${uniqueName})`)
-      const blob = await fetchImageAsBlob(`/uploads/images/${img}`)
-      if (blob) imagesFolder?.file(uniqueName, blob)
+  if ((window as any).pywebview?.api) {
+    const reader = new FileReader()
+    reader.onload = async () => {
+      const base64data = (reader.result as string).split(',')[1]
+      await (window as any).pywebview.api.download('notes.zip', base64data)
     }
-    zip.file(`${safeName}.md`, lines.join('\n'), { binary: false })
+    reader.readAsDataURL(blob)
+  } else {
+    const a = document.createElement('a')
+    a.href = blobUrl
+    a.download = 'notes.zip'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(blobUrl)
   }
-
-  const label = multiple ? 'notes' : notes[0]!.title.replace(/[\\/:*?"<>|]/g, '_') || 'note'
-  const blob = await zip.generateAsync({ type: 'blob' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${label}.zip`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
 }
 
-export async function exportNoteToZip(note: Note): Promise<void> {
-  return exportNotesToZip([note])
+export async function exportNoteToZip(title: string): Promise<void> {
+  return exportNotesToZip([title])
 }

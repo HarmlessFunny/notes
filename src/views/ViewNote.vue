@@ -52,7 +52,6 @@ import { useNotesStore } from '@/stores/notes'
 import { storeToRefs } from 'pinia'
 import { onMounted, onUnmounted, ref } from 'vue'
 import { exportNotesToZip } from '@/utils/export'
-import type { Note } from '@/types'
 
 const cacheStore = useCacheStore()
 const notesStore = useNotesStore()
@@ -83,11 +82,7 @@ function handleGlobalKeydown(e: KeyboardEvent) {
 }
 
 async function handleExportChecked() {
-  const titles = [...checkedNotes.value]
-  if (titles.length === 0) return
-  const notes = (await Promise.all(titles.map(t => notesStore.getNote(t)))).filter(Boolean) as Note[]
-  if (notes.length === 0) return
-  await exportNotesToZip(notes)
+  await exportNotesToZip([...checkedNotes.value])
 }
 
 onMounted(() => document.addEventListener('keydown', handleGlobalKeydown))

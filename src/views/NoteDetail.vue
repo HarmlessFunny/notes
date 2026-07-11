@@ -92,7 +92,7 @@ watch(() => route.params.title, async (newTitle) => {
 
 async function handleExportZip() {
     if (!note.value) return
-    await exportNoteToZip(note.value)
+    await exportNoteToZip(note.value.title)
 }
 </script>
 

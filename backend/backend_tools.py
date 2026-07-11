@@ -181,7 +181,7 @@ def save_note_file(title: str, subject: str, content: str, imgs: List[str]) -> N
         parts.append(content)
     for img in imgs:
         parts.append(f'![图片](../uploads/images/{img})')
-    file_content = header + '\n' + ''.join(parts)
+    file_content = header + '\n' + '\n'.join(parts)
     with open(os.path.join(NOTES_FOLDER, f'{title}.md'), 'w', encoding='utf-8') as f:
         f.write(file_content)
     # 同步更新内存缓存（去掉标题行和图片引用，只存纯正文）

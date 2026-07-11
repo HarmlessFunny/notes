@@ -48,11 +48,9 @@ defineOptions({ name: 'App' })
 import { ref, onMounted } from 'vue'
 import { Edit, Notebook, ChatDotRound, Moon, Sunny, Setting } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { useNotesStore } from '@/stores/notes'
 import { useCacheStore } from '@/stores/cache'
 import SettingsDialog from '@/components/SettingsDialog.vue'
 
-const notesStore = useNotesStore()
 const cacheStore = useCacheStore()
 const showSettings = ref(false)
 

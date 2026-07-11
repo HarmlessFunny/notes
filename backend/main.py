@@ -2,6 +2,7 @@ import os
 import sys
 import webbrowser
 import threading
+import webview
 from flask import Flask
 from flask_cors import CORS
 from backend_tools import init_database
@@ -16,18 +17,33 @@ register_routes(app)
 
 
 def start_flask(host='127.0.0.1', port=5000, debug=False):
-    """启动 Flask 服务器（供 Android / PyInstaller / 开发环境调用）"""
     app.run(host=host, port=port, debug=debug, use_reloader=False)
 
 
 if __name__ == '__main__':
-    if getattr(sys, 'frozen', False):
-        for port in range(5000, 5100):
-            try:
-                threading.Timer(1.0, lambda p=port: webbrowser.open(f'http://localhost:{p}')).start()
-                start_flask(host='0.0.0.0', port=port, debug=False)
-            except OSError:
-                continue
-            break
+    is_frozen = getattr(sys, 'frozen', False)
+
+    flask_thread = threading.Thread(
+        target=start_flask,
+        args=('127.0.0.1', 5000, not is_frozen),
+        daemon=True
+    )
+    flask_thread.start()
+
+    if is_frozen:
+        window = webview.create_window(
+            title='Notes - 智能笔记应用',
+            url='http://127.0.0.1:5000',
+            width=1200,
+            height=800,
+            resizable=True,
+            min_size=(800, 600),
+        )
+        webview.start(private_mode=False)
     else:
-        start_flask(host='0.0.0.0', port=5000, debug=True)
+        # 开发模式：Flask 运行在后台，打开 Vite 开发服务器
+        threading.Timer(1.0, lambda: webbrowser.open('http://localhost:5173')).start()
+        print('开发模式启动成功！')
+        print(f'  Flask API:  http://127.0.0.1:5000')
+        print(f'  前端地址:   http://localhost:5173')
+        flask_thread.join()

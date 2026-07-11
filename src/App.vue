@@ -23,10 +23,9 @@
         </el-menu-item>
       </el-menu>
       <div class="navbar-actions">
-        <el-tooltip content="AI 设置" placement="bottom">
+        <el-tooltip content="设置" placement="bottom">
           <el-button class="action-icon-btn" :icon="Setting" text @click="showSettings = true" />
         </el-tooltip>
-        <el-switch v-model="cacheStore.darkMode" :active-action-icon="Moon" :inactive-action-icon="Sunny" />
       </div>
     </div>
 
@@ -46,7 +45,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'App' })
 import { ref, onMounted } from 'vue'
-import { Edit, Notebook, ChatDotRound, Moon, Sunny, Setting } from '@element-plus/icons-vue'
+import { Edit, Notebook, ChatDotRound, Setting } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { useCacheStore } from '@/stores/cache'
 import SettingsDialog from '@/components/SettingsDialog.vue'
@@ -125,6 +124,7 @@ function handleMenuSelect(index: string) {
   padding: 0;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 @media (max-width: 768px) {

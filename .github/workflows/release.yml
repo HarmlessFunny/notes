@@ -23,8 +23,10 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Install Python dependencies
-        run: pip install -r requirements.txt pyinstaller
+      - name: Setup Python virtual environment
+        run: |
+          python -m venv venv
+          .\venv\Scripts\pip install -r requirements.txt pyinstaller
 
       - name: Install Node dependencies
         run: npm ci

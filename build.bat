@@ -6,6 +6,11 @@ echo   Build Script
 echo ========================================
 echo.
 
+if exist "%~dp0venv\Scripts\activate.bat" (
+    echo Activating virtual environment...
+    call "%~dp0venv\Scripts\activate.bat"
+)
+
 echo [1/3] Building frontend (npm run build)...
 call npm run build
 if errorlevel 1 (
@@ -21,7 +26,8 @@ cd backend
 
 pyinstaller --onedir --windowed --noconfirm --name Notes --distpath ..\release --add-data "dist;dist" ^
     --hidden-import webview.platforms.edgechromium ^
-    --collect-all pywebview main.py
+    --collect-all pywebview ^
+    --upx-dir tools main.py
 
 if errorlevel 1 (
     echo [ERROR] PyInstaller build failed

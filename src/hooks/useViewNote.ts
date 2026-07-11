@@ -68,6 +68,7 @@ export function useViewNote() {
 
   const loadByTime = async (t: string) => {
     if (t === 'all' || t == null || t === '') {
+      await notesStore.flashAllNotes()
       notes.value = notesStore.allNotes
       selectedDate.value = null
     } else if (t === 'today') {

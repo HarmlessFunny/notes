@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, watch, type Ref } from 'vue'
 import axios from 'axios'
-import type { NoteFormData, UploadFile, AiConfig } from '@/types'
+import type { NoteFormData, UploadFile, AiConfig, ThemeMode } from '@/types'
 import { loadAiConfig, saveAiConfig as saveAiConfigToStorage, getAiConfigHeaders, AI_CONFIG_KEY } from '@/types'
 
-const DARK_KEY = 'notes-dark-mode'
+const THEME_KEY = 'notes-theme-mode'
 
 export const useCacheStore = defineStore('cache', () => {
     const openSubjects: Ref<string[]> = ref([])
@@ -12,7 +12,7 @@ export const useCacheStore = defineStore('cache', () => {
     const aiAvailable: Ref<boolean> = ref(false)
     const visionEnabled: Ref<boolean> = ref(true)
     const aiStatusLoaded: Ref<boolean> = ref(false)
-    const darkMode = ref(localStorage.getItem(DARK_KEY) === 'true')
+    const themeMode = ref<ThemeMode>((localStorage.getItem(THEME_KEY) as ThemeMode) || 'system')
 
     const aiConfig = ref<AiConfig>(loadAiConfig())
 
@@ -34,17 +34,24 @@ export const useCacheStore = defineStore('cache', () => {
         publishSubmitting.value = false
     }
 
-    watch(darkMode, (val) => {
-        localStorage.setItem(DARK_KEY, String(val))
+    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+
+    function applyTheme(mode: ThemeMode) {
+        const isDark = mode === 'dark' || (mode === 'system' && darkModeMediaQuery.matches)
         const root = document.documentElement
         root.classList.add('no-transition')
-        root.classList.toggle('dark', val)
+        root.classList.toggle('dark', isDark)
         requestAnimationFrame(() => root.classList.remove('no-transition'))
+    }
+
+    watch(themeMode, (val) => {
+        localStorage.setItem(THEME_KEY, val)
+        applyTheme(val)
     }, { immediate: true })
 
-    function toggleDarkMode() {
-        darkMode.value = !darkMode.value
-    }
+    darkModeMediaQuery.addEventListener('change', () => {
+        if (themeMode.value === 'system') applyTheme('system')
+    })
 
     function updateAiConfig(config: AiConfig) {
         aiConfig.value = config
@@ -85,9 +92,8 @@ export const useCacheStore = defineStore('cache', () => {
         aiAvailable,
         visionEnabled,
         aiStatusLoaded,
-        darkMode,
+        themeMode,
         aiConfig,
-        toggleDarkMode,
         loadAiStatus,
         updateAiConfig,
         testAiConfig,

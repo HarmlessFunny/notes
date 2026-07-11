@@ -6,37 +6,33 @@
             <p>请点击右上角 <el-icon><Setting /></el-icon> 按钮设置 API 配置</p>
         </div>
         <template v-else>
-        <el-card class="ai-card" shadow="hover">
-            <div class="chat-container">
-                <div class="message-list">
-                    <template v-for="(message, index) in chatMessages" :key="index">
-                        <div v-if="message.role !== 'system'" :class="['message-item', message.role]">
-                            <div class="message-content">
-                                <template v-if="typeof message.content === 'string'">
-                                    <MarkdownRenderer class="message-text" :content="message.content" />
-                                </template>
-                                <template v-else>
-                                    <template v-for="(part, pi) in message.content" :key="pi">
-                                        <MarkdownRenderer v-if="part.type === 'text'" class="message-text" :content="part.text" />
-                                        <el-image v-else-if="part.type === 'image_url'" :src="part.image_url.url" class="chat-image" :preview-src-list="[part.image_url.url]" preview-teleported />
-                                    </template>
-                                </template>
-                                <div v-if="message.role === 'user'" class="message-actions">
-                                    <el-icon class="action-btn delete-btn" title="删除该对话及之后" @click.stop="truncateMessages(index)">
-                                        <Delete />
-                                    </el-icon>
-                                </div>
-                                <div v-if="message.role === 'assistant' && !sending" class="message-actions">
-                                    <el-icon class="action-btn" title="重新生成" @click.stop="retryMessage(index)">
-                                        <Refresh />
-                                    </el-icon>
-                                </div>
-                            </div>
+        <div class="message-list">
+            <template v-for="(message, index) in chatMessages" :key="index">
+                <div v-if="message.role !== 'system'" :class="['message-item', message.role]">
+                    <div class="message-content">
+                        <template v-if="typeof message.content === 'string'">
+                            <MarkdownRenderer class="message-text" :content="message.content" />
+                        </template>
+                        <template v-else>
+                            <template v-for="(part, pi) in message.content" :key="pi">
+                                <MarkdownRenderer v-if="part.type === 'text'" class="message-text" :content="part.text" />
+                                <el-image v-else-if="part.type === 'image_url'" :src="part.image_url.url" class="chat-image" :preview-src-list="[part.image_url.url]" preview-teleported />
+                            </template>
+                        </template>
+                        <div v-if="message.role === 'user'" class="message-actions">
+                            <el-icon class="action-btn delete-btn" title="删除该对话及之后" @click.stop="truncateMessages(index)">
+                                <Delete />
+                            </el-icon>
                         </div>
-                    </template>
+                        <div v-if="message.role === 'assistant' && !sending" class="message-actions">
+                            <el-icon class="action-btn" title="重新生成" @click.stop="retryMessage(index)">
+                                <Refresh />
+                            </el-icon>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </el-card>
+            </template>
+        </div>
 
         <div class="input-area">
             <div v-if="selectedImages.length" class="image-preview-list">
@@ -115,22 +111,7 @@ onActivated(loadChat)
     display: flex;
     flex-direction: column;
     font-family: var(--el-font-family);
-}
-
-.ai-card {
-    margin: 0;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    border: none;
-    box-shadow: none;
-}
-
-.ai-card :deep(.el-card__body) {
-    padding: 0;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+    overflow: hidden;
 }
 
 .unconfigured-hint {
@@ -157,21 +138,13 @@ onActivated(loadChat)
     gap: 4px;
 }
 
-.chat-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    min-height: 0;
-}
-
 .message-list {
     flex: 1;
     overflow-y: auto;
-    padding: 20px 20px 160px;
+    padding: 20px 20px 80px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
 }
 
 .message-item {
@@ -199,22 +172,21 @@ onActivated(loadChat)
 
 .message-item:not(.user) .message-text {
     color: var(--el-text-color-primary);
+    background: var(--el-fill-color-light);
 }
 
 .message-content {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    max-width: 100%;
+    max-width: 75%;
 }
 
 .message-text {
-    padding: 12px 16px;
-    background: var(--el-bg-color-page);
+    padding: 10px 14px;
     border-radius: 12px 12px 12px 0;
     line-height: 1.6;
     word-break: break-word;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .message-actions {
@@ -271,6 +243,7 @@ onActivated(loadChat)
     bottom: 0;
     left: 0;
     right: 0;
+    z-index: 10;
     background: var(--el-bg-color);
     border-top: 1px solid var(--el-border-color-light);
     display: flex;
@@ -334,17 +307,25 @@ onActivated(loadChat)
     .input-area {
         padding: 12px 16px;
     }
+
+    .message-content {
+        max-width: 85%;
+    }
 }
 
 @media (max-width: 480px) {
     .message-list {
-        padding: 12px 12px 110px;
-        gap: 14px;
+        padding: 12px 12px 70px;
+        gap: 12px;
     }
 
     .message-text {
-        padding: 10px 12px;
+        padding: 8px 12px;
         font-size: 14px;
+    }
+
+    .message-content {
+        max-width: 90%;
     }
 
     .input-area {

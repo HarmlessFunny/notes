@@ -27,9 +27,7 @@ cd backend
 pyinstaller --onedir --windowed --noconfirm --name Notes --distpath ..\release --add-data "dist;dist" ^
     --hidden-import webview.platforms.edgechromium ^
     --collect-all pywebview ^
-    --upx-dir . ^
-    --exclude-module tkinter ^
-    --exclude-module tkinter.filedialog main.py
+    --upx-dir tools main.py
 
 if errorlevel 1 (
     echo [ERROR] PyInstaller build failed

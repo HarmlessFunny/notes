@@ -10,56 +10,22 @@ from backend_tools import init_database
 
 class Api:
     def download(self, filename: str, data: str) -> bool:
-        import ctypes
-        from ctypes import wintypes
+        import tkinter as tk
+        from tkinter import filedialog
         try:
-            MAX_PATH = 260
-            buf = ctypes.create_unicode_buffer(MAX_PATH)
-            buf.value = filename
-
-            class OPENFILENAMEW(ctypes.Structure):
-                _fields_ = [
-                    ("lStructSize", wintypes.DWORD),
-                    ("hwndOwner", wintypes.HWND),
-                    ("hInstance", wintypes.HINSTANCE),
-                    ("lpstrFilter", wintypes.LPCWSTR),
-                    ("lpstrCustomFilter", wintypes.LPWSTR),
-                    ("nMaxCustFilter", wintypes.DWORD),
-                    ("nFilterIndex", wintypes.DWORD),
-                    ("lpstrFile", wintypes.LPWSTR),
-                    ("nMaxFile", wintypes.DWORD),
-                    ("lpstrFileTitle", wintypes.LPWSTR),
-                    ("nMaxFileTitle", wintypes.DWORD),
-                    ("lpstrInitialDir", wintypes.LPCWSTR),
-                    ("lpstrTitle", wintypes.LPCWSTR),
-                    ("Flags", wintypes.DWORD),
-                    ("nFileOffset", wintypes.WORD),
-                    ("nFileExtension", wintypes.WORD),
-                    ("lpstrDefExt", wintypes.LPCWSTR),
-                    ("lCustData", wintypes.LPARAM),
-                    ("lpfnHook", ctypes.c_void_p),
-                    ("lpTemplateName", wintypes.LPCWSTR),
-                    ("pvReserved", ctypes.c_void_p),
-                    ("dwReserved", wintypes.DWORD),
-                    ("flagsEx", wintypes.DWORD),
-                ]
-
-            ofn = OPENFILENAMEW()
-            ofn.lStructSize = ctypes.sizeof(OPENFILENAMEW)
-            ofn.lpstrFile = buf
-            ofn.nMaxFile = MAX_PATH
-            ofn.lpstrFilter = "ZIP Files\0*.zip\0\0"
-            ofn.nFilterIndex = 1
-            ofn.lpstrTitle = "Save As"
-            ofn.Flags = 0x00000002 | 0x00000800
-            ofn.lpstrDefExt = "zip"
-
-            if ctypes.windll.comdlg32.GetSaveFileNameW(ctypes.byref(ofn)):
-                path = buf.value
-                with open(path, 'wb') as f:
-                    f.write(base64.b64decode(data))
-                return True
-            return False
+            root = tk.Tk()
+            root.withdraw()
+            path = filedialog.asksaveasfilename(
+                defaultextension=".zip",
+                filetypes=[("ZIP files", "*.zip")],
+                initialfile=filename
+            )
+            root.destroy()
+            if not path:
+                return False
+            with open(path, 'wb') as f:
+                f.write(base64.b64decode(data))
+            return True
         except Exception:
             return False
 

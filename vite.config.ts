@@ -12,7 +12,7 @@ function katexFontOptimizer(): Plugin {
   return {
     name: 'katex-font-optimizer',
     closeBundle() {
-      const assetsDir = resolve(__dirname, 'backend', 'dist', 'assets')
+      const assetsDir = resolve(__dirname, 'server', 'dist', 'assets')
       if (!existsSync(assetsDir)) return
       const files = readdirSync(assetsDir)
       for (const file of files) {
@@ -51,18 +51,19 @@ export default defineConfig({
     host: '0.0.0.0',
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:3001',
         changeOrigin: true,
         secure: false,
       },
       '/uploads': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:3001',
         changeOrigin: true,
+        secure: false,
       }
     },
   },
   build: {
-    outDir: './backend/dist',
+    outDir: './server/dist',
     assetsDir: 'assets',
     emptyOutDir: true,
   },

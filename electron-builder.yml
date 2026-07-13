@@ -1,0 +1,17 @@
+appId: com.notes.app
+productName: Notes
+copyright: Copyright © 2026
+
+directories:
+  output: release
+
+asar: true
+
+asarUnpack:
+  - "server/dist/**/*"
+
+win:
+  target:
+    - target: dir
+      arch:
+        - x64

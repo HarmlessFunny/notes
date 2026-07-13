@@ -13,11 +13,11 @@ export async function exportNotesToZip(titles: string[]): Promise<void> {
   const blob = await response.blob()
   const blobUrl = URL.createObjectURL(blob)
 
-  if ((window as any).pywebview?.api) {
+  if ((window as any).electronAPI) {
     const reader = new FileReader()
     reader.onload = async () => {
       const base64data = (reader.result as string).split(',')[1]
-      await (window as any).pywebview.api.download('notes.zip', base64data)
+      await (window as any).electronAPI.download('notes.zip', base64data)
     }
     reader.readAsDataURL(blob)
   } else {

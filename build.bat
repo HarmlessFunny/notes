@@ -1,59 +1,25 @@
 @echo off
-cd /d "%~dp0"
+setlocal
 
-echo ========================================
-echo   Build Script
-echo ========================================
-echo.
+call npx vite build
+if %errorlevel% neq 0 exit /b %errorlevel%
 
-if exist "%~dp0venv\Scripts\activate.bat" (
-    echo Activating virtual environment...
-    call "%~dp0venv\Scripts\activate.bat"
+call npm run build:server
+if %errorlevel% neq 0 exit /b %errorlevel%
+
+call npx electron-builder
+if %errorlevel% neq 0 exit /b %errorlevel%
+
+:: wait for file handles to be released
+timeout /t 2 /nobreak >nul
+
+if exist "release\win-unpacked" (
+  if exist "release\Notes-Windows-x64" rmdir /s /q "release\Notes-Windows-x64"
+  move /y "release\win-unpacked" "release\Notes-Windows-x64"
 )
 
-echo [1/3] Building frontend (npm run build)...
-call npm run build
-if errorlevel 1 (
-    echo [ERROR] Frontend build failed
-    pause
-    exit /b 1
-)
-echo [OK] Frontend built to backend\dist
-echo.
+:: clean up electron-builder temp files
+if exist "release\builder-debug.yml" del /q "release\builder-debug.yml"
+if exist "release\builder-effective-config.yaml" del /q "release\builder-effective-config.yaml"
 
-echo [2/3] Building backend executable (PyInstaller)...
-cd backend
-
-pyinstaller --onedir --windowed --noconfirm --name Notes --distpath ..\release --add-data "dist;dist" ^
-    --hidden-import webview.platforms.edgechromium ^
-    --collect-all pywebview ^
-    --upx-dir tools main.py
-
-if errorlevel 1 (
-    echo [ERROR] PyInstaller build failed
-    pause
-    exit /b 1
-)
-
-rd /s /q build 2>nul
-del backend.spec 2>nul
-
-echo [OK] Executable output to release\Notes.exe
-echo.
-
-cd ..
-echo.
-
-echo ========================================
-echo   Build complete!
-echo ========================================
-echo.
-echo Output: release\
-echo   Notes.exe          - backend executable (frontend embedded)
-echo.
-echo Note: AI config (API Key / Base URL / Model) is set in the app UI
-echo and saved to localStorage. No .env file needed.
-echo.
-echo   (database.json / uploads\images\ / notes\ auto-created on first run)
-echo.
-pause
+echo Build complete: release\Notes-Windows-x64

@@ -87,7 +87,7 @@ const { itemStyles, onImageLoaded, resetLayout } = useWaterfallLayout(imagesRef,
 watch(() => route.params.title, async (newTitle) => {
     if (newTitle) {
         resetLayout()
-        await getNote(decodeURIComponent(newTitle as string))
+        await getNote(newTitle as string)
     }
 }, { immediate: true })
 

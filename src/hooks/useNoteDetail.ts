@@ -26,10 +26,13 @@ export function useNoteDetail() {
         if (!note.value) return
         editSubmitting.value = true
 
+        const title = formData.title.trim()
+        const subject = formData.subject.trim()
+        const content = formData.content.trim()
         const submitFormData = new FormData()
-        submitFormData.append('title', formData.title)
-        submitFormData.append('subject', formData.subject)
-        submitFormData.append('content', formData.content)
+        submitFormData.append('title', title)
+        submitFormData.append('subject', subject)
+        submitFormData.append('content', content)
 
         const existingImages: string[] = []
         fileList.forEach((item) => {
@@ -45,9 +48,8 @@ export function useNoteDetail() {
         editSubmitting.value = false
         if (success) {
             showEditForm.value = false
-            // 如果标题改了，跳转到新标题的路由
-            if (formData.title !== note.value.title) {
-                router.replace(`/view/detail/${encodeURIComponent(formData.title)}`)
+            if (title !== note.value.title) {
+                router.replace(`/view/detail/${encodeURIComponent(title)}`)
             } else {
                 const updatedNote = await notesStore.getNote(note.value.title)
                 if (updatedNote) {

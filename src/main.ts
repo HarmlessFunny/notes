@@ -2,9 +2,27 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import { createPinia } from 'pinia'
+import axios from 'axios'
 
 // Element Plus 暗色模式 CSS 变量
 import 'element-plus/theme-chalk/dark/css-vars.css'
+
+declare global {
+  interface Window { __API_BASE__?: string }
+}
+
+if (!import.meta.env.DEV) {
+  const API_BASE = 'http://127.0.0.1:5000'
+  window.__API_BASE__ = API_BASE
+  axios.defaults.baseURL = API_BASE
+  const origFetch = window.fetch.bind(window)
+  window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+    if (typeof input === 'string' && (input.startsWith('/api/') || input.startsWith('/uploads/'))) {
+      input = API_BASE + input
+    }
+    return origFetch(input, init)
+  }
+}
 
 const app = createApp(App)
 const pinia = createPinia()

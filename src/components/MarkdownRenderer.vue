@@ -117,15 +117,21 @@ watch(() => props.content, async (newContent) => {
     }
 }, { immediate: true })
 
-const sanitizedHtml = computed(() => DOMPurify.sanitize(rawHtml.value, {
-    ADD_TAGS: [
-        'math', 'mi', 'mo', 'mn', 'msup', 'msub', 'mfrac', 'msqrt',
-        'mroot', 'mrow', 'munder', 'mover', 'munderover', 'mspace',
-        'mpadded', 'mphantom', 'mstyle', 'merror', 'semantics',
-        'annotation', 'annotation-xml', 'mtext'
-    ],
-    ADD_ATTR: ['xmlns', 'encoding']
-}))
+const sanitizedHtml = computed(() => {
+    let html = DOMPurify.sanitize(rawHtml.value, {
+        ADD_TAGS: [
+            'math', 'mi', 'mo', 'mn', 'msup', 'msub', 'mfrac', 'msqrt',
+            'mroot', 'mrow', 'munder', 'mover', 'munderover', 'mspace',
+            'mpadded', 'mphantom', 'mstyle', 'merror', 'semantics',
+            'annotation', 'annotation-xml', 'mtext'
+        ],
+        ADD_ATTR: ['xmlns', 'encoding']
+    })
+    if (!import.meta.env.DEV) {
+        html = html.replace(/src="\/uploads\/images\//g, `src="${(window as any).__API_BASE__}/uploads/images/`)
+    }
+    return html
+})
 </script>
 
 <style>

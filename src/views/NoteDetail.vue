@@ -13,7 +13,7 @@
                 </div>
                 <div class="header-row">
                     <div class="buttons">
-                        <el-button type="warning" @click="handleExportZip" :icon="Document">
+                        <el-button type="warning" @click="handleExportZip" :icon="Document" :loading="exportLoading" :disabled="exportLoading">
                             导出笔记
                         </el-button>
                         <el-button type="primary" @click="showEditForm = true" :icon="Edit">
@@ -62,8 +62,8 @@ import { exportNoteToZip } from '@/utils/export'
 const router = useRouter()
 const route = useRoute()
 
-// 图片基础路径（生产环境 Flask 同源服务，直接用相对路径）
-const baseUrl = ''
+// 图片基础路径（生产环境指向 Axum）
+const baseUrl = (window as any).__API_BASE__ || ''
 
 const {
     note,
@@ -76,6 +76,7 @@ const {
     deleteCurrentNote,
 } = useNoteDetail()
 
+const exportLoading = ref(false)
 const imagesRef = ref<HTMLElement | null>(null)
 
 const imagesList = computed(() => note.value?.imgs ?? [])
@@ -92,7 +93,12 @@ watch(() => route.params.title, async (newTitle) => {
 
 async function handleExportZip() {
     if (!note.value) return
-    await exportNoteToZip(note.value.title)
+    exportLoading.value = true
+    try {
+        await exportNoteToZip(note.value.title)
+    } finally {
+        exportLoading.value = false
+    }
 }
 </script>
 

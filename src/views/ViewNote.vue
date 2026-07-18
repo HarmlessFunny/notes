@@ -11,7 +11,7 @@
         <el-date-picker v-model="selectedDate" type="date" placeholder="选择日期" format="YYYY年MM月DD日" value-format="x"
           @change="handleDateChange(selectedDate)" />
         <div class="toolbar-actions" v-if="selectedDate === null && checkedNotes.length > 0">
-          <el-button type="warning" @click="handleExportChecked" :icon="Download">导出</el-button>
+          <el-button type="warning" @click="handleExportChecked" :icon="Download" :loading="exportLoading" :disabled="exportLoading">导出</el-button>
           <el-button type="danger" @click="deleteChecked">删除</el-button>
         </div>
       </div>
@@ -73,6 +73,7 @@ const {
 } = useViewNote()
 
 const searchInputRef = ref<{ focus: () => void } | null>(null)
+const exportLoading = ref(false)
 
 function handleGlobalKeydown(e: KeyboardEvent) {
   if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
@@ -82,7 +83,12 @@ function handleGlobalKeydown(e: KeyboardEvent) {
 }
 
 async function handleExportChecked() {
-  await exportNotesToZip([...checkedNotes.value])
+  exportLoading.value = true
+  try {
+    await exportNotesToZip([...checkedNotes.value])
+  } finally {
+    exportLoading.value = false
+  }
 }
 
 onMounted(() => document.addEventListener('keydown', handleGlobalKeydown))

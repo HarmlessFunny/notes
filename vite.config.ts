@@ -12,7 +12,7 @@ function katexFontOptimizer(): Plugin {
   return {
     name: 'katex-font-optimizer',
     closeBundle() {
-      const assetsDir = resolve(__dirname, 'backend', 'dist', 'assets')
+      const assetsDir = resolve(__dirname, 'dist', 'assets')
       if (!existsSync(assetsDir)) return
       const files = readdirSync(assetsDir)
       for (const file of files) {
@@ -49,6 +49,9 @@ export default defineConfig({
   server: {
     port: 5173,
     host: '0.0.0.0',
+    watch: {
+      ignored: ['**/src-tauri/target/**'],
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
@@ -62,7 +65,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: './backend/dist',
+    outDir: './dist',
     assetsDir: 'assets',
     emptyOutDir: true,
   },

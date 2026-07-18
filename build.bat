@@ -1,59 +1,52 @@
 @echo off
 cd /d "%~dp0"
 
+set RELEASE_DIR=release
+if not exist %RELEASE_DIR% mkdir %RELEASE_DIR%
+
 echo ========================================
-echo   Build Script
+echo   Build Script (Tauri 2)
 echo ========================================
 echo.
 
-if exist "%~dp0venv\Scripts\activate.bat" (
-    echo Activating virtual environment...
-    call "%~dp0venv\Scripts\activate.bat"
-)
-
-echo [1/3] Building frontend (npm run build)...
+echo [1/3] Building frontend...
 call npm run build
 if errorlevel 1 (
     echo [ERROR] Frontend build failed
     pause
     exit /b 1
 )
-echo [OK] Frontend built to backend\dist
+echo [OK] Frontend built
 echo.
 
-echo [2/3] Building backend executable (PyInstaller)...
-cd backend
-
-pyinstaller --onedir --windowed --noconfirm --name Notes --distpath ..\release --add-data "dist;dist" ^
-    --hidden-import webview.platforms.edgechromium ^
-    --collect-all pywebview ^
-    --upx-dir tools main.py
-
+echo [2/3] Building Windows exe...
+call npx tauri build
 if errorlevel 1 (
-    echo [ERROR] PyInstaller build failed
+    echo [ERROR] Windows build failed
     pause
     exit /b 1
 )
-
-rd /s /q build 2>nul
-del backend.spec 2>nul
-
-echo [OK] Executable output to release\Notes.exe
+copy /Y src-tauri\target\release\notes.exe %RELEASE_DIR%\Notes-Windows-x64.exe
+echo [OK] Windows exe -^> %RELEASE_DIR%\Notes-Windows-x64.exe
 echo.
 
-cd ..
+echo [3/3] Building Android APK...
+call npx tauri android build --target aarch64
+if errorlevel 1 (
+    echo [ERROR] Android build failed
+    pause
+    exit /b 1
+)
+copy /Y src-tauri\gen\android\app\build\outputs\apk\universal\release\app-universal-release.apk %RELEASE_DIR%\Notes-Android-arm64-v8a.apk
+echo [OK] Android APK -^> %RELEASE_DIR%\Notes-Android-arm64-v8a.apk
 echo.
 
 echo ========================================
 echo   Build complete!
 echo ========================================
 echo.
-echo Output: release\
-echo   Notes.exe          - backend executable (frontend embedded)
-echo.
-echo Note: AI config (API Key / Base URL / Model) is set in the app UI
-echo and saved to localStorage. No .env file needed.
-echo.
-echo   (database.json / uploads\images\ / notes\ auto-created on first run)
+echo Output: %RELEASE_DIR%\
+echo   Notes-Windows-x64.exe           - Windows executable
+echo   Notes-Android-arm64-v8a.apk     - Android APK
 echo.
 pause

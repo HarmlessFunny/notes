@@ -16,26 +16,33 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          python-version: '3.13'
+          distribution: 'temurin'
+          java-version: '17'
 
-      - name: Install Python dependencies
-        run: pip install -r requirements.txt pyinstaller
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Install Node dependencies
+      - name: Install NDK
+        run: |
+          echo y | $env:ANDROID_HOME\cmdline-tools\latest\bin\sdkmanager.bat "ndk;27.0.12077973" "platforms;android-36"
+
+      - name: Install dependencies
         run: npm ci
 
-      - name: Build
+      - name: Build (exe + APK)
         run: .\build.bat
 
-      - name: Package
-        run: Compress-Archive -LiteralPath release\Notes -DestinationPath release\Notes-Windows-x64.zip
-
-      - name: Upload Release
+      - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
         with:
-          files: release\Notes-Windows-x64.zip
+          files: |
+            release/Notes-Windows-x64.exe
+            release/Notes-Android-arm64-v8a.apk

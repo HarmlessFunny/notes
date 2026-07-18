@@ -148,7 +148,7 @@ const initForm = () => {
       fileList.value.push({
         uid: Date.now() + Math.floor(Math.random() * 10000),
         name: img,
-        url: `/uploads/images/${img}`,
+        url: `${(window as any).__API_BASE__ || ''}/uploads/images/${img}`,
         status: 'success'
       })
     })

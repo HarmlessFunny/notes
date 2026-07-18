@@ -8,15 +8,19 @@
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",
-    "type-check": "vue-tsc --build"
+    "type-check": "vue-tsc --build",
+    "tauri": "tauri",
+    "release:win": "npx tauri build && if not exist release mkdir release && copy /Y src-tauri\\target\\release\\notes.exe release\\",
+    "release:android": "npx tauri android build --target aarch64 && if not exist release mkdir release && copy /Y src-tauri\\gen\\android\\app\\build\\outputs\\apk\\universal\\release\\app-universal-release.apk release\\notes.apk"
   },
   "dependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/plugin-dialog": "^2.7.1",
     "axios": "^1.16.1",
     "dompurify": "^3.4.9",
     "element-plus": "^2.14.1",
     "github-markdown-css": "^5.9.0",
     "highlight.js": "^11.11.1",
-
     "katex": "^0.17.0",
     "marked": "^18.0.5",
     "marked-highlight": "^2.2.4",
@@ -26,6 +30,7 @@
     "vue-router": "^5.0.4"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4",
     "@tsconfig/node24": "^24.0.4",
     "@types/node": "^24.12.2",
     "@vitejs/plugin-vue": "^6.0.6",

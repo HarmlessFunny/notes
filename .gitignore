@@ -74,12 +74,19 @@ env/
 .env.local
 .env.*.local
 
-# Database
-backend/database.json
-backend/uploads/
-backend/notes/
+# Rust build
+src-tauri/target/
 
-# AI memory
-.workbuddy/
-.trae/
-.uploads/
+# Android build
+src-tauri/gen/android/app/build/
+
+# Database / user data
+data/database.json
+data/uploads/
+data/notes/
+
+# Release output
+release/
+
+# Android keystore (private key)
+src-tauri/gen/android/app/keystore.jks

@@ -10,6 +10,7 @@
           :prefix-icon="Search" />
         <el-date-picker v-model="selectedDate" type="date" placeholder="选择日期" format="YYYY年MM月DD日" value-format="x"
           @change="handleDateChange(selectedDate)" />
+        <el-button type="success" @click="handleImport" :icon="Upload">导入</el-button>
         <div class="toolbar-actions" v-if="selectedDate === null && checkedNotes.length > 0">
           <el-button type="warning" @click="handleExportChecked" :icon="Download" :loading="exportLoading" :disabled="exportLoading">导出</el-button>
           <el-button type="danger" @click="deleteChecked">删除</el-button>
@@ -45,13 +46,14 @@
 
 <script setup lang="ts">
 defineOptions({ name: 'ViewNote' })
-import { Search, Download } from '@element-plus/icons-vue'
+import { Search, Download, Upload } from '@element-plus/icons-vue'
 import { useViewNote } from '@/hooks/useViewNote'
 import { useCacheStore } from '@/stores/cache'
 import { useNotesStore } from '@/stores/notes'
 import { storeToRefs } from 'pinia'
 import { onMounted, onUnmounted, ref } from 'vue'
 import { exportNotesToZip } from '@/utils/export'
+import { importNotesFromZip } from '@/utils/import'
 
 const cacheStore = useCacheStore()
 const notesStore = useNotesStore()
@@ -74,6 +76,10 @@ const {
 
 const searchInputRef = ref<{ focus: () => void } | null>(null)
 const exportLoading = ref(false)
+
+function handleImport() {
+  importNotesFromZip()
+}
 
 function handleGlobalKeydown(e: KeyboardEvent) {
   if ((e.ctrlKey || e.metaKey) && e.key === 'f') {

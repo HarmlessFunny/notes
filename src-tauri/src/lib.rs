@@ -6,6 +6,7 @@ mod routes_notes;
 mod routes_ai;
 mod routes_export;
 mod routes_serve;
+mod routes_import;
 mod ai_tools;
 mod ai_stream;
 
@@ -40,6 +41,7 @@ fn create_router(state: Arc<AppState>) -> Router {
         .route("/api/ai/chat", delete(routes_ai::delete_ai_chat))
         .route("/api/ai/upload", post(routes_ai::upload_ai_image))
         .route("/api/export", get(routes_export::export_notes))
+        .route("/api/import", post(routes_import::import_notes))
         .route("/uploads/images/{filename}", get(routes_serve::serve_image))
         .fallback(get(routes_serve::serve_static))
         .layer(cors)

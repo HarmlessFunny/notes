@@ -48,7 +48,7 @@ impl AppState {
         }
     }
 
-    async fn refresh_cache(&self) {
+    pub(crate) async fn refresh_cache(&self) {
         if let Ok(db) = self.load_database_raw() {
             let mut cache = std::collections::HashMap::new();
             for note in &db.notes {

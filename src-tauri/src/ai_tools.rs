@@ -2,6 +2,7 @@ use std::sync::Arc;
 use serde_json::{json, Value};
 
 use crate::db::AppState;
+use crate::notes_file;
 
 pub fn get_tool_definitions() -> Vec<Value> {
     vec![
@@ -162,7 +163,9 @@ pub async fn execute_tool(state: &Arc<AppState>, name: &str, args: &Value) -> Va
             let content = args["content"].as_str().unwrap_or("");
             let images: Vec<String> = args["images"].as_array()
                 .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
-                .unwrap_or_default();
+                .unwrap_or_else(|| {
+                    notes_file::read_note_imgs(&state.paths, old_title)
+                });
             match state.update_note(old_title, new_title, subject, content, &images).await {
                 Ok(()) => json!({"status": "success", "message": "笔记已更新"}),
                 Err(e) => json!({"status": "error", "message": e}),

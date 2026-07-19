@@ -27,7 +27,7 @@ export async function exportNotesToZip(titles: string[]): Promise<void> {
       ElMessage.success(`导出成功: ${savedPath}`)
     } else {
       const filePath = await save({
-        defaultPath: 'notes.zip',
+        defaultPath: 'data.zip',
         filters: [{ name: 'ZIP', extensions: ['zip'] }]
       })
       if (!filePath) return

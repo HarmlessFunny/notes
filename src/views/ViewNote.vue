@@ -77,8 +77,11 @@ const {
 const searchInputRef = ref<{ focus: () => void } | null>(null)
 const exportLoading = ref(false)
 
-function handleImport() {
-  importNotesFromZip()
+async function handleImport() {
+  const ok = await importNotesFromZip()
+  if (ok) {
+    await notesStore.flashAllNotes()
+  }
 }
 
 function handleGlobalKeydown(e: KeyboardEvent) {

@@ -40,13 +40,24 @@ if errorlevel 1 (
     exit /b 1
 )
 echo [OK] Android project regenerated
+echo [3/3] Step: Generating keystore...
+keytool -genkey -v -keystore src-tauri\gen\android\app\keystore.jks -alias notes -keyalg RSA -keysize 2048 -validity 10000 -storepass notes123 -keypass notes123 -dname "CN=Notes, OU=Dev, O=Notes, L=City, ST=State, C=CN"
+echo [OK] Keystore generated
+set TAURI_ANDROID_KEYSTORE_PATH=%CD%\src-tauri\gen\android\app\keystore.jks
+set TAURI_ANDROID_KEYSTORE_PASSWORD=notes123
+set TAURI_ANDROID_KEY_ALIAS=notes
+set TAURI_ANDROID_KEY_PASSWORD=notes123
 call npx tauri android build --target aarch64
 if errorlevel 1 (
     echo [ERROR] Android build failed
     pause
     exit /b 1
 )
-copy /Y src-tauri\gen\android\app\build\outputs\apk\universal\release\app-universal-release.apk %RELEASE_DIR%\Notes-Android-arm64-v8a.apk
+if exist src-tauri\gen\android\app\build\outputs\apk\universal\release\app-universal-release.apk (
+    copy /Y src-tauri\gen\android\app\build\outputs\apk\universal\release\app-universal-release.apk %RELEASE_DIR%\Notes-Android-arm64-v8a.apk
+) else (
+    copy /Y src-tauri\gen\android\app\build\outputs\apk\universal\release\app-universal-release-unsigned.apk %RELEASE_DIR%\Notes-Android-arm64-v8a.apk
+)
 echo [OK] Android APK -^> %RELEASE_DIR%\Notes-Android-arm64-v8a.apk
 echo.
 

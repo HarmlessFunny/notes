@@ -105,11 +105,10 @@ pub fn run() {
             let state = Arc::new(AppState::new_with_paths(paths));
             let router = create_router(state);
 
-            let router_clone = router.clone();
             tauri::async_runtime::spawn(async move {
                 let listener = tokio::net::TcpListener::bind("127.0.0.1:5000").await.unwrap();
                 log::info!("Axum server starting on http://127.0.0.1:5000");
-                axum::serve(listener, router_clone).await.unwrap();
+                axum::serve(listener, router).await.unwrap();
             });
             Ok(())
         })

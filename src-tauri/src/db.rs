@@ -36,10 +36,7 @@ impl AppState {
                 Err(e) => eprintln!("[notes] serialize database.json failed: {e}"),
             }
         }
-        self.refresh_cache();
-    }
-
-    fn refresh_cache(&self) {
+        // No contention during initialization, safe sync refresh
         if let Ok(db) = self.load_database_raw() {
             let mut cache = std::collections::HashMap::new();
             for note in &db.notes {
@@ -48,6 +45,17 @@ impl AppState {
             if let Ok(mut lock) = self.content_cache.try_write() {
                 *lock = cache;
             }
+        }
+    }
+
+    async fn refresh_cache(&self) {
+        if let Ok(db) = self.load_database_raw() {
+            let mut cache = std::collections::HashMap::new();
+            for note in &db.notes {
+                cache.insert(note.title.clone(), notes_file::read_note_file(&self.paths, &note.title));
+            }
+            let mut lock = self.content_cache.write().await;
+            *lock = cache;
         }
     }
 
@@ -66,7 +74,7 @@ impl AppState {
     }
 
     fn days_difference(later: &str, earlier: &str) -> i32 {
-        let later_sec = later.parse::<i64>().unwrap_or(0) / 1000;
+        let later_sec = later.parse::<i64>().unwrap_or(i64::MAX) / 1000;
         let earlier_sec = earlier.parse::<i64>().unwrap_or(0) / 1000;
         let later_date = chrono::DateTime::from_timestamp(later_sec, 0)
             .map(|dt| dt.date_naive())
@@ -244,7 +252,7 @@ impl AppState {
 
         db.notes.retain(|n| !title_set.contains(&n.title));
         self.save_database_raw(&db)?;
-        self.refresh_cache();
+        self.refresh_cache().await;
         Ok(to_delete.len())
     }
 

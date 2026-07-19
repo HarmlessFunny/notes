@@ -20,7 +20,7 @@ pub async fn export_notes(
             let key = parts.next()?;
             let val = parts.next()?;
             if key == "titles" {
-                Some(urlencoding::decode(val).unwrap_or_default().to_string())
+                Some(urlencoding::decode(val).unwrap_or_default().replace('+', " "))
             } else {
                 None
             }

@@ -222,10 +222,12 @@ pub fn stream_ai_chat(
                         }
 
                         if let Some(finish) = choices[0]["finish_reason"].as_str() {
-                            if finish == "stop" && tool_calls.is_empty() {
-                                yield make_event(&SseEvent {
-                                    event_type: "done".into(), content: None, raw_json: None,
-                                });
+                            if finish != "tool_calls" {
+                                if tool_calls.is_empty() {
+                                    yield make_event(&SseEvent {
+                                        event_type: "done".into(), content: None, raw_json: None,
+                                    });
+                                }
                                 return;
                             }
                         }

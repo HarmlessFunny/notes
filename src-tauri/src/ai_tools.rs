@@ -160,7 +160,10 @@ pub async fn execute_tool(state: &Arc<AppState>, name: &str, args: &Value) -> Va
             let new_title = args["new_title"].as_str().unwrap_or("");
             let subject = args["subject"].as_str().unwrap_or("");
             let content = args["content"].as_str().unwrap_or("");
-            match state.update_note(old_title, new_title, subject, content, &[]).await {
+            let images: Vec<String> = args["images"].as_array()
+                .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+                .unwrap_or_default();
+            match state.update_note(old_title, new_title, subject, content, &images).await {
                 Ok(()) => json!({"status": "success", "message": "笔记已更新"}),
                 Err(e) => json!({"status": "error", "message": e}),
             }

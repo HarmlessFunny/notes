@@ -65,7 +65,7 @@ pub async fn search_notes_route(
 fn sanitize_title(title: &str) -> String {
     let illegal: &[char] = &['\\', '/', ':', '*', '?', '"', '<', '>', '|'];
     let s: String = title.chars().map(|c| if illegal.contains(&c) { '_' } else { c }).collect();
-    let t: String = s.chars().take(30).collect();
+    let t: String = s.chars().take(100).collect();
     if t.is_empty() { format!("note_{}", chrono::Utc::now().timestamp()) } else { t }
 }
 
@@ -82,7 +82,7 @@ pub async fn submit_note(
     let mut subject = String::new();
     let mut content = String::new();
     let mut timestamp = String::new();
-    let mut saved_images: Vec<String> = vec![];
+    let mut pending_images: Vec<(Vec<u8>, String)> = vec![];
 
     while let Ok(Some(field)) = Multipart::next_field(&mut multipart).await {
         let name = field.name().unwrap_or("").to_string();
@@ -95,19 +95,8 @@ pub async fn submit_note(
                 let fname = field.file_name().unwrap_or("image.png").to_string();
                 if !allowed_file(&fname) { continue; }
                 if let Ok(data) = field.bytes().await {
-                    let safe = sanitize_title(&title);
                     let ext = fname.rsplit('.').next().unwrap_or("png").to_lowercase();
-                    let img_name = if saved_images.is_empty() {
-                        format!("{}.{}", safe, ext)
-                    } else {
-                        format!("{}_{}.{}", safe, saved_images.len() + 1, ext)
-                    };
-                    let dst = unique_filepath(&state.paths.uploads_folder, &img_name);
-                    if std::fs::write(&dst, &data).is_ok() {
-                        if let Some(fname) = dst.file_name().and_then(|n| n.to_str()).map(String::from) {
-                            saved_images.push(fname);
-                        }
-                    }
+                    pending_images.push((data.to_vec(), ext));
                 }
             }
             _ => {}
@@ -116,6 +105,22 @@ pub async fn submit_note(
 
     if title.trim().is_empty() || subject.trim().is_empty() {
         return Err((StatusCode::BAD_REQUEST, Json(ApiResponse::error("缺少必要字段: title, subject"))));
+    }
+
+    let safe = sanitize_title(&title);
+    let mut saved_images: Vec<String> = vec![];
+    for (idx, (data, ext)) in pending_images.iter().enumerate() {
+        let img_name = if idx == 0 {
+            format!("{}.{}", safe, ext)
+        } else {
+            format!("{}_{}.{}", safe, idx + 1, ext)
+        };
+        let dst = unique_filepath(&state.paths.uploads_folder, &img_name);
+        if std::fs::write(&dst, &data).is_ok() {
+            if let Some(fname) = dst.file_name().and_then(|n| n.to_str()).map(String::from) {
+                saved_images.push(fname);
+            }
+        }
     }
 
     let ts = if timestamp.is_empty() { format!("{}", chrono::Utc::now().timestamp_millis()) } else { timestamp };
@@ -145,7 +150,7 @@ pub async fn update_note_route(
     let mut subject = String::new();
     let mut content = String::new();
     let mut existing_images: Vec<String> = vec![];
-    let mut new_images: Vec<String> = vec![];
+    let mut pending_images: Vec<(Vec<u8>, String)> = vec![];
 
     while let Ok(Some(field)) = Multipart::next_field(&mut multipart).await {
         let name = field.name().unwrap_or("").to_string();
@@ -163,19 +168,8 @@ pub async fn update_note_route(
                 let fname = field.file_name().unwrap_or("image.png").to_string();
                 if !allowed_file(&fname) { continue; }
                 if let Ok(data) = field.bytes().await {
-                    let safe = sanitize_title(&title);
                     let ext = fname.rsplit('.').next().unwrap_or("png").to_lowercase();
-                    let img_name = if new_images.is_empty() {
-                        format!("{}.{}", safe, ext)
-                    } else {
-                        format!("{}_{}.{}", safe, new_images.len() + 1, ext)
-                    };
-                    let dst = unique_filepath(&state.paths.uploads_folder, &img_name);
-                    if std::fs::write(&dst, &data).is_ok() {
-                        if let Some(fname) = dst.file_name().and_then(|n| n.to_str()).map(String::from) {
-                            new_images.push(fname);
-                        }
-                    }
+                    pending_images.push((data.to_vec(), ext));
                 }
             }
             _ => {}
@@ -184,6 +178,22 @@ pub async fn update_note_route(
 
     if title.trim().is_empty() || subject.trim().is_empty() {
         return Err((StatusCode::BAD_REQUEST, Json(ApiResponse::error("缺少必要字段: title, subject"))));
+    }
+
+    let safe = sanitize_title(&title);
+    let mut new_images: Vec<String> = vec![];
+    for (idx, (data, ext)) in pending_images.iter().enumerate() {
+        let img_name = if idx == 0 {
+            format!("{}.{}", safe, ext)
+        } else {
+            format!("{}_{}.{}", safe, idx + 1, ext)
+        };
+        let dst = unique_filepath(&state.paths.uploads_folder, &img_name);
+        if std::fs::write(&dst, &data).is_ok() {
+            if let Some(fname) = dst.file_name().and_then(|n| n.to_str()).map(String::from) {
+                new_images.push(fname);
+            }
+        }
     }
 
     let all_images: Vec<String> = existing_images.into_iter().chain(new_images).collect();

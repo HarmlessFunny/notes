@@ -49,8 +49,12 @@ export const useCacheStore = defineStore('cache', () => {
         applyTheme(val)
     }, { immediate: true })
 
-    darkModeMediaQuery.addEventListener('change', () => {
+    const darkModeHandler = () => {
         if (themeMode.value === 'system') applyTheme('system')
+    }
+    darkModeMediaQuery.addEventListener('change', darkModeHandler)
+    window.addEventListener('beforeunload', () => {
+        darkModeMediaQuery.removeEventListener('change', darkModeHandler)
     })
 
     function updateAiConfig(config: AiConfig) {
@@ -66,9 +70,6 @@ export const useCacheStore = defineStore('cache', () => {
             const res = await axios.get('/api/ai/status', { headers })
             aiAvailable.value = res.data?.ai_available ?? false
             visionEnabled.value = res.data?.vision_enabled ?? true
-            if (!aiAvailable.value && aiConfig.value.apiKey) {
-                aiAvailable.value = true
-            }
         } catch {
             aiAvailable.value = !!aiConfig.value.apiKey
         } finally {

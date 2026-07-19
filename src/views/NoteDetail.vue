@@ -44,7 +44,7 @@
     <div v-else class="container">
         <el-empty description="笔记不存在，正在跳转..." />
     </div>
-    <el-image-viewer v-if="showPreview" :url-list="note!.imgs.map(item => `${baseUrl}/uploads/images/${item}`)" show-progress
+    <el-image-viewer v-if="showPreview" :url-list="(note?.imgs ?? []).map(item => `${baseUrl}/uploads/images/${item}`)" show-progress
         hide-on-click-modal :max-scale="7" :min-scale="0.2" :initial-index="previewIndex" @close="showPreview = false"
         :infinite="false" />
 </template>

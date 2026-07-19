@@ -23,7 +23,7 @@ export const useNotesStore = defineStore('notes', () => {
         }
     }
 
-    async function publishNote(formData: FormData | NoteFormData) {
+    async function publishNote(formData: FormData) {
         try {
             await axios.post('/api/submit', formData)
             await flashAllNotes()
@@ -89,7 +89,7 @@ export const useNotesStore = defineStore('notes', () => {
         }
     }
 
-    async function updateNote(title: string, formData: FormData | NoteFormData) {
+    async function updateNote(title: string, formData: FormData) {
         try {
             await axios.put(`/api/note/${encodeURIComponent(title)}`, formData)
             await flashAllNotes()

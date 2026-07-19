@@ -3,10 +3,7 @@ import { ref, onUnmounted, onDeactivated } from 'vue'
 import { createAbortableStream } from '@/utils/stream'
 import { useCacheStore } from '@/stores/cache'
 import { getAiConfigHeaders } from '@/types'
-
-export type ContentPart =
-    | { type: 'text'; text: string }
-    | { type: 'image_url'; image_url: { url: string } }
+import type { ContentPart } from '@/types'
 
 export interface ChatMsg {
     role: 'user' | 'assistant' | 'system'

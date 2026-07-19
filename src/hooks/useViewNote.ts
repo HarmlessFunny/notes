@@ -17,7 +17,6 @@ export function useViewNote() {
   const notes: Ref<LightNote[]> = ref([])
   // null = 所有笔记；number = 具体日期的时间戳（毫秒）
   const selectedDate = ref<number | null>(null)
-  const time = route.params.time as string
 
   // ===== 搜索 =====
   const searchQuery = ref('')
@@ -179,7 +178,6 @@ export function useViewNote() {
   return {
     notes,
     selectedDate,
-    time,
     humanDate,
     searchQuery,
     displayNotes,

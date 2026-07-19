@@ -31,6 +31,15 @@ echo [OK] Windows exe -^> %RELEASE_DIR%\Notes-Windows-x64.exe
 echo.
 
 echo [3/3] Building Android APK...
+echo [3/3] Step: Regenerating Android project to match current identifier...
+if exist src-tauri\gen\android rmdir /s /q src-tauri\gen\android
+call npx tauri android init
+if errorlevel 1 (
+    echo [ERROR] Android project init failed
+    pause
+    exit /b 1
+)
+echo [OK] Android project regenerated
 call npx tauri android build --target aarch64
 if errorlevel 1 (
     echo [ERROR] Android build failed

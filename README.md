@@ -29,8 +29,11 @@
 ### 环境要求
 
 - Node.js 22+
-- Rust toolchain
+- Rust toolchain + `aarch64-linux-android` target（Android 交叉编译）
+- Java 17（Android 构建需要）
 - Android SDK + NDK（构建 APK 时需要）
+  - 通过 Android Studio 安装，或 CI 中由 `android-actions/setup-android` 自动配置
+- 构建 APK 需要签名密钥（开发可用 `keytool` 自签名）
 
 ### 启动开发服务器
 
@@ -63,7 +66,7 @@ AI 功能（对话复习）的 API 配置在网页右上角 ⚙️ 设置：
 
 | 配置项 | 示例 |
 |--------|------|
-| Base URL | `https://api.deepseek.com/v4` |
+| Base URL | `https://api.deepseek.com/` |
 | 模型名 | `deepseek-v4-flash` |
 | API Key | |
 | 启用识图 | `false` |

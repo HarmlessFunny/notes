@@ -97,7 +97,8 @@ pub fn get_tool_definitions() -> Vec<Value> {
                         "old_title": {"type": "string", "description": "当前标题"},
                         "new_title": {"type": "string", "description": "新标题"},
                         "subject": {"type": "string", "description": "科目"},
-                        "content": {"type": "string", "description": "内容"}
+                        "content": {"type": "string", "description": "内容"},
+                        "append_content": {"type": "boolean", "description": "是否追加到现有内容后（false 则覆盖）"}
                     },
                     "required": ["old_title", "new_title", "subject", "content"]
                 }
@@ -161,12 +162,13 @@ pub async fn execute_tool(state: &Arc<AppState>, name: &str, args: &Value) -> Va
             let new_title = args["new_title"].as_str().unwrap_or("");
             let subject = args["subject"].as_str().unwrap_or("");
             let content = args["content"].as_str().unwrap_or("");
+            let append_content = args["append_content"].as_bool().unwrap_or(false);
             let images: Vec<String> = args["images"].as_array()
                 .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
                 .unwrap_or_else(|| {
                     notes_file::read_note_imgs(&state.paths, old_title)
                 });
-            match state.update_note(old_title, new_title, subject, content, &images).await {
+            match state.update_note(old_title, new_title, subject, content, &images, append_content).await {
                 Ok(()) => json!({"status": "success", "message": "笔记已更新"}),
                 Err(e) => json!({"status": "error", "message": e}),
             }

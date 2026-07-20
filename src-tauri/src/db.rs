@@ -198,7 +198,7 @@ impl AppState {
         Ok(())
     }
 
-    pub async fn update_note(&self, old_title: &str, new_title: &str, subject: &str, content: &str, imgs: &[String]) -> Result<(), String> {
+    pub async fn update_note(&self, old_title: &str, new_title: &str, subject: &str, content: &str, imgs: &[String], append_content: bool) -> Result<(), String> {
         if let Some(err) = Self::validate_title(new_title) {
             return Err(err);
         }
@@ -211,18 +211,29 @@ impl AppState {
             return Err(format!("标题「{}」已存在，请更换标题", new_title));
         }
 
+        let final_content = if append_content {
+            let existing = notes_file::read_note_file(&self.paths, old_title);
+            if existing.is_empty() {
+                content.to_string()
+            } else {
+                format!("{}\n{}", existing, content)
+            }
+        } else {
+            content.to_string()
+        };
+
         db.notes[idx].title = new_title.to_string();
         db.notes[idx].subject = subject.to_string();
         self.save_database_raw(&db)?;
 
-        notes_file::save_note_file(&self.paths, new_title, subject, content, imgs)?;
+        notes_file::save_note_file(&self.paths, new_title, subject, &final_content, imgs)?;
 
         let mut cache = self.content_cache.write().await;
         if new_title != old_title {
             cache.remove(old_title);
             let _ = std::fs::remove_file(self.paths.notes_folder.join(format!("{}.md", old_title)));
         }
-        cache.insert(new_title.to_string(), notes_file::strip_md_content(content));
+        cache.insert(new_title.to_string(), notes_file::strip_md_content(&final_content));
         Ok(())
     }
 

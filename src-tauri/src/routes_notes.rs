@@ -198,7 +198,7 @@ pub async fn update_note_route(
 
     let all_images: Vec<String> = existing_images.into_iter().chain(new_images).collect();
 
-    match state.update_note(&decoded_old, &title, &subject, &content, &all_images).await {
+    match state.update_note(&decoded_old, &title, &subject, &content, &all_images, false).await {
         Ok(()) => {
             for img in &old_imgs {
                 if !all_images.contains(img) {

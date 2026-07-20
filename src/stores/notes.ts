@@ -1,4 +1,4 @@
-import type { Note, LightNote, NoteFormData } from '@/types'
+import type { Note, LightNote } from '@/types'
 import axios from 'axios'
 import { defineStore } from 'pinia'
 import { computed, ref, type Ref } from 'vue'

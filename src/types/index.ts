@@ -85,10 +85,6 @@ export interface SseEvent {
     raw_json?: string
 }
 
-export type SubjectType = '语文' | '数学' | '英语' | '物理' | '化学' | '生物' | '历史' | '地理' | '政治' | '其他'
-
-export const SUBJECTS: SubjectType[] = ['语文', '数学', '英语', '物理', '化学', '生物', '历史', '地理', '政治', '其他']
-
 export type ThemeMode = 'system' | 'light' | 'dark'
 
 export const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [

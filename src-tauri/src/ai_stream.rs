@@ -4,6 +4,7 @@ use axum::response::sse::Event;
 use futures::stream::Stream;
 use reqwest::Client;
 use serde_json::{json, Value};
+use tokio_stream::StreamExt;
 
 use base64::Engine;
 
@@ -170,7 +171,6 @@ pub fn stream_ai_chat(
             let mut byte_stream = response.bytes_stream();
             let mut buffer = String::new();
 
-            use tokio_stream::StreamExt;
             while let Some(chunk_result) = byte_stream.next().await {
                 let chunk = match chunk_result {
                     Ok(c) => c,

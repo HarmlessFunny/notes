@@ -1,5 +1,3 @@
-// import { ElNotification } from 'element-plus'
-
 export function handleApiError(error: any, fallbackMessage: string): void {
     const message = error?.response?.data?.message || error?.message || fallbackMessage
     ElNotification({

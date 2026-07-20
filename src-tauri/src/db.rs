@@ -61,10 +61,7 @@ impl AppState {
 
     pub fn load_database_raw(&self) -> Result<Database, String> {
         let data = std::fs::read_to_string(&self.paths.db_file).map_err(|e| format!("读取数据库失败: {} (路径: {})", e, self.paths.db_file.display()))?;
-        let mut db: Database = serde_json::from_str(&data).map_err(|e| format!("解析数据库失败: {}", e))?;
-        if db.ai_chat.is_empty() {
-            db.ai_chat = vec![];
-        }
+        let db: Database = serde_json::from_str(&data).map_err(|e| format!("解析数据库失败: {}", e))?;
         Ok(db)
     }
 

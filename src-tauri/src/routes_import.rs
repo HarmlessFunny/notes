@@ -37,6 +37,8 @@ pub async fn import_notes(
             .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error("读取 ZIP 文件失败"))))?;
         let path = file.name().to_string();
         if file.is_dir() { continue; }
+        // 全局路径穿越校验
+        if path.contains("..") { continue; }
 
         let mut data = Vec::new();
         std::io::Read::read_to_end(&mut file, &mut data)
@@ -70,6 +72,8 @@ pub async fn import_notes(
         let time = entry["time"].as_str().unwrap_or("");
 
         if title.is_empty() { continue; }
+        // 路径穿越校验：拒绝含 .. / \ 的标题
+        if title.contains("..") || title.contains('/') || title.contains('\\') { continue; }
 
         // Copy notes/<title>.md
         let md_key = format!("notes/{}.md", title);

@@ -78,8 +78,14 @@ export function useAIReview() {
         currentStream = null
     }
 
-    onUnmounted(abortChat)
-    onDeactivated(abortChat)
+    onUnmounted(() => {
+        abortChat()
+        clearImages()
+    })
+    onDeactivated(() => {
+        abortChat()
+        clearImages()
+    })
 
     function addImages(files: FileList | File[]) {
         for (const file of Array.from(files)) {
@@ -192,36 +198,41 @@ export function useAIReview() {
     async function retryMessage(index: number) {
         if (sending.value) return
         sending.value = true
-
-        chatMessages.value.splice(index)
-        await saveChat()
-
-        const aiIndex = chatMessages.value.length
-        chatMessages.value.push({ role: 'assistant', content: '' })
-
-        const { promise, abort } = createAbortableStream('/api/ai', {
-            messages: [
-                buildSystemMessage(),
-                ...chatMessages.value.slice(0, -1)
-            ]
-        }, {
-            onContent: (content) => {
-                chatMessages.value[aiIndex]!.content += content
-            },
-            onError: (error) => {
-                chatMessages.value[aiIndex]!.content = `抱歉，出错了: ${error.message}`
-            },
-        }, getHeaders())
-
-        currentStream = { abort }
-
         try {
-            await promise
+            chatMessages.value.splice(index)
             await saveChat()
+
+            const aiIndex = chatMessages.value.length
+            chatMessages.value.push({ role: 'assistant', content: '' })
+
+            const { promise, abort } = createAbortableStream('/api/ai', {
+                messages: [
+                    buildSystemMessage(),
+                    ...chatMessages.value.slice(0, -1)
+                ]
+            }, {
+                onContent: (content) => {
+                    chatMessages.value[aiIndex]!.content += content
+                },
+                onError: (error) => {
+                    chatMessages.value[aiIndex]!.content = `抱歉，出错了: ${error.message}`
+                },
+            }, getHeaders())
+
+            currentStream = { abort }
+
+            try {
+                await promise
+                await saveChat()
+            } catch (error: any) {
+                if (error?.name === 'AbortError') return
+                handleApiError(error, 'AI 请求失败')
+                chatMessages.value[aiIndex]!.content = '抱歉，请求失败，请检查网络后重试。'
+            } finally {
+                currentStream = null
+            }
         } catch (error: any) {
-            if (error?.name === 'AbortError') return
-            handleApiError(error, 'AI 请求失败')
-            chatMessages.value[aiIndex]!.content = '抱歉，请求失败，请检查网络后重试。'
+            handleApiError(error, 'AI 重试失败')
         } finally {
             sending.value = false
             currentStream = null

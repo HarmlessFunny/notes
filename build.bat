@@ -41,12 +41,14 @@ if errorlevel 1 (
 )
 echo [OK] Android project regenerated
 echo [3/3] Step: Generating keystore...
-keytool -genkey -v -keystore src-tauri\gen\android\app\keystore.jks -alias notes -keyalg RSA -keysize 2048 -validity 10000 -storepass notes123 -keypass notes123 -dname "CN=Notes, OU=Dev, O=Notes, L=City, ST=State, C=CN"
+if "%TAURI_ANDROID_KEYSTORE_PASSWORD%"=="" set /p TAURI_ANDROID_KEYSTORE_PASSWORD="请输入 keystore 密码: "
+if "%TAURI_ANDROID_KEY_PASSWORD%"=="" set /p TAURI_ANDROID_KEY_PASSWORD="请输入 key 密码: "
+keytool -genkey -v -keystore src-tauri\gen\android\app\keystore.jks -alias notes -keyalg RSA -keysize 2048 -validity 10000 -storepass %TAURI_ANDROID_KEYSTORE_PASSWORD% -keypass %TAURI_ANDROID_KEY_PASSWORD% -dname "CN=Notes, OU=Dev, O=Notes, L=City, ST=State, C=CN"
 echo [OK] Keystore generated
 set TAURI_ANDROID_KEYSTORE_PATH=%CD%\src-tauri\gen\android\app\keystore.jks
-set TAURI_ANDROID_KEYSTORE_PASSWORD=notes123
+set TAURI_ANDROID_KEYSTORE_PASSWORD=%TAURI_ANDROID_KEYSTORE_PASSWORD%
 set TAURI_ANDROID_KEY_ALIAS=notes
-set TAURI_ANDROID_KEY_PASSWORD=notes123
+set TAURI_ANDROID_KEY_PASSWORD=%TAURI_ANDROID_KEY_PASSWORD%
 call npx tauri android build --target aarch64
 if errorlevel 1 (
     echo [ERROR] Android build failed

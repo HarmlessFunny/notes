@@ -2,7 +2,7 @@
   <div id="app">
     <!-- 导航栏 -->
     <div class="navbar-wrapper">
-      <el-menu mode="horizontal" :default-active="$route.name as string" class="navbar" @select="handleMenuSelect">
+      <el-menu mode="horizontal" :default-active="routeNameForMenu" class="navbar" @select="handleMenuSelect">
         <el-menu-item index="publish">
           <el-icon>
             <Edit />
@@ -44,9 +44,9 @@
 
 <script setup lang="ts">
 defineOptions({ name: 'App' })
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Edit, Notebook, ChatDotRound, Setting } from '@element-plus/icons-vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useCacheStore } from '@/stores/cache'
 import SettingsDialog from '@/components/SettingsDialog.vue'
 
@@ -54,6 +54,13 @@ const cacheStore = useCacheStore()
 const showSettings = ref(false)
 
 const router = useRouter()
+const route = useRoute()
+
+const routeNameForMenu = computed(() => {
+  const name = route.name as string
+  if (name === 'viewDetail') return 'view'
+  return name
+})
 
 // 启动时检查 AI 是否可用（决定是否展示 AI 对话菜单）
 onMounted(() => {

@@ -3,7 +3,7 @@
         <template v-if="!showEditForm">
             <div class="header-section">
                 <div class="title-row">
-                    <el-button text @click="router.back()" :icon="ArrowLeft" class="back-button">
+                    <el-button text @click="goBack" :icon="ArrowLeft" class="back-button">
                         返回
                     </el-button>
                     <el-breadcrumb separator="/">
@@ -90,6 +90,14 @@ watch(() => route.params.title, async (newTitle) => {
         await getNote(newTitle as string)
     }
 }, { immediate: true })
+
+function goBack() {
+    if (window.history.length <= 1) {
+        router.replace('/view/notes/all')
+    } else {
+        router.back()
+    }
+}
 
 async function handleExportZip() {
     if (!note.value) return

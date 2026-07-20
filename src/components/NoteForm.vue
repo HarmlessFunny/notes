@@ -50,7 +50,7 @@
 
 <script setup lang="ts">
 defineOptions({ name: 'NoteForm' })
-import { onMounted, watch, computed, ref } from 'vue'
+import { onMounted, onUnmounted, watch, computed, ref } from 'vue'
 import { Plus, Paperclip } from '@element-plus/icons-vue'
 import type { NoteFormData, UploadFile } from '@/types'
 import { useNotesStore } from '@/stores/notes'
@@ -174,6 +174,14 @@ onMounted(() => {
         if (item.url) URL.revokeObjectURL(item.url)
         item.url = URL.createObjectURL(item.raw)
       }
+    })
+  }
+})
+
+onUnmounted(() => {
+  if (!hook) {
+    fileList.value.forEach(item => {
+      if (item.url?.startsWith('blob:')) URL.revokeObjectURL(item.url)
     })
   }
 })

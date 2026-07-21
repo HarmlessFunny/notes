@@ -53,10 +53,32 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
-if exist src-tauri\gen\android\app\build\outputs\apk\universal\release\app-universal-release.apk (
-    copy /Y src-tauri\gen\android\app\build\outputs\apk\universal\release\app-universal-release.apk %RELEASE_DIR%\Notes-Android-arm64-v8a.apk
-) else (
-    copy /Y src-tauri\gen\android\app\build\outputs\apk\universal\release\app-universal-release-unsigned.apk %RELEASE_DIR%\Notes-Android-arm64-v8a.apk
+
+set "APK_DIR=src-tauri\gen\android\app\build\outputs\apk\universal\release"
+
+rem 如果产出是 unsigned，用 apksigner 补签
+if exist "%APK_DIR%\app-universal-release-unsigned.apk" (
+    echo [3/3] Step: Signing APK...
+    set "APKSIGNER="
+    if not "%ANDROID_HOME%"=="" (
+        for /f "tokens=*" %%i in ('dir /b /ad /o-n "%ANDROID_HOME%\build-tools" 2^>nul') do (
+            if not defined APKSIGNER if exist "%ANDROID_HOME%\build-tools\%%i\apksigner.bat" set "APKSIGNER=%ANDROID_HOME%\build-tools\%%i\apksigner.bat"
+        )
+    )
+    if "%APKSIGNER%"=="" set "APKSIGNER=apksigner"
+    "%APKSIGNER%" sign --ks src-tauri\gen\android\app\keystore.jks --ks-pass pass:notes123 --key-pass pass:notes123 --in-place "%APK_DIR%\app-universal-release-unsigned.apk"
+    if errorlevel 1 (
+        echo [ERROR] APK signing failed
+        pause
+        exit /b 1
+    )
+    echo [OK] APK signed
+)
+
+if exist "%APK_DIR%\app-universal-release-unsigned.apk" (
+    copy /Y "%APK_DIR%\app-universal-release-unsigned.apk" %RELEASE_DIR%\Notes-Android-arm64-v8a.apk
+) else if exist "%APK_DIR%\app-universal-release.apk" (
+    copy /Y "%APK_DIR%\app-universal-release.apk" %RELEASE_DIR%\Notes-Android-arm64-v8a.apk
 )
 echo [OK] Android APK -^> %RELEASE_DIR%\Notes-Android-arm64-v8a.apk
 echo.

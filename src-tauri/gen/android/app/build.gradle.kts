@@ -15,33 +15,15 @@ val tauriProperties = Properties().apply {
 
 android {
     compileSdk = 36
-    namespace = "com.notes.app"
+    namespace = "com.harmlessfunny.notes"
     defaultConfig {
         manifestPlaceholders["usesCleartextTraffic"] = "false"
-        applicationId = "com.notes.app"
+        applicationId = "com.harmlessfunny.notes"
         minSdk = 24
         targetSdk = 36
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
-        ndk { abiFilters += listOf("arm64-v8a") }
     }
-    splits {
-        abi {
-            isUniversalApk = true
-            reset()
-            include("arm64-v8a")
-        }
-    }
-
-    signingConfigs {
-        create("release") {
-            storeFile = file("keystore.jks")
-            storePassword = "notes123"
-            keyAlias = "notes"
-            keyPassword = "notes123"
-        }
-    }
-
     buildTypes {
         getByName("debug") {
             applicationIdSuffix = ".debug"
@@ -49,12 +31,14 @@ android {
             isDebuggable = true
             isJniDebuggable = true
             isMinifyEnabled = false
-            packaging { jniLibs.keepDebugSymbols.add("*/arm64-v8a/*.so") }
+            packaging {                jniLibs.keepDebugSymbols.add("*/arm64-v8a/*.so")
+                jniLibs.keepDebugSymbols.add("*/armeabi-v7a/*.so")
+                jniLibs.keepDebugSymbols.add("*/x86/*.so")
+                jniLibs.keepDebugSymbols.add("*/x86_64/*.so")
+            }
         }
         getByName("release") {
-            manifestPlaceholders["usesCleartextTraffic"] = "true"
             isMinifyEnabled = true
-            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 *fileTree(".") { include("**/*.pro") }
                     .plus(getDefaultProguardFile("proguard-android-optimize.txt"))

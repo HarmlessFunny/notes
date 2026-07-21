@@ -5,6 +5,7 @@ import type { LightNote } from '@/types'
 import { useCacheStore } from '@/stores/cache'
 import { useNotesStore } from '@/stores/notes'
 import { handleApiError } from '@/utils/error'
+import i18n from '@/i18n'
 
 export function useViewNote() {
   const router = useRouter()
@@ -61,7 +62,7 @@ export function useViewNote() {
   })
 
   const humanDate = computed(() => {
-    if (selectedDate.value === null) return '所有笔记'
+    if (selectedDate.value === null) return i18n.global.t('viewNote.allNotes')
     return new Date(selectedDate.value).toLocaleDateString()
   })
 
@@ -109,7 +110,7 @@ export function useViewNote() {
       try {
         await loadByTime(newTime)
       } catch (error) {
-        handleApiError(error, '获取笔记列表失败')
+        handleApiError(error, i18n.global.t('viewNote.loadFailed'))
       }
     },
     { immediate: true }

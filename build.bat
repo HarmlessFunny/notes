@@ -32,7 +32,12 @@ echo.
 
 echo [3/3] Building Android APK...
 echo [3/3] Step: Regenerating Android project to match current identifier...
-if exist src-tauri\gen\android rmdir /s /q src-tauri\gen\android
+if exist src-tauri\gen\android (
+    pushd src-tauri\gen\android
+    call .\gradlew --stop >nul 2>&1
+    popd
+    rmdir /s /q src-tauri\gen\android
+)
 call npx tauri android init
 if errorlevel 1 (
     echo [ERROR] Android project init failed
@@ -40,13 +45,11 @@ if errorlevel 1 (
     exit /b 1
 )
 echo [OK] Android project regenerated
-echo [3/3] Step: Generating keystore...
-keytool -genkey -v -keystore src-tauri\gen\android\app\keystore.jks -alias notes -keyalg RSA -keysize 2048 -validity 10000 -storepass notes123 -keypass notes123 -dname "CN=Notes, OU=Dev, O=Notes, L=City, ST=State, C=CN"
-echo [OK] Keystore generated
-set TAURI_ANDROID_KEYSTORE_PATH=%CD%\src-tauri\gen\android\app\keystore.jks
-set TAURI_ANDROID_KEYSTORE_PASSWORD=notes123
-set TAURI_ANDROID_KEY_ALIAS=notes
-set TAURI_ANDROID_KEY_PASSWORD=notes123
+
+echo [3/3] Step: Applying signing configuration...
+call powershell -ExecutionPolicy Bypass -File scripts\apply-android-signing.ps1
+echo [OK] Signing configuration applied
+
 call npx tauri android build --target aarch64
 if errorlevel 1 (
     echo [ERROR] Android build failed
@@ -56,29 +59,10 @@ if errorlevel 1 (
 
 set "APK_DIR=src-tauri\gen\android\app\build\outputs\apk\universal\release"
 
-rem 如果产出是 unsigned，补签
-if exist "%APK_DIR%\app-universal-release-unsigned.apk" (
-    echo [3/3] Step: Signing APK...
-    set "SIGN_TOOL="
-    for /f "delims=" %%i in ('dir /b /ad /on "%ANDROID_HOME%\build-tools" 2^>nul') do if not defined SIGN_TOOL set "SIGN_TOOL=%ANDROID_HOME%\build-tools\%%i\apksigner.bat"
-    for /f "delims=" %%i in ('dir /b /ad /on "%ANDROID_SDK_ROOT%\build-tools" 2^>nul') do if not defined SIGN_TOOL set "SIGN_TOOL=%ANDROID_SDK_ROOT%\build-tools\%%i\apksigner.bat"
-    if defined SIGN_TOOL (
-        "%SIGN_TOOL%" sign --ks src-tauri\gen\android\app\keystore.jks --ks-pass pass:notes123 --key-pass pass:notes123 --in-place "%APK_DIR%\app-universal-release-unsigned.apk"
-    ) else (
-        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore src-tauri\gen\android\app\keystore.jks -storepass notes123 -keypass notes123 "%APK_DIR%\app-universal-release-unsigned.apk" notes
-    )
-    if errorlevel 1 (
-        echo [ERROR] APK signing failed
-        pause
-        exit /b 1
-    )
-    echo [OK] APK signed
-)
-
-if exist "%APK_DIR%\app-universal-release-unsigned.apk" (
-    copy /Y "%APK_DIR%\app-universal-release-unsigned.apk" %RELEASE_DIR%\Notes-Android-arm64-v8a.apk
-) else if exist "%APK_DIR%\app-universal-release.apk" (
+if exist "%APK_DIR%\app-universal-release.apk" (
     copy /Y "%APK_DIR%\app-universal-release.apk" %RELEASE_DIR%\Notes-Android-arm64-v8a.apk
+) else if exist "%APK_DIR%\app-universal-release-unsigned.apk" (
+    copy /Y "%APK_DIR%\app-universal-release-unsigned.apk" %RELEASE_DIR%\Notes-Android-arm64-v8a.apk
 )
 echo [OK] Android APK -^> %RELEASE_DIR%\Notes-Android-arm64-v8a.apk
 echo.

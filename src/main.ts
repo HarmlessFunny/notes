@@ -3,6 +3,7 @@ import App from './App.vue'
 import router from './router'
 import { createPinia } from 'pinia'
 import axios from 'axios'
+import i18n from './i18n'
 
 // Element Plus 暗色模式 CSS 变量
 import 'element-plus/theme-chalk/dark/css-vars.css'
@@ -26,6 +27,8 @@ const app = createApp(App)
 const pinia = createPinia()
 app.use(router)
 app.use(pinia)
+app.use(i18n)
+
 app.mount('#app')
 
 // 全局样式

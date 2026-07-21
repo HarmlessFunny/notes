@@ -124,15 +124,23 @@ pub fn stream_ai_chat(
         }
 
         let tools = ai_tools::get_tool_definitions();
-        let system_msg = json!({
-            "role": "system",
-            "content": format!(
-                "## 角色\n你是一个智能复习助手\n\n## 行为规范\n1. 使用中文回答用户的问题\n2. 调用add_note时禁止通过markdown引用图片\n\n## 可用格式\n- Markdown 语法\n- 数学公式：$行内$ 或 $$块级$$\n- 图片引用：<img src=\"/uploads/images/<图片名>\" />\n\n## 特殊说明\n- 如果用户想删除笔记，先向用户确认再执行删除\n- 今天的毫秒级时间戳是：{}",
-                chrono::Utc::now().timestamp_millis()
-            )
-        });
+        // 优先使用前端传来的 system message（已按 locale 翻译），否则用硬编码中文回退
+        let system_from_frontend = messages.iter().find(|m| m.role == "system");
+        let system_msg = match system_from_frontend {
+            Some(s) => json!({ "role": "system", "content": s.content }),
+            None => json!({
+                "role": "system",
+                "content": format!(
+                    "## 角色\n你是一个智能复习助手\n\n## 行为规范\n1. 使用中文回答用户的问题\n2. 调用add_note时禁止通过markdown引用图片\n\n## 可用格式\n- Markdown 语法\n- 数学公式：$行内$ 或 $$块级$$\n- 图片引用：<img src=\"/uploads/images/<图片名>\" />\n\n## 特殊说明\n- 如果用户想删除笔记，先向用户确认再执行删除\n- 今天的毫秒级时间戳是：{}",
+                    chrono::Utc::now().timestamp_millis()
+                )
+            }),
+        };
         let mut current_messages: Vec<Value> = vec![system_msg];
-        current_messages.extend(prepare_messages(&messages, &state.paths.uploads_folder));
+        // 只追加非 system 的消息，避免重复
+        let non_system: Vec<Value> = prepare_messages(&messages, &state.paths.uploads_folder)
+            .into_iter().filter(|m| m["role"] != "system").collect();
+        current_messages.extend(non_system);
 
         loop {
             let body = build_openai_body(&config, &current_messages, &tools);

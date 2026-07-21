@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <NoteForm ref="noteFormRef" title="发布新笔记" submit-button-text="发布笔记" :use-publish-note="publishNoteHook"
+    <NoteForm ref="noteFormRef" :title="$t('noteForm.publishTitle')" :submit-button-text="$t('noteForm.publishBtn')" :use-publish-note="publishNoteHook"
       @submit="handleFormSubmit" />
   </div>
 </template>

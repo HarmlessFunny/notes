@@ -2,8 +2,8 @@
     <div class="container">
         <div v-if="!configured" class="unconfigured-hint">
             <el-icon :size="48" color="var(--el-text-color-placeholder)"><ChatDotRound /></el-icon>
-            <h3>AI 功能未配置</h3>
-            <p>请点击右上角 <el-icon><Setting /></el-icon> 按钮设置 API 配置</p>
+            <h3>{{ $t('aiReview.unconfiguredTitle') }}</h3>
+            <p>{{ $t('aiReview.unconfiguredHint') }}</p>
         </div>
         <template v-else>
         <div class="message-list">
@@ -20,12 +20,12 @@
                             </template>
                         </template>
                         <div v-if="message.role === 'user'" class="message-actions">
-                            <el-icon class="action-btn delete-btn" title="删除该对话及之后" @click.stop="truncateMessages(index)">
+                            <el-icon class="action-btn delete-btn" :title="$t('aiReview.deleteTooltip')" @click.stop="truncateMessages(index)">
                                 <Delete />
                             </el-icon>
                         </div>
                         <div v-if="message.role === 'assistant' && !sending" class="message-actions">
-                            <el-icon class="action-btn" title="重新生成" @click.stop="retryMessage(index)">
+                            <el-icon class="action-btn" :title="$t('aiReview.retryTooltip')" @click.stop="retryMessage(index)">
                                 <Refresh />
                             </el-icon>
                         </div>
@@ -44,11 +44,11 @@
             <div class="input-row">
                 <el-button v-if="visionEnabled" :icon="Picture" circle @click="triggerUpload" :disabled="sending || uploading" />
                 <input v-if="visionEnabled" ref="fileInputRef" type="file" multiple accept="image/*" class="hidden-input" @change="onFileChange" />
-                <el-input v-model="inputMessage" :rows="1" placeholder="输入您的问题..." class="message-input"
+                <el-input v-model="inputMessage" :rows="1" :placeholder="$t('aiReview.inputPlaceholder')" class="message-input"
                     @keydown.enter="sendMessage" />
                 <el-button type="primary" class="send-btn" :icon="Top" @click="sendMessage" :loading="sending"
                     :disabled="(!inputMessage.trim() && !selectedImages.length) || sending || uploading">
-                    {{ uploading ? '上传中...' : '发送' }}
+                    {{ uploading ? $t('aiReview.uploading') : $t('aiReview.send') }}
                 </el-button>
             </div>
         </div>

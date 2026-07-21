@@ -88,5 +88,5 @@ data/notes/
 # Release output
 release/
 
-# Android keystore (private key)
+# Android keystore (private key) - intentionally committed for personal project
 src-tauri/gen/android/app/keystore.jks

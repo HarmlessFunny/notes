@@ -5,19 +5,19 @@
     </template>
 
     <el-form :model="formData" label-width="80px">
-      <el-form-item label="标题" required>
-        <el-input v-model="formData.title" placeholder="输入笔记标题" clearable />
+      <el-form-item :label="$t('noteForm.title')" required>
+        <el-input v-model="formData.title" :placeholder="$t('noteForm.titlePlaceholder')" clearable />
       </el-form-item>
 
-      <el-form-item label="科目" required>
-        <el-select v-model="formData.subject" placeholder="选择科目" filterable clearable allow-create default-first-option>
+      <el-form-item :label="$t('noteForm.subject')" required>
+        <el-select v-model="formData.subject" :placeholder="$t('noteForm.subjectPlaceholder')" filterable clearable allow-create default-first-option>
           <el-option v-for="subject in subjectsList" :key="subject" :label="subject" :value="subject" />
         </el-select>
       </el-form-item>
 
-      <el-form-item label="笔记内容">
+      <el-form-item :label="$t('noteForm.content')">
         <div class="editor-body split">
-          <el-input v-model="formData.content" placeholder="输入笔记内容（可选）" type="textarea" :rows="1" show-word-limit
+          <el-input v-model="formData.content" :placeholder="$t('noteForm.contentPlaceholder')" type="textarea" :rows="1" show-word-limit
             maxlength="50000" autosize class="editor-input" />
           <div class="preview-area">
             <MarkdownRenderer v-if="formData.content" :content="formData.content" />
@@ -25,7 +25,7 @@
         </div>
       </el-form-item>
 
-      <el-form-item label="选择图片">
+      <el-form-item :label="$t('noteForm.images')">
         <el-upload :auto-upload="false" :on-change="handleFileChange" :on-remove="handleFileRemove"
           :on-preview="handleFilePreview" :file-list="fileList" accept="image/*" multiple list-type="picture-card">
           <el-icon>
@@ -39,7 +39,7 @@
           :icon="Paperclip">
           {{ submitButtonText }}
         </el-button>
-        <el-button v-if="showCancelButton" @click="handleCancel">取消</el-button>
+        <el-button v-if="showCancelButton" @click="handleCancel">{{ $t('noteForm.cancel') }}</el-button>
       </el-form-item>
     </el-form>
   </el-card>
@@ -76,8 +76,8 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  title: '发布新笔记',
-  submitButtonText: '发布笔记',
+  title: '',
+  submitButtonText: '',
   showCancelButton: false,
   loading: false,
   usePublishNote: null

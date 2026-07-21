@@ -86,6 +86,7 @@ export interface SseEvent {
 }
 
 export type ThemeMode = 'system' | 'light' | 'dark'
+export type LocaleType = 'zh-CN' | 'en'
 
 export const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
     { value: 'system', label: '跟随系统' },

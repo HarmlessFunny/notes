@@ -2,24 +2,23 @@
   <div class="container">
     <el-card class="notes-card" shadow="hover">
       <template #header>
-        <span class="card-title">笔记列表：{{ humanDate }}</span>
+        <span class="card-title">{{ $t('viewNote.title') }}：{{ humanDate }}</span>
       </template>
 
       <div class="notes-toolbar">
-        <el-input ref="searchInputRef" v-model="searchQuery" placeholder="搜索笔记标题/科目..." clearable class="search-input"
+        <el-input ref="searchInputRef" v-model="searchQuery" :placeholder="$t('viewNote.searchPlaceholder')" clearable class="search-input"
           :prefix-icon="Search" />
-        <el-date-picker v-model="selectedDate" type="date" placeholder="选择日期" format="YYYY年MM月DD日" value-format="x"
+        <el-date-picker v-model="selectedDate" type="date" :placeholder="$t('viewNote.selectDate')" :format="dateFormat" value-format="x"
           @change="handleDateChange(selectedDate)" />
-        <el-button type="success" @click="handleImport" :icon="Upload">导入</el-button>
+        <el-button type="success" @click="handleImport" :icon="Upload">{{ $t('viewNote.import') }}</el-button>
         <div class="toolbar-actions" v-if="selectedDate === null && checkedNotes.length > 0">
-          <el-button type="warning" @click="handleExportChecked" :icon="Download" :loading="exportLoading" :disabled="exportLoading">导出</el-button>
-          <el-button type="danger" @click="deleteChecked">删除</el-button>
+          <el-button type="warning" @click="handleExportChecked" :icon="Download" :loading="exportLoading" :disabled="exportLoading">{{ $t('viewNote.export') }}</el-button>
+          <el-button type="danger" @click="deleteChecked">{{ $t('viewNote.delete') }}</el-button>
         </div>
       </div>
 
-      <!-- 搜索无结果提示 -->
-      <el-empty v-if="searchQuery && displayNotes.length === 0" description="没有找到匹配的笔记" />
-      <el-empty v-else-if="displayNotes.length === 0" description="暂无笔记" />
+      <el-empty v-if="searchQuery && displayNotes.length === 0" :description="$t('viewNote.noMatch')" />
+      <el-empty v-else-if="displayNotes.length === 0" :description="$t('viewNote.empty')" />
 
       <el-collapse v-model="openSubjects" v-if="displayNotes.length > 0">
         <el-collapse-item v-for="subject in filteredSubjects" :title="subject" :key="subject" :name="subject">
@@ -51,9 +50,13 @@ import { useViewNote } from '@/hooks/useViewNote'
 import { useCacheStore } from '@/stores/cache'
 import { useNotesStore } from '@/stores/notes'
 import { storeToRefs } from 'pinia'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { exportNotesToZip } from '@/utils/export'
 import { importNotesFromZip } from '@/utils/import'
+
+const { t } = useI18n()
+const dateFormat = computed(() => t('dateFormat'))
 
 const cacheStore = useCacheStore()
 const notesStore = useNotesStore()

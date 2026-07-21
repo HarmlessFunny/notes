@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, watch, type Ref } from 'vue'
 import axios from 'axios'
-import type { NoteFormData, UploadFile, AiConfig, ThemeMode } from '@/types'
+import type { NoteFormData, UploadFile, AiConfig, ThemeMode, LocaleType } from '@/types'
 import { loadAiConfig, saveAiConfig as saveAiConfigToStorage, getAiConfigHeaders, AI_CONFIG_KEY } from '@/types'
+import { setLocale, LOCALE_KEY, getDefaultLocale } from '@/i18n'
 
 const THEME_KEY = 'notes-theme-mode'
 
@@ -13,6 +14,11 @@ export const useCacheStore = defineStore('cache', () => {
     const visionEnabled: Ref<boolean> = ref(true)
     const aiStatusLoaded: Ref<boolean> = ref(false)
     const themeMode = ref<ThemeMode>((localStorage.getItem(THEME_KEY) as ThemeMode) || 'system')
+    const locale = ref<LocaleType>(getDefaultLocale())
+
+    watch(locale, (val) => {
+        setLocale(val)
+    }, { immediate: true })
 
     const aiConfig = ref<AiConfig>(loadAiConfig())
 
@@ -94,6 +100,7 @@ export const useCacheStore = defineStore('cache', () => {
         visionEnabled,
         aiStatusLoaded,
         themeMode,
+        locale,
         aiConfig,
         loadAiStatus,
         updateAiConfig,

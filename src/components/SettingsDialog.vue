@@ -1,5 +1,5 @@
 <template>
-    <el-dialog v-model="visible" title="设置" width="480px" :close-on-click-modal="false">
+    <el-dialog v-model="visible" title="设置" width="auto" class="settings-dialog" :close-on-click-modal="false">
         <el-tabs>
             <el-tab-pane label="AI 配置">
                 <el-form label-position="top">
@@ -89,3 +89,10 @@ async function handleSave() {
     }
 }
 </script>
+
+<style scoped>
+.settings-dialog {
+    max-width: 480px;
+    width: calc(100vw - 32px);
+}
+</style>

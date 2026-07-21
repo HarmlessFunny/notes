@@ -158,9 +158,24 @@ pub fn stream_ai_chat(
             if !response.status().is_success() {
                 let status = response.status();
                 let text = response.text().await.unwrap_or_default();
+
+                let has_image_parts = current_messages.iter().any(|m| {
+                    m.get("content")
+                        .and_then(|c| c.as_array())
+                        .map_or(false, |parts| {
+                            parts.iter().any(|p| p.get("type").and_then(|t| t.as_str()) == Some("image_url"))
+                        })
+                });
+
+                let error_msg = if has_image_parts {
+                    "该模型不支持识图功能".into()
+                } else {
+                    format!("API 错误 ({}): {}", status, text)
+                };
+
                 yield make_event(&SseEvent {
                     event_type: "error".into(),
-                    content: Some(format!("API 错误 ({}): {}", status, text)),
+                    content: Some(error_msg),
                     raw_json: None,
                 });
                 return;

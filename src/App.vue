@@ -52,6 +52,9 @@ import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import enLocale from 'element-plus/es/locale/lang/en'
 import { useCacheStore } from '@/stores/cache'
 import SettingsDialog from '@/components/SettingsDialog.vue'
+import { openUrl } from '@tauri-apps/plugin-opener'
+import { checkForUpdate } from '@/utils/updateChecker'
+import type { UpdateInfo } from '@/utils/updateChecker'
 
 const cacheStore = useCacheStore()
 const { locale: elLocale } = useLocale()
@@ -71,9 +74,32 @@ const routeNameForMenu = computed(() => {
   return name
 })
 
-// 启动时检查 AI 是否可用（决定是否展示 AI 对话菜单）
 onMounted(() => {
   cacheStore.loadAiStatus()
+  checkForUpdate().then((update: UpdateInfo | null) => {
+    if (update) {
+      ElMessageBox.alert(
+        `${i18nLocale.t('update.latestVersion')}: ${update.latestVersion}`,
+        i18nLocale.t('update.found'),
+        {
+          confirmButtonText: i18nLocale.t('update.download'),
+          callback: async (action: string) => {
+            if (action === 'confirm') {
+              try {
+                await openUrl(update.downloadUrl)
+              } catch {
+                const a = document.createElement('a')
+                a.href = update.downloadUrl
+                a.target = '_blank'
+                a.rel = 'noopener noreferrer'
+                a.click()
+              }
+            }
+          },
+        },
+      )
+    }
+  })
 })
 
 function handleMenuSelect(index: string) {

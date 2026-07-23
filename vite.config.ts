@@ -33,7 +33,12 @@ function katexFontOptimizer(): Plugin {
 }
 
 // https://vite.dev/config/
+const pkg = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf-8'))
+
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   plugins: [
     vue(),
     vueDevTools(),

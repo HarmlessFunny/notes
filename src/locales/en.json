@@ -107,5 +107,9 @@
   "import.success": "Import successful",
   "import.failed": "Import failed",
 
-  "dateFormat": "MM/DD/YYYY"
+  "dateFormat": "MM/DD/YYYY",
+
+  "update.found": "New Version Available",
+  "update.latestVersion": "Latest version",
+  "update.download": "Download"
 }

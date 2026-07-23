@@ -37,7 +37,6 @@
         </keep-alive>
       </router-view>
     </main>
-    <el-backtop :right="100" :bottom="100" />
     <SettingsDialog v-model:visible="showSettings" />
   </div>
 </template>

@@ -7,7 +7,7 @@
 
   "settings.title": "设置",
   "settings.tab.ai": "AI 配置",
-  "settings.tab.theme": "主题",
+  "settings.tab.basic": "基本",
   "settings.baseUrl": "Base URL",
   "settings.baseUrlPlaceholder": "例：https://api.deepseek.com",
   "settings.modelName": "模型名",
@@ -22,6 +22,8 @@
   "settings.language": "语言/Language",
   "settings.langZh": "中文",
   "settings.langEn": "English",
+  "settings.autoUpdate": "自动检查更新",
+  "settings.checkUpdate": "检查更新",
   "settings.cancel": "取消",
   "settings.save": "保存",
   "settings.testing": "测试中...",
@@ -109,6 +111,7 @@
 
   "dateFormat": "YYYY年MM月DD日",
 
+  "update.upToDate": "已是最新版本",
   "update.found": "发现新版本",
   "update.latestVersion": "最新版本",
   "update.download": "去下载"

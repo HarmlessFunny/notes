@@ -76,6 +76,7 @@ const routeNameForMenu = computed(() => {
 
 onMounted(() => {
   cacheStore.loadAiStatus()
+  if (!cacheStore.autoUpdate) return
   checkForUpdate().then((update: UpdateInfo | null) => {
     if (update) {
       ElMessageBox.alert(

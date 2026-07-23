@@ -17,7 +17,7 @@
                     </el-form-item>
                 </el-form>
             </el-tab-pane>
-            <el-tab-pane :label="$t('settings.tab.theme')">
+            <el-tab-pane :label="$t('settings.tab.basic')">
                 <el-form label-position="top">
                     <el-form-item :label="$t('settings.colorMode')">
                         <el-select v-model="themeForm" style="width: 100%">
@@ -31,6 +31,15 @@
                             <el-option value="zh-CN" :label="$t('settings.langZh')" />
                             <el-option value="en" :label="$t('settings.langEn')" />
                         </el-select>
+                    </el-form-item>
+                    <el-form-item>
+                        <div class="update-row">
+                            <span>{{ $t('settings.autoUpdate') }}</span>
+                            <el-switch v-model="store.autoUpdate" />
+                            <el-button size="small" :loading="checkingUpdate" @click="handleCheckUpdate">
+                                {{ $t('settings.checkUpdate') }}
+                            </el-button>
+                        </div>
                     </el-form-item>
                 </el-form>
             </el-tab-pane>
@@ -47,15 +56,20 @@
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { ElMessageBox } from 'element-plus'
+import { openUrl } from '@tauri-apps/plugin-opener'
 import type { AiConfig, ThemeMode, LocaleType } from '@/types'
 import { useCacheStore } from '@/stores/cache'
 import { handleApiSuccess, handleApiWarning, handleApiInfo } from '@/utils/error'
+import { checkForUpdate } from '@/utils/updateChecker'
+import type { UpdateInfo } from '@/utils/updateChecker'
 
 const { t } = useI18n()
 const store = useCacheStore()
 
 const visible = defineModel<boolean>('visible', { default: false })
 const testing = ref(false)
+const checkingUpdate = ref(false)
 const themeForm = ref<ThemeMode>('system')
 const localeForm = ref<LocaleType>('zh-CN')
 
@@ -100,11 +114,51 @@ async function handleSave() {
         testing.value = false
     }
 }
+
+async function handleCheckUpdate() {
+    checkingUpdate.value = true
+    try {
+        const update: UpdateInfo | null = await checkForUpdate(true)
+        if (update) {
+            ElMessageBox.alert(
+                `${t('update.latestVersion')}: ${update.latestVersion}`,
+                t('update.found'),
+                {
+                    confirmButtonText: t('update.download'),
+                    callback: async (action: string) => {
+                        if (action === 'confirm') {
+                            try {
+                                await openUrl(update.downloadUrl)
+                            } catch {
+                                const a = document.createElement('a')
+                                a.href = update.downloadUrl
+                                a.target = '_blank'
+                                a.rel = 'noopener noreferrer'
+                                a.click()
+                            }
+                        }
+                    },
+                },
+            )
+        } else {
+            ElMessageBox.alert(t('update.upToDate'), t('update.found'), { confirmButtonText: 'OK' })
+        }
+    } finally {
+        checkingUpdate.value = false
+    }
+}
 </script>
 
 <style scoped>
 .settings-dialog {
     max-width: 480px;
     width: calc(100vw - 32px);
+}
+
+.update-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
 }
 </style>

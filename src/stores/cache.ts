@@ -6,6 +6,7 @@ import { loadAiConfig, saveAiConfig as saveAiConfigToStorage, getAiConfigHeaders
 import { setLocale, LOCALE_KEY, getDefaultLocale } from '@/i18n'
 
 const THEME_KEY = 'notes-theme-mode'
+const AUTO_UPDATE_KEY = 'notes-auto-update'
 
 export const useCacheStore = defineStore('cache', () => {
     const openSubjects: Ref<string[]> = ref([])
@@ -15,6 +16,7 @@ export const useCacheStore = defineStore('cache', () => {
     const aiStatusLoaded: Ref<boolean> = ref(false)
     const themeMode = ref<ThemeMode>((localStorage.getItem(THEME_KEY) as ThemeMode) || 'system')
     const locale = ref<LocaleType>(getDefaultLocale())
+    const autoUpdate = ref(localStorage.getItem(AUTO_UPDATE_KEY) !== 'false')
 
     watch(locale, (val) => {
         setLocale(val)
@@ -54,6 +56,10 @@ export const useCacheStore = defineStore('cache', () => {
         localStorage.setItem(THEME_KEY, val)
         applyTheme(val)
     }, { immediate: true })
+
+    watch(autoUpdate, (val) => {
+        localStorage.setItem(AUTO_UPDATE_KEY, String(val))
+    })
 
     const darkModeHandler = () => {
         if (themeMode.value === 'system') applyTheme('system')
@@ -101,6 +107,7 @@ export const useCacheStore = defineStore('cache', () => {
         aiStatusLoaded,
         themeMode,
         locale,
+        autoUpdate,
         aiConfig,
         loadAiStatus,
         updateAiConfig,

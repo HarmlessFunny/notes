@@ -65,10 +65,12 @@ function setCachedResult(info: UpdateInfo | null): void {
   } catch { /* ignore */ }
 }
 
-export async function checkForUpdate(): Promise<UpdateInfo | null> {
+export async function checkForUpdate(force = false): Promise<UpdateInfo | null> {
   try {
-    const cached = getCachedResult()
-    if (cached) return cached
+    if (!force) {
+      const cached = getCachedResult()
+      if (cached) return cached
+    }
 
     const currentVersion = __APP_VERSION__
     const isPrerelease = currentVersion.includes('-')

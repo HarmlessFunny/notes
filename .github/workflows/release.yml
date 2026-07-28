@@ -40,7 +40,7 @@ jobs:
       - name: Update version from tag
         shell: pwsh
         run: |
-          $ver = "$env:GITHUB_REF_NAME" -replace '^v', ''
+          $ver = "$env:GITHUB_REF_NAME" -replace '^v', '' -replace '-.*', ''
           $c = Get-Content src-tauri\tauri.conf.json -Raw | ConvertFrom-Json
           $c.version = $ver
           $c | ConvertTo-Json -Depth 32 | Set-Content src-tauri\tauri.conf.json

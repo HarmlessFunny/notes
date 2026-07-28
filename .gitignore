@@ -89,4 +89,4 @@ data/notes/
 release/
 
 # Android keystore (private key)
-src-tauri/gen/android/app/keystore.jks
+src-tauri/keystore.jks

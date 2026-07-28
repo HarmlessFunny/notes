@@ -30,10 +30,9 @@
 
 - Node.js 22+
 - Rust toolchain + `aarch64-linux-android` target（Android 交叉编译）
-- Java 17（Android 构建需要）
+- Java 17（Android 构建需要，`keytool` 用于生成签名密钥）
 - Android SDK + NDK（构建 APK 时需要）
   - 通过 Android Studio 安装，或 CI 中由 `android-actions/setup-android` 自动配置
-- 构建 APK 需要签名密钥（开发可用 `keytool` 自签名）
 
 ### 启动开发服务器
 
@@ -47,18 +46,39 @@ npm run tauri dev
 
 ### 构建
 
-```bash
-# 一键构建 Windows exe + Android APK
-.\build.bat
-
-# 或单独构建
-npx tauri build           # Windows exe
-npx tauri android build --target aarch64  # Android APK
-```
-
 产物输出到 `release/`：
 - `Notes-Windows-x64.exe`
 - `Notes-Android-arm64-v8a.apk`
+
+#### 一键构建（推荐）
+
+```bash
+.\build.bat
+```
+
+自动构建前端 → Windows exe → Android APK，并自动生成签名密钥注入签名。
+
+#### 单独构建
+
+```bash
+# Windows exe
+npx tauri build
+
+# Android APK（需先设置签名环境变量）
+set TAURI_ANDROID_KEYSTORE_PATH=%CD%\src-tauri\keystore.jks
+set TAURI_ANDROID_KEYSTORE_PASSWORD=notes123
+set TAURI_ANDROID_KEY_ALIAS=notes
+set TAURI_ANDROID_KEY_PASSWORD=notes123
+npx tauri android build --target aarch64
+```
+
+首次构建 APK 需要先生成签名密钥：
+
+```bash
+keytool -genkey -v -keystore src-tauri\keystore.jks -alias notes -keyalg RSA -keysize 2048 -validity 10000 -storepass notes123 -keypass notes123 -dname "CN=Notes, OU=Dev, O=Notes, L=City, ST=State, C=CN"
+```
+
+> CI 环境自动完成以上所有步骤，无需手动配置。
 
 ### AI 配置
 

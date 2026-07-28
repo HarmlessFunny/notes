@@ -31,19 +31,10 @@ echo [OK] Windows exe -^> %RELEASE_DIR%\Notes-Windows-x64.exe
 echo.
 
 echo [3/3] Building Android APK...
-echo [3/3] Step: Regenerating Android project to match current identifier...
-if exist src-tauri\gen\android rmdir /s /q src-tauri\gen\android
-call npx tauri android init
-if errorlevel 1 (
-    echo [ERROR] Android project init failed
-    pause
-    exit /b 1
-)
-echo [OK] Android project regenerated
 echo [3/3] Step: Generating keystore...
-keytool -genkey -v -keystore src-tauri\gen\android\app\keystore.jks -alias notes -keyalg RSA -keysize 2048 -validity 10000 -storepass notes123 -keypass notes123 -dname "CN=Notes, OU=Dev, O=Notes, L=City, ST=State, C=CN"
+keytool -genkey -v -keystore src-tauri\keystore.jks -alias notes -keyalg RSA -keysize 2048 -validity 10000 -storepass notes123 -keypass notes123 -dname "CN=Notes, OU=Dev, O=Notes, L=City, ST=State, C=CN"
 echo [OK] Keystore generated
-set TAURI_ANDROID_KEYSTORE_PATH=%CD%\src-tauri\gen\android\app\keystore.jks
+set TAURI_ANDROID_KEYSTORE_PATH=%CD%\src-tauri\keystore.jks
 set TAURI_ANDROID_KEYSTORE_PASSWORD=notes123
 set TAURI_ANDROID_KEY_ALIAS=notes
 set TAURI_ANDROID_KEY_PASSWORD=notes123
@@ -53,11 +44,7 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
-if exist src-tauri\gen\android\app\build\outputs\apk\universal\release\app-universal-release.apk (
-    copy /Y src-tauri\gen\android\app\build\outputs\apk\universal\release\app-universal-release.apk %RELEASE_DIR%\Notes-Android-arm64-v8a.apk
-) else (
-    copy /Y src-tauri\gen\android\app\build\outputs\apk\universal\release\app-universal-release-unsigned.apk %RELEASE_DIR%\Notes-Android-arm64-v8a.apk
-)
+copy /Y src-tauri\gen\android\app\build\outputs\apk\universal\release\app-universal-release.apk %RELEASE_DIR%\Notes-Android-arm64-v8a.apk
 echo [OK] Android APK -^> %RELEASE_DIR%\Notes-Android-arm64-v8a.apk
 echo.
 

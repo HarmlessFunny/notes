@@ -43,7 +43,7 @@ if errorlevel 1 (
 if exist src-tauri\gen\android\app\build\outputs\apk\universal\release\app-universal-release.apk (
     copy /Y src-tauri\gen\android\app\build\outputs\apk\universal\release\app-universal-release.apk %RELEASE_DIR%\Notes-Android-arm64-v8a.apk
 ) else (
-    echo [WARN] Signed APK not found (is keystore missing?), copying unsigned APK instead
+    echo [WARN] Signed APK not found, copying unsigned APK instead
     copy /Y src-tauri\gen\android\app\build\outputs\apk\universal\release\app-universal-release-unsigned.apk %RELEASE_DIR%\Notes-Android-arm64-v8a.apk
 )
 echo [OK] Android APK -^> %RELEASE_DIR%\Notes-Android-arm64-v8a.apk

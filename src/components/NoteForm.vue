@@ -4,18 +4,22 @@
       <span class="card-title">{{ title }}</span>
     </template>
 
-    <el-form :model="formData" label-width="80px">
-      <el-form-item label="标题" required>
-        <el-input v-model="formData.title" placeholder="输入笔记标题" clearable />
-      </el-form-item>
+    <el-form-item label="标题" label-width="80px" required>
+      <el-autocomplete
+        v-model="formData.title"
+        :fetch-suggestions="fetchTitleSuggestions"
+        placeholder="输入笔记标题"
+        clearable
+      />
+    </el-form-item>
 
-      <el-form-item label="科目" required>
+    <el-form-item label="科目" label-width="80px" required>
         <el-select v-model="formData.subject" placeholder="选择科目" filterable clearable allow-create default-first-option>
           <el-option v-for="subject in subjectsList" :key="subject" :label="subject" :value="subject" />
         </el-select>
       </el-form-item>
 
-      <el-form-item label="笔记内容">
+      <el-form-item label="笔记内容" label-width="80px">
         <div class="editor-body split">
           <el-input v-model="formData.content" placeholder="输入笔记内容（可选）" type="textarea" :rows="1" show-word-limit
             maxlength="50000" autosize class="editor-input" />
@@ -25,7 +29,7 @@
         </div>
       </el-form-item>
 
-      <el-form-item label="选择图片">
+      <el-form-item label="选择图片" label-width="80px">
         <el-upload :auto-upload="false" :on-change="handleFileChange" :on-remove="handleFileRemove"
           :on-preview="handleFilePreview" :file-list="fileList" accept="image/*" multiple list-type="picture-card">
           <el-icon>
@@ -41,7 +45,6 @@
         </el-button>
         <el-button v-if="showCancelButton" @click="handleCancel">取消</el-button>
       </el-form-item>
-    </el-form>
   </el-card>
 
   <el-image-viewer v-if="showPreview" :url-list="fileList.map(item => item.url || '')" show-progress
@@ -58,6 +61,14 @@ import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 
 const notesStore = useNotesStore()
 const subjectsList = computed(() => notesStore.subjectsList)
+
+function fetchTitleSuggestions(queryString: string, cb: (results: { value: string }[]) => void) {
+    const titles = notesStore.allNotes.map(n => ({ value: n.title }))
+    const results = queryString
+        ? titles.filter(t => t.value.includes(queryString))
+        : titles
+    cb(results)
+}
 
 interface Props {
   title?: string

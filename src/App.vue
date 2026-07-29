@@ -93,6 +93,7 @@ function handleMenuSelect(index: string) {
   position: sticky;
   top: 0;
   z-index: 1000;
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 .navbar {

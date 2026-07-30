@@ -31,9 +31,13 @@ echo [OK] Windows exe -^> %RELEASE_DIR%\Notes-Windows-x64.exe
 echo.
 
 echo [3/3] Building Android APK...
-echo [3/3] Step: Generating keystore...
-keytool -genkey -v -keystore src-tauri\keystore.jks -alias notes -keyalg RSA -keysize 2048 -validity 10000 -storepass notes123 -keypass notes123 -dname "CN=Notes, OU=Dev, O=Notes, L=City, ST=State, C=CN"
-echo [OK] Keystore generated
+if not exist src-tauri\keystore.jks (
+    echo [3/3] Step: Generating keystore...
+    keytool -genkey -v -keystore src-tauri\keystore.jks -alias notes -keyalg RSA -keysize 2048 -validity 10000 -storepass notes123 -keypass notes123 -dname "CN=Notes, OU=Dev, O=Notes, L=City, ST=State, C=CN"
+    echo [OK] Keystore generated
+) else (
+    echo [OK] Keystore already exists, skipping generation
+)
 call npx tauri android build --target aarch64
 if errorlevel 1 (
     echo [ERROR] Android build failed

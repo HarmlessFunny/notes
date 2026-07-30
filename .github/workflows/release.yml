@@ -57,6 +57,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Restore keystore from secret
+        shell: pwsh
+        run: |
+          if ($env:KEYSTORE_B64) {
+            $bytes = [Convert]::FromBase64String($env:KEYSTORE_B64)
+            [IO.File]::WriteAllBytes("src-tauri\keystore.jks", $bytes)
+            echo "Keystore restored from secret"
+          } else {
+            echo "WARN: ANDROID_KEYSTORE_BASE64 secret not set, keystore will be generated"
+          }
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+
       - name: Build (exe + APK)
         run: .\build.bat
 

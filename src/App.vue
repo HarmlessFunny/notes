@@ -81,9 +81,7 @@ function handleMenuSelect(index: string) {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: var(--el-bg-color);
-  padding-bottom: 48px;
-  box-sizing: border-box;
+  background-color: var(--el-bg-color-page);
 }
 
 .navbar-wrapper * {
@@ -94,8 +92,6 @@ function handleMenuSelect(index: string) {
   position: sticky;
   top: 0;
   z-index: 1000;
-  padding-top: env(safe-area-inset-top, 0px);
-  background-color: var(--el-bg-color);
 }
 
 .navbar {
@@ -108,8 +104,8 @@ function handleMenuSelect(index: string) {
 .navbar-actions {
   position: absolute;
   right: 16px;
-  top: 0;
-  height: 100%;
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 10;
   display: flex;
   align-items: center;
@@ -128,7 +124,6 @@ function handleMenuSelect(index: string) {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background-color: var(--el-bg-color-page);
 }
 
 @media (max-width: 768px) {

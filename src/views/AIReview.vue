@@ -141,7 +141,7 @@ onActivated(loadChat)
 .message-list {
     flex: 1;
     overflow-y: auto;
-    padding: 20px;
+    padding: 20px 20px 80px;
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -239,7 +239,11 @@ onActivated(loadChat)
 
 .input-area {
     padding: 12px 20px;
-    flex-shrink: 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
     background: var(--el-bg-color);
     border-top: 1px solid var(--el-border-color-light);
     display: flex;

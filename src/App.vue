@@ -82,7 +82,7 @@ function handleMenuSelect(index: string) {
   flex-direction: column;
   min-height: 100vh;
   background-color: var(--el-bg-color);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: 48px;
   box-sizing: border-box;
 }
 

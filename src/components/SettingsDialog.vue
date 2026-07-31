@@ -157,10 +157,7 @@ async function handleCheckUpdate() {
         { confirmButtonText: '前往下载', cancelButtonText: '取消' }
       ).then(() => {
         openUrl(info.downloadUrl).catch(() => {
-          const a = document.createElement('a')
-          a.href = info.downloadUrl
-          a.target = '_blank'
-          a.click()
+          window.open(info.downloadUrl, '_blank')
         })
       }).catch(() => {})
     }

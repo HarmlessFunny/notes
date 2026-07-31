@@ -70,12 +70,9 @@ async function checkSilentUpdate() {
     '发现新版本',
     { confirmButtonText: '前往下载', cancelButtonText: '稍后' }
   ).then(() => {
-    openUrl(info.downloadUrl).catch(() => {
-      const a = document.createElement('a')
-      a.href = info.downloadUrl
-      a.target = '_blank'
-      a.click()
-    })
+      openUrl(info.downloadUrl).catch(() => {
+        window.open(info.downloadUrl, '_blank')
+      })
   }).catch(() => {})
 }
 

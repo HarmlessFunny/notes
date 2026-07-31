@@ -49,6 +49,18 @@
                     <el-form-item label="启用识图">
                         <el-switch v-model="form.visionEnabled" />
                     </el-form-item>
+                    <el-form-item label="系统提示词（可选）">
+                        <el-input
+                            v-model="form.systemPrompt"
+                            type="textarea"
+                            :autosize="{ minRows: 4, maxRows: 12 }"
+                            :placeholder="DEFAULT_SYSTEM_PROMPT"
+                        />
+                        <div class="prompt-hint">
+                            <span>留空则使用默认提示词；{timestamp} 占位符会替换为当前时间戳（可出现在任意位置，可多个）</span>
+                            <el-button link type="primary" @click="form.systemPrompt = ''">清空恢复默认</el-button>
+                        </div>
+                    </el-form-item>
                 </el-form>
             </el-tab-pane>
         </el-tabs>
@@ -66,6 +78,7 @@
 import { ref, reactive, watch } from 'vue'
 import { version as currentVersion } from '../../package.json'
 import type { AiConfig, ThemeMode } from '@/types'
+import { DEFAULT_SYSTEM_PROMPT } from '@/types'
 import { useCacheStore } from '@/stores/cache'
 import { checkForUpdate, type UpdateInfo } from '@/utils/update'
 import UpdateDialog from '@/components/UpdateDialog.vue'
@@ -138,6 +151,7 @@ const form = reactive<AiConfig>({
     baseUrl: '',
     modelName: '',
     visionEnabled: true,
+    systemPrompt: '',
 })
 
 watch(visible, (val) => {
@@ -148,6 +162,7 @@ watch(visible, (val) => {
         form.baseUrl = cfg.baseUrl
         form.modelName = cfg.modelName
         form.visionEnabled = cfg.visionEnabled
+        form.systemPrompt = cfg.systemPrompt ?? ''
     }
 })
 
@@ -221,5 +236,17 @@ async function handleSave() {
     white-space: nowrap;
     direction: rtl;
     text-align: left;
+}
+
+.prompt-hint {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    line-height: 1.5;
+    margin-top: 4px;
 }
 </style>

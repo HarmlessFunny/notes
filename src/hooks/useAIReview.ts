@@ -2,7 +2,7 @@ import { handleApiError } from '@/utils/error'
 import { ref, onUnmounted, onDeactivated } from 'vue'
 import { createAbortableStream } from '@/utils/stream'
 import { useCacheStore } from '@/stores/cache'
-import { getAiConfigHeaders } from '@/types'
+import { getAiConfigHeaders, DEFAULT_SYSTEM_PROMPT } from '@/types'
 import type { ContentPart } from '@/types'
 
 export interface ChatMsg {
@@ -14,25 +14,10 @@ type SelectedImage =
     | { file: File; preview: string }
     | { url: string; preview: string }
 
-const SYSTEM_PROMPT_BASE = `## 角色
-你是一个智能复习助手
-
-## 行为规范
-1. 用户有多项笔记，你需要根据笔记来考用户知识点
-2. 使用中文回答用户的问题
-3. 调用add_note添加笔记时，禁止通过markdown和html等语法引用图片，其他时候可自由引用图片
-
-## 可用格式
-- Markdown 语法：表格、列表、引用等
-- 数学公式：$行内$ 或 $$块级$$
-- 图片引用：<img src="/uploads/images/<图片名>" style="..." />（style中，如果你想缩放图片，必须额外填写max-height:none）
-
-## 特殊说明
-- 如果用户想删除笔记，先向用户确认再执行删除
-- 今天的毫秒级13位时间戳是：`
-
 function buildSystemMessage() {
-    return { role: 'system', content: SYSTEM_PROMPT_BASE + `${Date.now()}` }
+    const store = useCacheStore()
+    const prompt = store.aiConfig.systemPrompt || DEFAULT_SYSTEM_PROMPT
+    return { role: 'system', content: prompt.replaceAll('{timestamp}', String(Date.now())) }
 }
 
 export function useAIReview() {

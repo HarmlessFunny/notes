@@ -17,7 +17,7 @@
         />
       </el-form-item>
 
-      <el-form-item label="笔记内容" label-width="80px">
+      <el-form-item label="内容" label-width="80px">
         <div class="editor-body split">
           <el-input v-model="formData.content" placeholder="输入笔记内容（可选）" type="textarea" :rows="1" show-word-limit
             maxlength="50000" autosize class="editor-input" />
@@ -27,7 +27,7 @@
         </div>
       </el-form-item>
 
-      <el-form-item label="选择图片" label-width="80px">
+      <el-form-item label="图片" label-width="80px">
         <el-upload :auto-upload="false" :on-change="handleFileChange" :on-remove="handleFileRemove"
           :on-preview="handleFilePreview" :file-list="fileList" accept="image/*" multiple list-type="picture-card">
           <el-icon>
@@ -197,6 +197,17 @@ defineExpose({ resetForm, clearFiles })
   font-size: 20px;
   font-weight: 600;
   color: var(--el-text-color-primary);
+}
+
+:deep(.el-form-item__label::before) {
+  content: '*';
+  visibility: hidden;
+  margin-right: 4px;
+}
+
+:deep(.el-form-item.is-required .el-form-item__label::before) {
+  visibility: visible;
+  color: var(--el-color-danger);
 }
 
 :deep(.el-upload-list__item-thumbnail) {

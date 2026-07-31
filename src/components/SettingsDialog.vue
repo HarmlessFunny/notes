@@ -14,6 +14,7 @@
                         <el-button type="primary" plain :loading="checkingUpdate" @click="handleCheckUpdate">
                             {{ checkingUpdate ? '检查中...' : '检查更新' }}
                         </el-button>
+                        <span class="current-version">当前版本：{{ currentVersion }}</span>
                     </el-form-item>
                 </el-form>
             </el-tab-pane>
@@ -58,14 +59,16 @@
             </el-button>
         </template>
     </el-dialog>
+    <UpdateDialog v-model="showUpdate" :info="updateInfo" cancel-text="取消" />
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
+import { version as currentVersion } from '../../package.json'
 import type { AiConfig, ThemeMode } from '@/types'
 import { useCacheStore } from '@/stores/cache'
-import { checkForUpdate } from '@/utils/update'
-import { openUrl } from '@tauri-apps/plugin-opener'
+import { checkForUpdate, type UpdateInfo } from '@/utils/update'
+import UpdateDialog from '@/components/UpdateDialog.vue'
 import axios from 'axios'
 
 const store = useCacheStore()
@@ -126,6 +129,8 @@ async function fetchModelSuggestions(queryString: string, cb: (results: BaseUrlS
 const visible = defineModel<boolean>('visible', { default: false })
 const testing = ref(false)
 const checkingUpdate = ref(false)
+const showUpdate = ref(false)
+const updateInfo = ref<UpdateInfo | null>(null)
 const themeForm = ref<ThemeMode>('system')
 
 const form = reactive<AiConfig>({
@@ -151,15 +156,8 @@ async function handleCheckUpdate() {
   try {
     const info = await checkForUpdate(true)
     if (info) {
-      ElMessageBox.confirm(
-        `新版本 ${info.latestVersion} 已发布，是否前往下载？`,
-        '发现新版本',
-        { confirmButtonText: '前往下载', cancelButtonText: '取消' }
-      ).then(() => {
-        openUrl(info.downloadUrl).catch(() => {
-          window.open(info.downloadUrl, '_blank')
-        })
-      }).catch(() => {})
+      updateInfo.value = info
+      showUpdate.value = true
     }
   } finally {
     checkingUpdate.value = false
@@ -192,6 +190,12 @@ async function handleSave() {
 <style>
 .settings-dialog {
     max-width: 480px !important;
+}
+
+.current-version {
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+    margin-left: 12px;
 }
 
 .base-url-option {

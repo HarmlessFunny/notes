@@ -1,11 +1,14 @@
 import { version } from '../../package.json'
+import { openUrl } from '@tauri-apps/plugin-opener'
 
 const GITHUB_API = 'https://api.github.com/repos/HarmlessFunny/notes/releases/latest'
+const MIRROR_PREFIX = 'https://gh-proxy.org/'
 
 export interface UpdateInfo {
   latestVersion: string
   htmlUrl: string
   downloadUrl: string
+  mirrorUrl: string
 }
 
 const isMobile = /android/i.test(navigator.userAgent)
@@ -45,8 +48,20 @@ export async function checkForUpdate(showUpToDate = false): Promise<UpdateInfo |
       if (showUpToDate) ElMessage.info('已是最新版本')
       return null
     }
-    return { latestVersion, htmlUrl: data.html_url ?? '', downloadUrl: buildDownloadUrl(tag) }
+    const downloadUrl = buildDownloadUrl(tag)
+    return {
+      latestVersion,
+      htmlUrl: data.html_url ?? '',
+      downloadUrl,
+      mirrorUrl: MIRROR_PREFIX + downloadUrl
+    }
   } catch {
     return null
   }
+}
+
+export async function openDownloadUrl(url: string) {
+  openUrl(url).catch(() => {
+    window.open(url, '_blank')
+  })
 }

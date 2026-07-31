@@ -38,6 +38,7 @@
       </router-view>
     </main>
     <SettingsDialog v-model:visible="showSettings" />
+    <UpdateDialog v-model="showUpdate" :info="updateInfo" cancel-text="稍后" />
   </div>
 </template>
 
@@ -46,13 +47,15 @@ defineOptions({ name: 'App' })
 import { ref, onMounted } from 'vue'
 import { Edit, Notebook, ChatDotRound, Setting } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { openUrl } from '@tauri-apps/plugin-opener'
 import { useCacheStore } from '@/stores/cache'
 import SettingsDialog from '@/components/SettingsDialog.vue'
-import { checkForUpdate } from '@/utils/update'
+import UpdateDialog from '@/components/UpdateDialog.vue'
+import { checkForUpdate, type UpdateInfo } from '@/utils/update'
 
 const cacheStore = useCacheStore()
 const showSettings = ref(false)
+const showUpdate = ref(false)
+const updateInfo = ref<UpdateInfo | null>(null)
 
 const router = useRouter()
 
@@ -65,15 +68,8 @@ onMounted(() => {
 async function checkSilentUpdate() {
   const info = await checkForUpdate(false)
   if (!info) return
-  ElMessageBox.confirm(
-    `新版本 ${info.latestVersion} 已发布，是否前往下载？`,
-    '发现新版本',
-    { confirmButtonText: '前往下载', cancelButtonText: '稍后' }
-  ).then(() => {
-      openUrl(info.downloadUrl).catch(() => {
-        window.open(info.downloadUrl, '_blank')
-      })
-  }).catch(() => {})
+  updateInfo.value = info
+  showUpdate.value = true
 }
 
 function handleMenuSelect(index: string) {

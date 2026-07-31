@@ -5,7 +5,7 @@
 - 笔记写了一大堆，但从来不复习，等于白写。
 - 想按艾宾浩斯曲线复习，但手动算日期太麻烦。
 
-**Notes 帮你自动搞定这一切。** 写完笔记，系统自动帮你规划复习时间，到点提醒你——你只需要专注学习和创作。
+**Notes 帮你自动搞定这一切。** 写完笔记，系统自动帮你规划复习时间——你只需要专注学习和创作。
 
 ## 功能特性
 
@@ -22,9 +22,9 @@
 
 ## 下载
 
-[**Windows-x64**](https://github.com/HarmlessFunny/notes/releases/latest/download/Notes-Windows-x64.exe)
+[**Windows-x64**](https://github.com/HarmlessFunny/notes/releases/latest/download/Notes-Windows-x64.exe) [**国内镜像**](https://gh-proxy.org/https://github.com/HarmlessFunny/notes/releases/latest/download/Notes-Windows-x64.exe)
 
-[**Android-arm64-v8a**](https://github.com/HarmlessFunny/notes/releases/latest/download/Notes-Android-arm64-v8a.apk)
+[**Android-arm64-v8a**](https://github.com/HarmlessFunny/notes/releases/latest/download/Notes-Android-arm64-v8a.apk) [**国内镜像**](https://gh-proxy.org/https://github.com/HarmlessFunny/notes/releases/latest/download/Notes-Android-arm64-v8a.apk)
 
 ## 开发者
 

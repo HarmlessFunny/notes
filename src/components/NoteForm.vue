@@ -5,18 +5,16 @@
     </template>
 
     <el-form-item label="标题" label-width="80px" required>
-      <el-autocomplete
-        v-model="formData.title"
-        :fetch-suggestions="fetchTitleSuggestions"
-        placeholder="输入笔记标题"
-        clearable
-      />
+      <el-input v-model="formData.title" placeholder="输入笔记标题" clearable />
     </el-form-item>
 
     <el-form-item label="科目" label-width="80px" required>
-        <el-select v-model="formData.subject" placeholder="选择科目" filterable clearable allow-create default-first-option>
-          <el-option v-for="subject in subjectsList" :key="subject" :label="subject" :value="subject" />
-        </el-select>
+        <el-autocomplete
+          v-model="formData.subject"
+          :fetch-suggestions="fetchSubjectSuggestions"
+          placeholder="输入或选择科目"
+          clearable
+        />
       </el-form-item>
 
       <el-form-item label="笔记内容" label-width="80px">
@@ -62,11 +60,11 @@ import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 const notesStore = useNotesStore()
 const subjectsList = computed(() => notesStore.subjectsList)
 
-function fetchTitleSuggestions(queryString: string, cb: (results: { value: string }[]) => void) {
-    const titles = notesStore.allNotes.map(n => ({ value: n.title }))
+function fetchSubjectSuggestions(queryString: string, cb: (results: { value: string }[]) => void) {
+    const subjects = subjectsList.value.map(s => ({ value: s }))
     const results = queryString
-        ? titles.filter(t => t.value.includes(queryString))
-        : titles
+        ? subjects.filter(s => s.value.includes(queryString))
+        : subjects
     cb(results)
 }
 

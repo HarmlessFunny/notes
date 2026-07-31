@@ -32,10 +32,10 @@
             </div>
           </template>
           <template v-for="note in displayNotes" :key="note.title">
-            <div v-if="note.subject === subject" class="note-item">
+            <div v-if="note.subject === subject" class="note-item" @click="seeDetail(note.title)">
               <el-checkbox v-if="selectedDate === null" :model-value="checkedNotes.includes(note.title)"
-                @change="handleNoteCheck(note.title, $event)" />
-              <span class="note-link" @click="seeDetail(note.title)">{{ note.title }}</span>
+                @change="handleNoteCheck(note.title, $event)" @click.stop />
+              <span class="note-link">{{ note.title }}</span>
             </div>
           </template>
         </el-collapse-item>

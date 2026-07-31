@@ -46,8 +46,10 @@ defineOptions({ name: 'App' })
 import { ref, onMounted } from 'vue'
 import { Edit, Notebook, ChatDotRound, Setting } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
+import { openUrl } from '@tauri-apps/plugin-opener'
 import { useCacheStore } from '@/stores/cache'
 import SettingsDialog from '@/components/SettingsDialog.vue'
+import { checkForUpdate } from '@/utils/update'
 
 const cacheStore = useCacheStore()
 const showSettings = ref(false)
@@ -57,7 +59,25 @@ const router = useRouter()
 // 启动时检查 AI 是否可用（决定是否展示 AI 对话菜单）
 onMounted(() => {
   cacheStore.loadAiStatus()
+  checkSilentUpdate()
 })
+
+async function checkSilentUpdate() {
+  const info = await checkForUpdate(false)
+  if (!info) return
+  ElMessageBox.confirm(
+    `新版本 ${info.latestVersion} 已发布，是否前往下载？`,
+    '发现新版本',
+    { confirmButtonText: '前往下载', cancelButtonText: '稍后' }
+  ).then(() => {
+    openUrl(info.downloadUrl).catch(() => {
+      const a = document.createElement('a')
+      a.href = info.downloadUrl
+      a.target = '_blank'
+      a.click()
+    })
+  }).catch(() => {})
+}
 
 function handleMenuSelect(index: string) {
   switch (index) {

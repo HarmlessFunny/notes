@@ -1,6 +1,22 @@
 <template>
     <el-dialog v-model="visible" title="设置" class="settings-dialog" width="90%" :close-on-click-modal="false">
         <el-tabs>
+            <el-tab-pane label="基本">
+                <el-form label-position="top">
+                    <el-form-item label="颜色模式">
+                        <el-select v-model="themeForm" style="width: 100%">
+                            <el-option value="system" label="跟随系统" />
+                            <el-option value="light" label="浅色" />
+                            <el-option value="dark" label="深色" />
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-button type="primary" plain :loading="checkingUpdate" @click="handleCheckUpdate">
+                            {{ checkingUpdate ? '检查中...' : '检查更新' }}
+                        </el-button>
+                    </el-form-item>
+                </el-form>
+            </el-tab-pane>
             <el-tab-pane label="AI 配置">
                 <el-form label-position="top">
                     <el-form-item label="Base URL">
@@ -34,17 +50,6 @@
                     </el-form-item>
                 </el-form>
             </el-tab-pane>
-            <el-tab-pane label="主题">
-                <el-form label-position="top">
-                    <el-form-item label="颜色模式">
-                        <el-select v-model="themeForm" style="width: 100%">
-                            <el-option value="system" label="跟随系统" />
-                            <el-option value="light" label="浅色" />
-                            <el-option value="dark" label="深色" />
-                        </el-select>
-                    </el-form-item>
-                </el-form>
-            </el-tab-pane>
         </el-tabs>
         <template #footer>
             <el-button @click="visible = false">取消</el-button>
@@ -59,6 +64,8 @@
 import { ref, reactive, watch } from 'vue'
 import type { AiConfig, ThemeMode } from '@/types'
 import { useCacheStore } from '@/stores/cache'
+import { checkForUpdate } from '@/utils/update'
+import { openUrl } from '@tauri-apps/plugin-opener'
 import axios from 'axios'
 
 const store = useCacheStore()
@@ -118,6 +125,7 @@ async function fetchModelSuggestions(queryString: string, cb: (results: BaseUrlS
 
 const visible = defineModel<boolean>('visible', { default: false })
 const testing = ref(false)
+const checkingUpdate = ref(false)
 const themeForm = ref<ThemeMode>('system')
 
 const form = reactive<AiConfig>({
@@ -137,6 +145,29 @@ watch(visible, (val) => {
         form.visionEnabled = cfg.visionEnabled
     }
 })
+
+async function handleCheckUpdate() {
+  checkingUpdate.value = true
+  try {
+    const info = await checkForUpdate(true)
+    if (info) {
+      ElMessageBox.confirm(
+        `新版本 ${info.latestVersion} 已发布，是否前往下载？`,
+        '发现新版本',
+        { confirmButtonText: '前往下载', cancelButtonText: '取消' }
+      ).then(() => {
+        openUrl(info.downloadUrl).catch(() => {
+          const a = document.createElement('a')
+          a.href = info.downloadUrl
+          a.target = '_blank'
+          a.click()
+        })
+      }).catch(() => {})
+    }
+  } finally {
+    checkingUpdate.value = false
+  }
+}
 
 async function handleSave() {
     testing.value = true

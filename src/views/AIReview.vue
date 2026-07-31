@@ -44,8 +44,9 @@
             <div class="input-row">
                 <el-button v-if="visionEnabled" :icon="Picture" circle @click="triggerUpload" :disabled="sending || uploading" />
                 <input v-if="visionEnabled" ref="fileInputRef" type="file" multiple accept="image/*" class="hidden-input" @change="onFileChange" />
-                <el-input v-model="inputMessage" :rows="1" placeholder="输入您的问题..." class="message-input"
-                    @keydown.enter="sendMessage" />
+                <el-input v-model="inputMessage" type="textarea" :autosize="{ minRows: 1, maxRows: 6 }"
+                    resize="none" placeholder="输入您的问题...（Enter 发送，Shift+Enter 换行）" class="message-input"
+                    @keydown.enter.exact.prevent="sendMessage" />
                 <el-button type="primary" class="send-btn" :icon="Top" @click="sendMessage" :loading="sending"
                     :disabled="(!inputMessage.trim() && !selectedImages.length) || sending || uploading">
                     {{ uploading ? '上传中...' : '发送' }}

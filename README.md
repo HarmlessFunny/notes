@@ -15,7 +15,9 @@
 - **艾宾浩斯复习** — 根据遗忘曲线智能推荐复习计划
 - **AI 复习助手** — 与 AI 对话复习笔记内容，自动生成练习题并批改
 - **暗色模式** — 支持深浅色主题切换，自动保存偏好
-- **ZIP 导出** — 将笔记导出为 ZIP（含图片）
+- **ZIP 导出** — 将笔记导出为 ZIP（含图片）：桌面端弹保存对话框，手机端调起系统分享面板
+- **ZIP 导入** — 将导出的 ZIP 一键恢复为笔记
+- **自动检查更新** — 启动时静默检查 GitHub 最新 Release，设置页也可手动检查并跳转下载
 - **响应式设计** — 适配桌面端和移动端
 
 ## 下载
@@ -56,7 +58,7 @@ npm run tauri dev
 .\build.bat
 ```
 
-自动构建前端 → Windows exe → Android APK，并自动生成签名密钥注入签名。
+自动构建前端 → Windows exe → Android APK。首次构建自动生成签名密钥 `src-tauri\keystore.jks`（已存在则复用），保证每次构建签名一致，手机可无缝覆盖安装升级。
 
 #### 单独构建
 
@@ -78,7 +80,7 @@ npx tauri android build --target aarch64
 keytool -genkey -v -keystore src-tauri\keystore.jks -alias notes -keyalg RSA -keysize 2048 -validity 10000 -storepass notes123 -keypass notes123 -dname "CN=Notes, OU=Dev, O=Notes, L=City, ST=State, C=CN"
 ```
 
-> CI 环境自动完成以上所有步骤，无需手动配置。
+> CI 环境自动完成以上所有步骤，无需手动配置。GitHub Actions 会从仓库 Secret `ANDROID_KEYSTORE_BASE64` 恢复签名密钥，确保每个 Release 版本签名一致。
 
 ### AI 配置
 
@@ -132,6 +134,8 @@ notes/
 │   │   ├── routes_notes.rs   # 笔记 CRUD API
 │   │   ├── routes_ai.rs      # AI 对话/出题/批改 API
 │   │   ├── routes_export.rs  # ZIP 导出 API
+│   │   ├── routes_import.rs  # ZIP 导入 API
+│   │   ├── export.rs         # ZIP 构建（导出/导入共用）
 │   │   ├── routes_serve.rs   # 静态文件/图片服务
 │   │   ├── ai_stream.rs      # AI 流式响应
 │   │   ├── ai_tools.rs       # AI 工具调用
@@ -149,15 +153,17 @@ notes/
 |------|------|------|
 | `/api/notes` | GET | 获取所有笔记（精简字段） |
 | `/api/notes/<someday>` | GET | 获取指定日期需复习的笔记 |
-| `/api/notes/search?q=` | GET | 搜索笔记 |
+| `/api/notes/search` | GET | 搜索笔记 |
 | `/api/note/<title>` | GET | 获取单篇笔记详情 |
 | `/api/submit` | POST | 创建笔记 |
 | `/api/note/<title>` | PUT | 更新笔记 |
 | `/api/notes/delete` | DELETE | 批量删除笔记 |
+| `/api/ai/status` | GET | AI 配置状态 |
 | `/api/ai` | POST | AI 流式对话 |
 | `/api/ai/chat` | GET/POST/DELETE | AI 对话记录管理 |
 | `/api/ai/upload` | POST | 上传 AI 识图图片 |
-| `/api/export` | GET | 导出笔记为 ZIP |
+| `/api/export` | GET | 导出笔记为 ZIP（桌面保存/手机分享） |
+| `/api/import` | POST | 导入 ZIP 笔记 |
 | `/uploads/images/<file>` | GET | 获取上传的图片 |
 
 ## 技术栈
@@ -176,6 +182,7 @@ notes/
 - reqwest + rustls (AI API 客户端)
 - serde + serde_json
 - zip (压缩导出)
+- tauri-plugin-dialog / tauri-plugin-opener / tauri-plugin-sharekit / tauri-plugin-log
 
 ### 移动端
 - Android (arm64-v8a)

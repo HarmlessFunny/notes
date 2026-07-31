@@ -6,7 +6,7 @@
             <p>请点击右上角 <el-icon><Setting /></el-icon> 按钮设置 API 配置</p>
         </div>
         <template v-else>
-        <div class="message-list">
+        <div ref="messageListRef" class="message-list">
             <template v-for="(message, index) in chatMessages" :key="index">
                 <div v-if="message.role !== 'system'" :class="['message-item', message.role]">
                     <div class="message-content">
@@ -34,7 +34,7 @@
             </template>
         </div>
 
-        <div class="input-area">
+        <div ref="inputAreaRef" class="input-area">
             <div v-if="selectedImages.length" class="image-preview-list">
                 <div v-for="(img, idx) in selectedImages" :key="idx" class="image-preview-item">
                     <el-image :src="img.preview" class="image-preview-thumb" :preview-src-list="[img.preview]" preview-teleported />
@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 defineOptions({ name: 'AIReview' })
-import { ref, computed, onMounted, onActivated } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted, onActivated } from 'vue'
 import { Top, Delete, Picture, Close, Refresh, ChatDotRound, Setting } from '@element-plus/icons-vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import { useAIReview } from '@/hooks/useAIReview'
@@ -84,6 +84,33 @@ const {
 } = useAIReview()
 
 const fileInputRef = ref<HTMLInputElement>()
+const messageListRef = ref<HTMLDivElement>()
+const inputAreaRef = ref<HTMLDivElement>()
+let resizeObserver: ResizeObserver | null = null
+
+function onInputAreaResize() {
+    scrollToBottomIfNear()
+}
+
+function isNearBottom() {
+    const el = messageListRef.value
+    if (!el) return true
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 120
+}
+
+function scrollToBottomIfNear() {
+    if (isNearBottom()) scrollToBottom()
+}
+
+function scrollToBottom(smooth = false) {
+    const el = messageListRef.value
+    if (!el) return
+    if (smooth) {
+        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+    } else {
+        el.scrollTop = el.scrollHeight
+    }
+}
 
 function triggerUpload() {
     fileInputRef.value?.click()
@@ -99,9 +126,31 @@ function onFileChange(e: Event) {
 
 onMounted(() => {
     store.loadAiStatus()
-    loadChat()
+    if (inputAreaRef.value) {
+        resizeObserver = new ResizeObserver(onInputAreaResize)
+        resizeObserver.observe(inputAreaRef.value)
+    }
 })
-onActivated(loadChat)
+onUnmounted(() => {
+    resizeObserver?.disconnect()
+    resizeObserver = null
+})
+
+async function handleActivated() {
+    await loadChat()
+    await nextTick()
+    scrollToBottom(true)
+    window.setTimeout(() => scrollToBottom(), 400)
+}
+onActivated(handleActivated)
+
+watch(chatMessages, () => {
+    if (sending.value) {
+        scrollToBottom()
+    } else {
+        scrollToBottomIfNear()
+    }
+}, { deep: true })
 </script>
 
 <style scoped>
@@ -113,6 +162,7 @@ onActivated(loadChat)
     flex-direction: column;
     font-family: var(--el-font-family);
     overflow: hidden;
+    min-height: 0;
 }
 
 .unconfigured-hint {
@@ -142,7 +192,7 @@ onActivated(loadChat)
 .message-list {
     flex: 1;
     overflow-y: auto;
-    padding: 20px 20px 80px;
+    padding: 20px;
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -240,11 +290,7 @@ onActivated(loadChat)
 
 .input-area {
     padding: 12px 20px;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 10;
+    flex-shrink: 0;
     background: var(--el-bg-color);
     border-top: 1px solid var(--el-border-color-light);
     display: flex;
@@ -316,7 +362,7 @@ onActivated(loadChat)
 
 @media (max-width: 480px) {
     .message-list {
-        padding: 12px 12px 70px;
+        padding: 12px;
         gap: 12px;
     }
 

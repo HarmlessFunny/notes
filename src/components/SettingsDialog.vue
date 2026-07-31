@@ -19,7 +19,7 @@
             </el-tab-pane>
             <el-tab-pane label="AI 配置">
                 <el-form label-position="top">
-                    <el-form-item label="Base URL">
+                    <el-form-item label="Base URL (Chat Completions)">
                         <el-autocomplete
                             v-model="form.baseUrl"
                             :fetch-suggestions="queryBaseUrlSuggestions"

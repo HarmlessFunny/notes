@@ -14,6 +14,7 @@
     "release:android": "npx tauri android build --target aarch64 && if not exist release mkdir release && copy /Y src-tauri\\gen\\android\\app\\build\\outputs\\apk\\universal\\release\\app-universal-release.apk release\\notes.apk"
   },
   "dependencies": {
+    "@choochmeque/tauri-plugin-sharekit-api": "^0.4.0-rc.5",
     "@tauri-apps/api": "^2.11.1",
     "@tauri-apps/plugin-dialog": "^2.7.1",
     "@tauri-apps/plugin-opener": "^2.5.4",

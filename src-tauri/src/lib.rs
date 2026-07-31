@@ -9,6 +9,7 @@ mod routes_serve;
 mod routes_import;
 mod ai_tools;
 mod ai_stream;
+mod export;
 
 use std::sync::Arc;
 use axum::{
@@ -50,6 +51,48 @@ fn create_router(state: Arc<AppState>) -> Router {
 }
 
 #[tauri::command]
+async fn export_notes(
+    #[cfg_attr(not(target_os = "android"), allow(unused_variables))] app: tauri::AppHandle,
+    state: tauri::State<'_, Arc<AppState>>,
+    titles: Vec<String>,
+    path: Option<String>,
+) -> Result<String, String> {
+    let notes = state.fetch_notes_by_titles(&titles)
+        .map_err(|e| format!("查询笔记失败: {}", e))?;
+    if notes.is_empty() {
+        return Err("未找到要导出的笔记".into());
+    }
+
+    let zip_bytes = crate::export::build_export_zip(&notes, &state.paths)?;
+
+    let save_path = match path {
+        Some(p) => std::path::PathBuf::from(p),
+        None => {
+            #[cfg(target_os = "android")]
+            {
+                let cache_dir = app
+                    .path()
+                    .app_cache_dir()
+                    .map_err(|e| format!("获取缓存目录失败: {}", e))?;
+                let export_dir = cache_dir.join("export");
+                tokio::fs::create_dir_all(&export_dir)
+                    .await
+                    .map_err(|e| format!("创建导出目录失败: {}", e))?;
+                export_dir.join("notes.zip")
+            }
+            #[cfg(not(target_os = "android"))]
+            {
+                return Err("未指定保存路径".into());
+            }
+        }
+    };
+    tokio::fs::write(&save_path, &zip_bytes)
+        .await
+        .map_err(|e| format!("保存失败: {}", e))?;
+    Ok(save_path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
 async fn save_export_file(path: Option<String>, data: Vec<u8>) -> Result<String, String> {
     let save_path = match path {
         Some(p) => std::path::PathBuf::from(p),
@@ -79,7 +122,8 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![save_export_file])
+        .plugin(tauri_plugin_sharekit::init())
+        .invoke_handler(tauri::generate_handler![save_export_file, export_notes])
         .setup(move |app| {
             app.handle().plugin(
                 tauri_plugin_log::Builder::default()
@@ -106,6 +150,7 @@ pub fn run() {
             eprintln!("[notes] data_dir resolved to: {:?}", data_dir);
             let paths = config::AppPaths::with_data_dir(&data_dir);
             let state = Arc::new(AppState::new_with_paths(paths));
+            app.manage(state.clone());
             let router = create_router(state);
 
             tauri::async_runtime::spawn(async move {

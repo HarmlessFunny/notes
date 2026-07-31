@@ -78,6 +78,7 @@ async fn save_export_file(path: Option<String>, data: Vec<u8>) -> Result<String,
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![save_export_file])
         .setup(move |app| {
             app.handle().plugin(

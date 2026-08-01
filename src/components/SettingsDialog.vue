@@ -46,10 +46,21 @@
                             clearable
                         />
                     </el-form-item>
-                    <el-form-item label="启用识图">
+                    <el-form-item label="启用识图" label-position="left" label-width="70px">
                         <el-switch v-model="form.visionEnabled" />
                     </el-form-item>
-                    <el-form-item label="系统提示词（可选）">
+                    <el-form-item label="思考模式" label-position="left" label-width="70px">
+                        <el-select v-model="form.reasoningEffort" style="width: 220px">
+                            <el-option label="默认" value="" />
+                            <el-option label="禁用" value="disabled" />
+                            <el-option label="低" value="low" />
+                            <el-option label="中" value="medium" />
+                            <el-option label="高" value="high" />
+                            <el-option label="最高" value="xhigh" />
+                            <el-option label="max" value="max" />
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="系统提示词">
                         <el-input
                             v-model="form.systemPrompt"
                             type="textarea"
@@ -57,8 +68,7 @@
                             :placeholder="DEFAULT_SYSTEM_PROMPT"
                         />
                         <div class="prompt-hint">
-                            <span>留空则使用默认提示词；{timestamp} 占位符会替换为当前时间戳（可出现在任意位置，可多个）</span>
-                            <el-button link type="primary" @click="form.systemPrompt = ''">清空恢复默认</el-button>
+                            <span>{timestamp} 占位符会替换为当前时间戳</span>
                         </div>
                     </el-form-item>
                 </el-form>
@@ -152,6 +162,7 @@ const form = reactive<AiConfig>({
     modelName: '',
     visionEnabled: true,
     systemPrompt: '',
+    reasoningEffort: '',
 })
 
 watch(visible, (val) => {
@@ -163,6 +174,7 @@ watch(visible, (val) => {
         form.modelName = cfg.modelName
         form.visionEnabled = cfg.visionEnabled
         form.systemPrompt = cfg.systemPrompt ?? ''
+        form.reasoningEffort = cfg.reasoningEffort ?? ''
     }
 })
 

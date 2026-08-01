@@ -36,7 +36,34 @@ fn build_openai_body(
         }
     }
     if let Some(re) = &config.reasoning_effort {
-        body["reasoning_effort"] = json!(re);
+        match re.as_str() {
+            "disabled" => {
+                body["thinking"] = json!({"type": "disabled"});
+            }
+            "low" => {
+                body["thinking"] = json!({"type": "enabled"});
+                body["reasoning_effort"] = json!("low");
+            }
+            "medium" => {
+                body["thinking"] = json!({"type": "enabled"});
+                body["reasoning_effort"] = json!("medium");
+            }
+            "high" => {
+                body["thinking"] = json!({"type": "enabled"});
+                body["reasoning_effort"] = json!("high");
+            }
+            "xhigh" => {
+                body["thinking"] = json!({"type": "enabled"});
+                body["reasoning_effort"] = json!("xhigh");
+            }
+            "max" => {
+                body["thinking"] = json!({"type": "enabled"});
+                body["reasoning_effort"] = json!("max");
+            }
+            _ => {
+                body["thinking"] = json!({"type": "enabled"});
+            }
+        }
     }
     body
 }

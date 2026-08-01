@@ -4,6 +4,7 @@ export interface AiConfig {
     modelName: string
     visionEnabled: boolean
     systemPrompt: string
+    reasoningEffort: string
 }
 
 export const AI_CONFIG_KEY = 'notes-ai-config'
@@ -28,9 +29,9 @@ export const DEFAULT_SYSTEM_PROMPT = `## 角色
 export function loadAiConfig(): AiConfig {
     try {
         const raw = localStorage.getItem(AI_CONFIG_KEY)
-        if (raw) return { systemPrompt: '', ...JSON.parse(raw) } as AiConfig
+        if (raw) return { systemPrompt: '', reasoningEffort: '', ...JSON.parse(raw) } as AiConfig
     } catch { /* ignore */ }
-    return { apiKey: '', baseUrl: '', modelName: '', visionEnabled: true, systemPrompt: '' }
+    return { apiKey: '', baseUrl: '', modelName: '', visionEnabled: true, systemPrompt: '', reasoningEffort: '' }
 }
 
 export function saveAiConfig(config: AiConfig) {
@@ -38,12 +39,16 @@ export function saveAiConfig(config: AiConfig) {
 }
 
 export function getAiConfigHeaders(config: AiConfig): Record<string, string> {
-    return {
+    const headers: Record<string, string> = {
         'X-Chat-Api-Key': config.apiKey,
         'X-Chat-Base-Url': config.baseUrl,
         'X-Chat-Model-Name': config.modelName,
         'X-Vision-Enabled': String(config.visionEnabled),
     }
+    if (config.reasoningEffort) {
+        headers['X-Reasoning-Effort'] = config.reasoningEffort
+    }
+    return headers
 }
 
 export interface NoteFormData {

@@ -48,15 +48,17 @@
                     </el-form-item>
                     <el-form-item label="启用识图" label-position="left" label-width="70px">
                         <el-switch v-model="form.visionEnabled" />
+                        <span class="inline-label">显示思考</span>
+                        <el-switch v-model="form.showThinking" />
                     </el-form-item>
                     <el-form-item label="思考模式" label-position="left" label-width="70px">
                         <el-select v-model="form.reasoningEffort" style="width: 220px">
                             <el-option label="默认" value="" />
                             <el-option label="禁用" value="disabled" />
-                            <el-option label="低" value="low" />
-                            <el-option label="中" value="medium" />
-                            <el-option label="高" value="high" />
-                            <el-option label="最高" value="xhigh" />
+                            <el-option label="low" value="low" />
+                            <el-option label="medium" value="medium" />
+                            <el-option label="high" value="high" />
+                            <el-option label="xhigh" value="xhigh" />
                             <el-option label="max" value="max" />
                         </el-select>
                     </el-form-item>
@@ -163,6 +165,7 @@ const form = reactive<AiConfig>({
     visionEnabled: true,
     systemPrompt: '',
     reasoningEffort: '',
+    showThinking: true,
 })
 
 watch(visible, (val) => {
@@ -175,6 +178,7 @@ watch(visible, (val) => {
         form.visionEnabled = cfg.visionEnabled
         form.systemPrompt = cfg.systemPrompt ?? ''
         form.reasoningEffort = cfg.reasoningEffort ?? ''
+        form.showThinking = cfg.showThinking ?? true
     }
 })
 
@@ -215,6 +219,13 @@ async function handleSave() {
 </script>
 
 <style>
+.inline-label {
+    margin: 0 6px 0 16px;
+    font-size: 14px;
+    color: var(--el-text-color-primary);
+    white-space: nowrap;
+}
+
 .settings-dialog {
     max-width: 480px !important;
 }

@@ -1,5 +1,15 @@
+export interface ToolCallInfo {
+    name: string
+    arguments: Record<string, unknown>
+    success: boolean
+    summary: string
+    round: number
+}
+
 export interface StreamCallback {
     onContent: (content: string) => void
+    onThinking?: (content: string) => void
+    onTool?: (info: ToolCallInfo) => void
     onError?: (error: Error) => void
     onComplete?: () => void
 }
@@ -33,6 +43,12 @@ async function processSSEStream(
                 if (data.type === 'content' && typeof data.content === 'string') {
                     fullText += data.content
                     callback?.onContent(data.content)
+                } else if (data.type === 'thinking' && typeof data.content === 'string') {
+                    callback?.onThinking?.(data.content)
+                } else if (data.type === 'tool' && typeof data.content === 'string') {
+                    try {
+                        callback?.onTool?.(JSON.parse(data.content) as ToolCallInfo)
+                    } catch { /* ignore malformed tool event */ }
                 } else if (data.type === 'done') {
                     if (data.raw_json && typeof data.raw_json === 'string') {
                         fullText = data.raw_json

@@ -11,6 +11,26 @@
                 <div v-if="message.role !== 'system'" :class="['message-item', message.role]">
                     <div class="message-content">
                         <template v-if="typeof message.content === 'string'">
+                            <div v-if="message.thinking && showThinking" class="thinking-block">
+                                <div class="thinking-header" @click="toggleThinking(message)">
+                                    <el-icon :size="12"><Cpu /></el-icon>
+                                    <span>思考过程</span>
+                                    <el-icon :size="12" class="thinking-toggle-icon">
+                                        <ArrowDown v-if="!collapsedThinking.has(message)" />
+                                        <ArrowRight v-else />
+                                    </el-icon>
+                                </div>
+                                <div v-show="!collapsedThinking.has(message)" class="thinking-body">{{ message.thinking }}</div>
+                            </div>
+                            <div v-if="message.tools?.length && showThinking" class="tool-list">
+                                <div v-for="tool in message.tools" :key="`${tool.round}-${tool.name}`" class="tool-card" :class="{ failed: !tool.success }">
+                                    <el-icon :size="13"><Cpu /></el-icon>
+                                    <span class="tool-name">{{ toolNames[tool.name] ?? tool.name }}</span>
+                                    <span class="tool-args" :title="JSON.stringify(tool.arguments)">{{ formatArgs(tool.arguments) }}</span>
+                                    <span class="tool-summary">{{ tool.summary }}</span>
+                                    <span class="tool-status" :class="tool.success ? 'ok' : 'bad'">{{ tool.success ? '✓' : '✗' }}</span>
+                                </div>
+                            </div>
                             <MarkdownRenderer class="message-text" :content="message.content" />
                         </template>
                         <template v-else>
@@ -59,15 +79,41 @@
 
 <script setup lang="ts">
 defineOptions({ name: 'AIReview' })
-import { ref, computed, watch, nextTick, onMounted, onUnmounted, onActivated } from 'vue'
-import { Top, Delete, Picture, Close, Refresh, ChatDotRound, Setting } from '@element-plus/icons-vue'
+import { ref, reactive, computed, watch, nextTick, onMounted, onUnmounted, onActivated } from 'vue'
+import { Top, Delete, Picture, Close, Refresh, ChatDotRound, Setting, Cpu, ArrowDown, ArrowRight } from '@element-plus/icons-vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import { useAIReview } from '@/hooks/useAIReview'
+import type { ChatMsg } from '@/hooks/useAIReview'
 import { useCacheStore } from '@/stores/cache'
 
 const store = useCacheStore()
 const visionEnabled = computed(() => store.visionEnabled)
 const configured = computed(() => !!store.aiConfig.apiKey && !!store.aiConfig.baseUrl && !!store.aiConfig.modelName)
+const showThinking = computed(() => store.aiConfig.showThinking)
+
+const collapsedThinking = reactive(new Set<ChatMsg>())
+function toggleThinking(msg: ChatMsg) {
+    if (collapsedThinking.has(msg)) {
+        collapsedThinking.delete(msg)
+    } else {
+        collapsedThinking.add(msg)
+    }
+}
+
+const toolNames: Record<string, string> = {
+    fetch_note_by_title: '获取笔记详情',
+    fetch_all_notes: '获取全部笔记',
+    fetch_notes_by_day: '获取当日复习笔记',
+    search_notes: '搜索笔记',
+    add_note: '添加笔记',
+    delete_notes: '删除笔记',
+    update_note: '更新笔记',
+}
+
+function formatArgs(args: Record<string, unknown>): string {
+    const s = JSON.stringify(args)
+    return s.length > 60 ? `${s.slice(0, 60)}…` : s
+}
 
 const {
     chatMessages,
@@ -238,6 +284,101 @@ watch(chatMessages, () => {
     border-radius: 12px 12px 12px 0;
     line-height: 1.6;
     word-break: break-word;
+}
+
+.thinking-block {
+    background: var(--el-fill-color-light);
+    border-radius: 8px;
+    padding: 4px 8px;
+    font-size: 13px;
+}
+
+.thinking-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--el-text-color-secondary);
+    cursor: pointer;
+    user-select: none;
+}
+
+.thinking-header:hover {
+    color: var(--el-color-primary);
+}
+
+.thinking-toggle-icon {
+    margin-left: auto;
+}
+
+.thinking-body {
+    color: var(--el-text-color-secondary);
+    font-style: italic;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 4px 0 2px;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.tool-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tool-card {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    background: var(--el-fill-color-light);
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 6px;
+    padding: 4px 8px;
+    color: var(--el-text-color-secondary);
+}
+
+.tool-card.failed {
+    border-color: var(--el-color-danger-light-5);
+    background: var(--el-color-danger-light-9);
+}
+
+.tool-name {
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    flex-shrink: 0;
+}
+
+.tool-args {
+    font-family: monospace;
+    color: var(--el-text-color-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+}
+
+.tool-summary {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+
+.tool-status {
+    flex-shrink: 0;
+    font-weight: 600;
+}
+
+.tool-status.ok {
+    color: var(--el-color-success);
+}
+
+.tool-status.bad {
+    color: var(--el-color-danger);
 }
 
 .message-actions {

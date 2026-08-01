@@ -5,12 +5,13 @@ export interface AiConfig {
     visionEnabled: boolean
     systemPrompt: string
     reasoningEffort: string
+    showThinking: boolean
 }
 
 export const AI_CONFIG_KEY = 'notes-ai-config'
 
 export const DEFAULT_SYSTEM_PROMPT = `## 角色
-你是一个智能复习助手
+你是一个智能复习助手，使用中文思考和回答
 
 ## 行为规范
 1. 用户有多项笔记，你需要根据笔记来考用户知识点
@@ -29,9 +30,9 @@ export const DEFAULT_SYSTEM_PROMPT = `## 角色
 export function loadAiConfig(): AiConfig {
     try {
         const raw = localStorage.getItem(AI_CONFIG_KEY)
-        if (raw) return { systemPrompt: '', reasoningEffort: '', ...JSON.parse(raw) } as AiConfig
+        if (raw) return { systemPrompt: '', reasoningEffort: '', showThinking: true, ...JSON.parse(raw) } as AiConfig
     } catch { /* ignore */ }
-    return { apiKey: '', baseUrl: '', modelName: '', visionEnabled: true, systemPrompt: '', reasoningEffort: '' }
+    return { apiKey: '', baseUrl: '', modelName: '', visionEnabled: true, systemPrompt: '', reasoningEffort: '', showThinking: true }
 }
 
 export function saveAiConfig(config: AiConfig) {

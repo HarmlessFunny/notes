@@ -33,6 +33,10 @@ pub struct LightNote {
 pub struct ChatMessage {
     pub role: String,
     pub content: serde_json::Value,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub thinking: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tools: Option<Vec<serde_json::Value>>,
 }
 
 #[derive(Debug, Serialize, Default)]

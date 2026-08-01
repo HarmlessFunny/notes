@@ -68,6 +68,22 @@ fn build_openai_body(
     body
 }
 
+fn build_tool_summary(result: &Value) -> String {
+    if result["status"].as_str() != Some("success") {
+        return result["message"].as_str().unwrap_or("工具执行失败").to_string();
+    }
+    if let Some(m) = result["message"].as_str() {
+        return m.to_string();
+    }
+    if let Some(notes) = result["notes"].as_array() {
+        return format!("获取到 {} 篇笔记", notes.len());
+    }
+    if let Some(title) = result["note"]["title"].as_str() {
+        return format!("获取笔记「{}」", title);
+    }
+    "执行成功".to_string()
+}
+
 fn convert_image_to_base64(uploads_dir: &std::path::Path, url: &str) -> String {
     let filename = std::path::Path::new(url).file_name()
         .and_then(|n| n.to_str()).unwrap_or("");
@@ -151,8 +167,13 @@ pub fn stream_ai_chat(
 
         let tools = ai_tools::get_tool_definitions();
         let mut current_messages: Vec<Value> = prepare_messages(&messages, &state.paths.uploads_folder);
+        let mut round: u32 = 0;
+        let mut prev_round_had_content = false;
 
         loop {
+            round += 1;
+            let mut round_content = String::new();
+            let mut first_content_in_round = true;
             let body = build_openai_body(&config, &current_messages, &tools);
 
             let response = match client
@@ -211,9 +232,40 @@ pub fn stream_ai_chat(
                         let delta = &choices[0]["delta"];
 
                         if let Some(content) = delta["content"].as_str() {
+                            if first_content_in_round && !content.is_empty() {
+                                first_content_in_round = false;
+                                if prev_round_had_content && !content.starts_with('\n') {
+                                    yield make_event(&SseEvent {
+                                        event_type: "content".into(),
+                                        content: Some("\n".to_string()),
+                                        raw_json: None,
+                                    });
+                                }
+                            }
+                            round_content.push_str(content);
                             yield make_event(&SseEvent {
                                 event_type: "content".into(),
                                 content: Some(content.to_string()),
+                                raw_json: None,
+                            });
+                        }
+
+                        if let Some(rc) = delta["reasoning_content"].as_str() {
+                            yield make_event(&SseEvent {
+                                event_type: "thinking".into(),
+                                content: Some(rc.to_string()),
+                                raw_json: None,
+                            });
+                        } else if let Some(t) = delta["thinking"].as_str() {
+                            yield make_event(&SseEvent {
+                                event_type: "thinking".into(),
+                                content: Some(t.to_string()),
+                                raw_json: None,
+                            });
+                        } else if let Some(rs) = delta["reasoning_summary"].as_str() {
+                            yield make_event(&SseEvent {
+                                event_type: "thinking".into(),
+                                content: Some(rs.to_string()),
                                 raw_json: None,
                             });
                         }
@@ -270,9 +322,10 @@ pub fn stream_ai_chat(
                 }
             })).collect();
 
+            prev_round_had_content = !round_content.is_empty();
             current_messages.push(json!({
                 "role": "assistant",
-                "content": null,
+                "content": if round_content.is_empty() { Value::Null } else { json!(round_content) },
                 "tool_calls": assistant_tc
             }));
 
@@ -286,6 +339,17 @@ pub fn stream_ai_chat(
                     "tool_call_id": tc["id"],
                     "content": serde_json::to_string(&result).unwrap_or_default()
                 }));
+                yield make_event(&SseEvent {
+                    event_type: "tool".into(),
+                    content: Some(json!({
+                        "name": func_name,
+                        "arguments": args,
+                        "success": result["status"].as_str() == Some("success"),
+                        "summary": build_tool_summary(&result),
+                        "round": round
+                    }).to_string()),
+                    raw_json: None,
+                });
             }
         }
     };

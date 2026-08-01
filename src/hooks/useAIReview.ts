@@ -1,6 +1,7 @@
 import { handleApiError } from '@/utils/error'
-import { ref, onUnmounted, onDeactivated } from 'vue'
+import { ref } from 'vue'
 import { createAbortableStream } from '@/utils/stream'
+import type { ToolCallInfo } from '@/utils/stream'
 import { useCacheStore } from '@/stores/cache'
 import { getAiConfigHeaders, DEFAULT_SYSTEM_PROMPT } from '@/types'
 import type { ContentPart } from '@/types'
@@ -8,11 +9,23 @@ import type { ContentPart } from '@/types'
 export interface ChatMsg {
     role: 'user' | 'assistant' | 'system'
     content: string | ContentPart[]
+    thinking?: string
+    tools?: ToolCallInfo[]
 }
 
 type SelectedImage =
     | { file: File; preview: string }
     | { url: string; preview: string }
+
+const chatMessages = ref<ChatMsg[]>([])
+const inputMessage = ref('')
+const sending = ref(false)
+const selectedImages = ref<SelectedImage[]>([])
+const uploading = ref(false)
+
+let currentStream: { abort: () => void } | null = null
+
+let chatLoaded = false
 
 function buildSystemMessage() {
     const store = useCacheStore()
@@ -21,16 +34,6 @@ function buildSystemMessage() {
 }
 
 export function useAIReview() {
-    const chatMessages = ref<ChatMsg[]>([])
-    const inputMessage = ref('')
-    const sending = ref(false)
-    const selectedImages = ref<SelectedImage[]>([])
-    const uploading = ref(false)
-
-    let currentStream: { abort: () => void } | null = null
-
-    let chatLoaded = false
-
     function getHeaders() {
         const store = useCacheStore()
         return getAiConfigHeaders(store.aiConfig)
@@ -57,14 +60,6 @@ export function useAIReview() {
             })
         } catch { console.warn('保存聊天记录失败') }
     }
-
-    function abortChat() {
-        currentStream?.abort()
-        currentStream = null
-    }
-
-    onUnmounted(abortChat)
-    onDeactivated(abortChat)
 
     function addImages(files: FileList | File[]) {
         for (const file of Array.from(files)) {
@@ -143,7 +138,7 @@ export function useAIReview() {
         inputMessage.value = ''
         clearImages()
         const aiIndex = chatMessages.value.length
-        chatMessages.value.push({ role: 'assistant', content: '' })
+        chatMessages.value.push({ role: 'assistant', content: '', thinking: '', tools: [] })
 
         const { promise, abort } = createAbortableStream('/api/ai', {
             messages: [
@@ -153,6 +148,13 @@ export function useAIReview() {
         }, {
             onContent: (content) => {
                 chatMessages.value[aiIndex]!.content += content
+            },
+            onThinking: (text) => {
+                chatMessages.value[aiIndex]!.thinking = (chatMessages.value[aiIndex]!.thinking ?? '') + text
+            },
+            onTool: (info) => {
+                chatMessages.value[aiIndex]!.tools ??= []
+                chatMessages.value[aiIndex]!.tools!.push(info)
             },
             onError: (error) => {
                 chatMessages.value[aiIndex]!.content = `抱歉，出错了: ${error.message}`
@@ -182,7 +184,7 @@ export function useAIReview() {
         await saveChat()
 
         const aiIndex = chatMessages.value.length
-        chatMessages.value.push({ role: 'assistant', content: '' })
+        chatMessages.value.push({ role: 'assistant', content: '', thinking: '', tools: [] })
 
         const { promise, abort } = createAbortableStream('/api/ai', {
             messages: [
@@ -192,6 +194,13 @@ export function useAIReview() {
         }, {
             onContent: (content) => {
                 chatMessages.value[aiIndex]!.content += content
+            },
+            onThinking: (text) => {
+                chatMessages.value[aiIndex]!.thinking = (chatMessages.value[aiIndex]!.thinking ?? '') + text
+            },
+            onTool: (info) => {
+                chatMessages.value[aiIndex]!.tools ??= []
+                chatMessages.value[aiIndex]!.tools!.push(info)
             },
             onError: (error) => {
                 chatMessages.value[aiIndex]!.content = `抱歉，出错了: ${error.message}`

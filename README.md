@@ -13,7 +13,7 @@
 - **Markdown 存储** — 笔记正文以 `.md` 文件存储，database.json 只存元信息，清晰可读
 - **Markdown 渲染** — 支持代码高亮、数学公式（KaTeX）
 - **艾宾浩斯复习** — 根据遗忘曲线智能推荐复习计划
-- **AI 复习助手** — 与 AI 对话复习笔记内容，AI 可调用工具读取、搜索、增删改笔记
+- **AI 复习助手** — 与 AI 对话复习笔记内容，AI 可调用工具读取、搜索、增删改笔记；支持思考模式与强度
 - **暗色模式** — 支持深浅色主题切换，自动保存偏好
 - **ZIP 导出** — 将笔记导出为 ZIP（含图片）：桌面端弹保存对话框，手机端调起系统分享面板
 - **ZIP 导入** — 将导出的 ZIP 一键恢复为笔记
@@ -92,7 +92,9 @@ AI 功能（对话复习）的 API 配置在网页右上角 ⚙️ 设置：
 | 模型名 | `deepseek-v4-flash` |
 | API Key | |
 | 启用识图 | `false` |
-| 系统提示词 | 留空使用默认提示词；自定义内容支持 `{timestamp}` 占位符（替换为当前毫秒级时间戳） |
+| 思考模式 | `默认` / `禁用` / `low` / `medium` / `high` / `xhigh` / `max` |
+| 显示思考 | `true` |
+| 系统提示词 | 留空使用默认提示词；占位符`{timestamp}`为当前毫秒级时间戳 |
 
 配置保存到浏览器 `localStorage`，无需环境变量。
 
@@ -102,7 +104,7 @@ AI 功能（对话复习）的 API 配置在网页右上角 ⚙️ 设置：
 
 ```
 data/
-├── database.json          # 元信息：title / subject / time
+├── database.json          # 笔记元信息（title/subject/time）+ AI 聊天记录（含思维链、工具调用）
 ├── notes/                 # 笔记正文（Markdown 文件）
 │   ├── <title>.md
 │   └── ...
@@ -183,7 +185,6 @@ notes/
 - reqwest + rustls (AI API 客户端)
 - serde + serde_json
 - zip (压缩导出)
-- tauri-plugin-dialog / tauri-plugin-opener / tauri-plugin-sharekit / tauri-plugin-log
 
 ### 移动端
 - Android (arm64-v8a)

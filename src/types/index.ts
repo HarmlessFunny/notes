@@ -30,9 +30,15 @@ export const DEFAULT_SYSTEM_PROMPT = `## 角色
 export function loadAiConfig(): AiConfig {
     try {
         const raw = localStorage.getItem(AI_CONFIG_KEY)
-        if (raw) return { systemPrompt: '', reasoningEffort: '', showThinking: true, ...JSON.parse(raw) } as AiConfig
+        if (raw) {
+            const parsed = JSON.parse(raw) as Partial<AiConfig>
+            if (parsed.reasoningEffort === '') {
+                parsed.reasoningEffort = 'default'
+            }
+            return { systemPrompt: '', reasoningEffort: 'default', showThinking: true, ...parsed } as AiConfig
+        }
     } catch { /* ignore */ }
-    return { apiKey: '', baseUrl: '', modelName: '', visionEnabled: true, systemPrompt: '', reasoningEffort: '', showThinking: true }
+    return { apiKey: '', baseUrl: '', modelName: '', visionEnabled: true, systemPrompt: '', reasoningEffort: 'default', showThinking: true }
 }
 
 export function saveAiConfig(config: AiConfig) {
@@ -46,7 +52,7 @@ export function getAiConfigHeaders(config: AiConfig): Record<string, string> {
         'X-Chat-Model-Name': config.modelName,
         'X-Vision-Enabled': String(config.visionEnabled),
     }
-    if (config.reasoningEffort) {
+    if (config.reasoningEffort && config.reasoningEffort !== 'default') {
         headers['X-Reasoning-Effort'] = config.reasoningEffort
     }
     return headers

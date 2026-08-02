@@ -53,7 +53,7 @@
                     </el-form-item>
                     <el-form-item label="思考模式" label-position="left" label-width="70px">
                         <el-select v-model="form.reasoningEffort" style="width: 220px">
-                            <el-option label="默认" value="" />
+                            <el-option label="默认" value="default" />
                             <el-option label="禁用" value="disabled" />
                             <el-option label="low" value="low" />
                             <el-option label="medium" value="medium" />

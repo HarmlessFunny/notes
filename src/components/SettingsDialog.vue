@@ -52,15 +52,9 @@
                         <el-switch v-model="form.showThinking" />
                     </el-form-item>
                     <el-form-item label="思考模式" label-position="left" label-width="70px">
-                        <el-select v-model="form.reasoningEffort" style="width: 220px">
-                            <el-option label="默认" value="default" />
-                            <el-option label="禁用" value="disabled" />
-                            <el-option label="low" value="low" />
-                            <el-option label="medium" value="medium" />
-                            <el-option label="high" value="high" />
-                            <el-option label="xhigh" value="xhigh" />
-                            <el-option label="max" value="max" />
-                        </el-select>
+                        <el-slider v-model="reasoningLevel" :min="0" :max="6" :step="1" :show-tooltip="false"
+                            style="width: 200px; margin: 0 5px" />
+                        <span class="reasoning-label">{{ reasoningLabel(reasoningLevel) }}</span>
                     </el-form-item>
                     <el-form-item label="系统提示词">
                         <el-input
@@ -87,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { version as currentVersion } from '../../package.json'
 import type { AiConfig, ThemeMode } from '@/types'
 import { DEFAULT_SYSTEM_PROMPT } from '@/types'
@@ -158,13 +152,33 @@ const showUpdate = ref(false)
 const updateInfo = ref<UpdateInfo | null>(null)
 const themeForm = ref<ThemeMode>('system')
 
+const REASONING_OPTIONS = ['default', 'disabled', 'low', 'medium', 'high', 'xhigh', 'max']
+
+const REASONING_LABELS: Record<string, string> = {
+    default: '默认',
+    disabled: '禁用',
+}
+
+function reasoningLabel(v: number) {
+    const key = REASONING_OPTIONS[Math.round(v)] ?? 'default'
+    return REASONING_LABELS[key] ?? key
+}
+
+const reasoningLevel = computed({
+    get: () => {
+        const i = REASONING_OPTIONS.indexOf(form.reasoningEffort)
+        return i === -1 ? 0 : i
+    },
+    set: (v: number) => { form.reasoningEffort = REASONING_OPTIONS[Math.round(v)] ?? 'default' },
+})
+
 const form = reactive<AiConfig>({
     apiKey: '',
     baseUrl: '',
     modelName: '',
     visionEnabled: true,
     systemPrompt: '',
-    reasoningEffort: '',
+    reasoningEffort: 'default',
     showThinking: true,
 })
 
@@ -224,6 +238,14 @@ async function handleSave() {
     font-size: 14px;
     color: var(--el-text-color-primary);
     white-space: nowrap;
+}
+
+.reasoning-label {
+    margin-left: 12px;
+    font-size: 13px;
+    color: var(--el-color-primary);
+    white-space: nowrap;
+    min-width: 60px;
 }
 
 .settings-dialog {

@@ -71,8 +71,8 @@
                 <el-button v-if="visionEnabled" :icon="Picture" circle @click="triggerUpload" :disabled="sending || uploading" />
                 <input v-if="visionEnabled" ref="fileInputRef" type="file" multiple accept="image/*" class="hidden-input" @change="onFileChange" />
                 <el-input v-model="inputMessage" type="textarea" :autosize="{ minRows: 1, maxRows: 6 }"
-                    resize="none" placeholder="输入您的问题...（Shift+Enter 换行）" class="message-input"
-                    @keydown.enter.exact.prevent="sendMessage" />
+                    resize="none" :placeholder="inputPlaceholder" class="message-input"
+                    @keydown="onInputKeydown" />
                 <el-button type="primary" class="send-btn" :icon="Top" @click="sendMessage" :loading="sending"
                     :disabled="(!inputMessage.trim() && !selectedImages.length) || sending || uploading">
                     {{ uploading ? '上传中...' : '发送' }}
@@ -98,6 +98,11 @@ const store = useCacheStore()
 const visionEnabled = computed(() => store.visionEnabled)
 const configured = computed(() => !!store.aiConfig.apiKey && !!store.aiConfig.baseUrl && !!store.aiConfig.modelName)
 const showThinking = computed(() => store.aiConfig.showThinking)
+
+const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches
+const inputPlaceholder = computed(() => isCoarsePointer
+    ? '输入您的问题...（点发送按钮，回车换行）'
+    : '输入您的问题...（Enter 发送，Shift+Enter 换行）')
 
 const expandedThinking = reactive(new Set<ChatMsg>())
 function toggleThinking(msg: ChatMsg) {
@@ -203,6 +208,13 @@ const {
     addImages,
     removeImage,
 } = useAIReview()
+
+function onInputKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter' && !e.shiftKey && !isCoarsePointer) {
+        e.preventDefault()
+        sendMessage()
+    }
+}
 
 const fileInputRef = ref<HTMLInputElement>()
 const messageListRef = ref<HTMLDivElement>()

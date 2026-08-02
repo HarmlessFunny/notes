@@ -16,18 +16,18 @@
                                     <el-icon :size="12"><Cpu /></el-icon>
                                     <span>思考过程</span>
                                     <el-icon :size="12" class="thinking-toggle-icon">
-                                        <ArrowDown v-if="!collapsedThinking.has(message)" />
+                                        <ArrowDown v-if="isThinkingExpanded(message)" />
                                         <ArrowRight v-else />
                                     </el-icon>
                                 </div>
-                                <div v-show="!collapsedThinking.has(message)" class="thinking-body">{{ message.thinking }}</div>
+                                <div v-show="isThinkingExpanded(message)" class="thinking-body">{{ message.thinking }}</div>
                             </div>
                             <div v-if="message.tools?.length && showThinking" class="tool-list">
                                 <div v-for="tool in message.tools" :key="`${tool.round}-${tool.name}`" class="tool-card" :class="{ failed: !tool.success }">
                                     <el-icon :size="13"><Cpu /></el-icon>
                                     <span class="tool-name">{{ toolNames[tool.name] ?? tool.name }}</span>
-                                    <span class="tool-args" :title="JSON.stringify(tool.arguments)">{{ formatArgs(tool.arguments) }}</span>
-                                    <span class="tool-summary">{{ tool.summary }}</span>
+                                    <span class="tool-args" :title="JSON.stringify(tool.arguments)">{{ formatArgs(tool) }}</span>
+                                    <span v-if="!tool.success || !isMutationTool(tool.name)" class="tool-summary">{{ tool.summary }}</span>
                                     <span class="tool-status" :class="tool.success ? 'ok' : 'bad'">{{ tool.success ? '✓' : '✗' }}</span>
                                 </div>
                             </div>
@@ -40,11 +40,17 @@
                             </template>
                         </template>
                         <div v-if="message.role === 'user'" class="message-actions">
+                            <el-icon class="action-btn" title="复制" @click.stop="copyMessage(message)">
+                                <CopyDocument />
+                            </el-icon>
                             <el-icon class="action-btn delete-btn" title="删除该对话及之后" @click.stop="truncateMessages(index)">
                                 <Delete />
                             </el-icon>
                         </div>
                         <div v-if="message.role === 'assistant' && !sending" class="message-actions">
+                            <el-icon class="action-btn" title="复制" @click.stop="copyMessage(message)">
+                                <CopyDocument />
+                            </el-icon>
                             <el-icon class="action-btn" title="重新生成" @click.stop="retryMessage(index)">
                                 <Refresh />
                             </el-icon>
@@ -80,10 +86,12 @@
 <script setup lang="ts">
 defineOptions({ name: 'AIReview' })
 import { ref, reactive, computed, watch, nextTick, onMounted, onUnmounted, onActivated } from 'vue'
-import { Top, Delete, Picture, Close, Refresh, ChatDotRound, Setting, Cpu, ArrowDown, ArrowRight } from '@element-plus/icons-vue'
+import { Top, Delete, Picture, Close, Refresh, ChatDotRound, Setting, Cpu, ArrowDown, ArrowRight, CopyDocument } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import { useAIReview } from '@/hooks/useAIReview'
 import type { ChatMsg } from '@/hooks/useAIReview'
+import type { ToolCallInfo } from '@/utils/stream'
 import { useCacheStore } from '@/stores/cache'
 
 const store = useCacheStore()
@@ -91,13 +99,18 @@ const visionEnabled = computed(() => store.visionEnabled)
 const configured = computed(() => !!store.aiConfig.apiKey && !!store.aiConfig.baseUrl && !!store.aiConfig.modelName)
 const showThinking = computed(() => store.aiConfig.showThinking)
 
-const collapsedThinking = reactive(new Set<ChatMsg>())
+const expandedThinking = reactive(new Set<ChatMsg>())
 function toggleThinking(msg: ChatMsg) {
-    if (collapsedThinking.has(msg)) {
-        collapsedThinking.delete(msg)
+    if (expandedThinking.has(msg)) {
+        expandedThinking.delete(msg)
     } else {
-        collapsedThinking.add(msg)
+        expandedThinking.add(msg)
     }
+}
+
+function isThinkingExpanded(msg: ChatMsg) {
+    return expandedThinking.has(msg)
+        || (sending.value && msg === chatMessages.value[chatMessages.value.length - 1])
 }
 
 const toolNames: Record<string, string> = {
@@ -110,9 +123,71 @@ const toolNames: Record<string, string> = {
     update_note: '更新笔记',
 }
 
-function formatArgs(args: Record<string, unknown>): string {
-    const s = JSON.stringify(args)
-    return s.length > 60 ? `${s.slice(0, 60)}…` : s
+const MUTATION_TOOLS = new Set(['add_note', 'delete_notes', 'update_note'])
+function isMutationTool(name: string) {
+    return MUTATION_TOOLS.has(name)
+}
+
+function formatArgs(tool: ToolCallInfo): string {
+    const args = tool.arguments as Record<string, unknown>
+    const arg = (key: string): string => String(args[key] ?? '')
+
+    switch (tool.name) {
+        case 'fetch_note_by_title':
+            return `标题: ${arg('title')}`
+        case 'fetch_all_notes':
+            return ''
+        case 'fetch_notes_by_day': {
+            const ts = Number(arg('someday'))
+            if (Number.isFinite(ts) && ts > 0) {
+                const d = new Date(ts)
+                const pad = (n: number) => String(n).padStart(2, '0')
+                return `日期: ${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+            }
+            return `时间戳: ${arg('someday')}`
+        }
+        case 'search_notes':
+            return `关键词: ${arg('keyword')}`
+        case 'add_note': {
+            const parts = [`标题: ${arg('title')}`]
+            if (arg('subject')) parts.push(`科目: ${arg('subject')}`)
+            return parts.join(' · ')
+        }
+        case 'delete_notes': {
+            const titles = Array.isArray(args.titles) ? args.titles as unknown[] : []
+            return `删除 ${titles.length} 篇`
+        }
+        case 'update_note':
+            return `旧: ${arg('old_title')} → 新: ${arg('new_title')}`
+        default:
+            return JSON.stringify(args)
+    }
+}
+
+async function copyMessage(message: ChatMsg) {
+    let text = ''
+    if (typeof message.content === 'string') {
+        text = message.content
+    } else {
+        text = message.content
+            .filter((part): part is { type: 'text'; text: string } => part.type === 'text')
+            .map(part => part.text)
+            .join('\n')
+    }
+    if (!text) return
+    try {
+        await navigator.clipboard.writeText(text)
+    } catch {
+        const ta = document.createElement('textarea')
+        ta.value = text
+        ta.style.position = 'fixed'
+        ta.style.opacity = '0'
+        document.body.appendChild(ta)
+        ta.select()
+        document.execCommand('copy')
+        document.body.removeChild(ta)
+    }
+    ElMessage.success('已复制')
 }
 
 const {
@@ -354,22 +429,18 @@ watch(chatMessages, () => {
 .tool-args {
     font-family: monospace;
     color: var(--el-text-color-secondary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 200px;
+    word-break: break-all;
 }
 
 .tool-summary {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    word-break: break-all;
     flex: 1;
     min-width: 0;
 }
 
 .tool-status {
     flex-shrink: 0;
+    margin-left: auto;
     font-weight: 600;
 }
 

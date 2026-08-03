@@ -1,6 +1,7 @@
 mod config;
 mod models;
 mod db;
+mod i18n;
 mod notes_file;
 mod routes_notes;
 mod routes_ai;
@@ -55,14 +56,16 @@ async fn export_notes(
     state: tauri::State<'_, Arc<AppState>>,
     titles: Vec<String>,
     path: Option<String>,
+    lang: Option<String>,
 ) -> Result<String, String> {
+    let lang = lang.unwrap_or_else(|| "zh".to_string());
     let notes = state.fetch_notes_by_titles(&titles)
-        .map_err(|e| format!("查询笔记失败: {}", e))?;
+        .map_err(|e| format!("{}: {}", crate::i18n::text(&lang, "查询笔记失败", "Failed to query notes"), e))?;
     if notes.is_empty() {
-        return Err("未找到要导出的笔记".into());
+        return Err(crate::i18n::text(&lang, "未找到要导出的笔记", "No notes found to export"));
     }
 
-    let zip_bytes = crate::export::build_export_zip(&notes, &state.paths)?;
+    let zip_bytes = crate::export::build_export_zip(&notes, &state.paths, &lang)?;
 
     let save_path = match path {
         Some(p) => std::path::PathBuf::from(p),
@@ -72,27 +75,28 @@ async fn export_notes(
                 let cache_dir = app
                     .path()
                     .app_cache_dir()
-                    .map_err(|e| format!("获取缓存目录失败: {}", e))?;
+                    .map_err(|e| format!("{}: {}", crate::i18n::text(&lang, "获取缓存目录失败", "Failed to get cache directory"), e))?;
                 let export_dir = cache_dir.join("export");
                 tokio::fs::create_dir_all(&export_dir)
                     .await
-                    .map_err(|e| format!("创建导出目录失败: {}", e))?;
+                    .map_err(|e| format!("{}: {}", crate::i18n::text(&lang, "创建导出目录失败", "Failed to create export directory"), e))?;
                 export_dir.join("notes.zip")
             }
             #[cfg(not(target_os = "android"))]
             {
-                return Err("未指定保存路径".into());
+                return Err(crate::i18n::text(&lang, "未指定保存路径", "No save path specified"));
             }
         }
     };
     tokio::fs::write(&save_path, &zip_bytes)
         .await
-        .map_err(|e| format!("保存失败: {}", e))?;
+        .map_err(|e| format!("{}: {}", crate::i18n::text(&lang, "保存失败", "Save failed"), e))?;
     Ok(save_path.to_string_lossy().to_string())
 }
 
 #[tauri::command]
-async fn save_export_file(path: Option<String>, data: Vec<u8>) -> Result<String, String> {
+async fn save_export_file(path: Option<String>, data: Vec<u8>, lang: Option<String>) -> Result<String, String> {
+    let lang = lang.unwrap_or_else(|| "zh".to_string());
     let save_path = match path {
         Some(p) => std::path::PathBuf::from(p),
         None => {
@@ -101,18 +105,18 @@ async fn save_export_file(path: Option<String>, data: Vec<u8>) -> Result<String,
                 let download = std::path::PathBuf::from("/storage/emulated/0/Download");
                 tokio::fs::create_dir_all(&download)
                     .await
-                    .map_err(|e| format!("创建目录失败: {}", e))?;
+                    .map_err(|e| format!("{}: {}", crate::i18n::text(&lang, "创建目录失败", "Failed to create directory"), e))?;
                 download.join("notes.zip")
             }
             #[cfg(not(target_os = "android"))]
             {
-                return Err("未指定保存路径".into());
+                return Err(crate::i18n::text(&lang, "未指定保存路径", "No save path specified"));
             }
         }
     };
     tokio::fs::write(&save_path, &data)
         .await
-        .map_err(|e| format!("保存失败: {}", e))?;
+        .map_err(|e| format!("{}: {}", crate::i18n::text(&lang, "保存失败", "Save failed"), e))?;
     Ok(save_path.to_string_lossy().to_string())
 }
 

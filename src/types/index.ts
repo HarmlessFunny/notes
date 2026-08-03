@@ -10,23 +10,6 @@ export interface AiConfig {
 
 export const AI_CONFIG_KEY = 'notes-ai-config'
 
-export const DEFAULT_SYSTEM_PROMPT = `## 角色
-你是一个智能复习助手，使用中文思考和回答
-
-## 行为规范
-1. 用户有多项笔记，你需要根据笔记来考用户知识点
-2. 使用中文回答用户的问题
-3. 调用add_note添加笔记时，禁止通过markdown和html等语法引用图片，其他时候可自由引用图片
-
-## 可用格式
-- Markdown 语法：表格、列表、引用等
-- 数学公式：$行内$ 或 $$块级$$
-- 图片引用：<img src="/uploads/images/<图片名>" style="..." />（style中，如果你想缩放图片，必须额外填写max-height:none）
-
-## 特殊说明
-- 如果用户想删除笔记，先向用户确认再执行删除
-- 今天的毫秒级13位时间戳是：{timestamp}`
-
 export function loadAiConfig(): AiConfig {
     try {
         const raw = localStorage.getItem(AI_CONFIG_KEY)
@@ -120,9 +103,3 @@ export type SubjectType = '语文' | '数学' | '英语' | '物理' | '化学' |
 export const SUBJECTS: SubjectType[] = ['语文', '数学', '英语', '物理', '化学', '生物', '历史', '地理', '政治', '其他']
 
 export type ThemeMode = 'system' | 'light' | 'dark'
-
-export const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
-    { value: 'system', label: '跟随系统' },
-    { value: 'dark', label: '深色' },
-    { value: 'light', label: '浅色' },
-]

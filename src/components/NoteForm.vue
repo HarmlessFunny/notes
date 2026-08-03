@@ -1,25 +1,25 @@
 <template>
   <el-card class="form-card" shadow="hover" @keydown.ctrl.s.prevent="handleSubmit" @keydown.meta.s.prevent="handleSubmit">
     <template #header>
-      <span class="card-title">{{ title }}</span>
+      <span class="card-title">{{ $t(title) }}</span>
     </template>
 
-    <el-form-item label="标题" label-width="80px" required>
-      <el-input v-model="formData.title" placeholder="输入笔记标题" clearable />
+    <el-form-item :label="$t('notes.form.titleLabel')" label-width="80px" required>
+      <el-input v-model="formData.title" :placeholder="$t('notes.form.titlePlaceholder')" clearable />
     </el-form-item>
 
-    <el-form-item label="科目" label-width="80px" required>
+    <el-form-item :label="$t('notes.form.subjectLabel')" label-width="80px" required>
         <el-autocomplete
           v-model="formData.subject"
           :fetch-suggestions="fetchSubjectSuggestions"
-          placeholder="输入或选择科目"
+          :placeholder="$t('notes.form.subjectPlaceholder')"
           clearable
         />
       </el-form-item>
 
-      <el-form-item label="内容" label-width="80px">
+      <el-form-item :label="$t('notes.form.contentLabel')" label-width="80px">
         <div class="editor-body split">
-          <el-input v-model="formData.content" placeholder="输入笔记内容（可选）" type="textarea" :rows="1" show-word-limit
+          <el-input v-model="formData.content" :placeholder="$t('notes.form.contentPlaceholder')" type="textarea" :rows="1" show-word-limit
             maxlength="50000" autosize class="editor-input" />
           <div class="preview-area">
             <MarkdownRenderer v-if="formData.content" :content="formData.content" />
@@ -27,7 +27,7 @@
         </div>
       </el-form-item>
 
-      <el-form-item label="图片" label-width="80px">
+      <el-form-item :label="$t('notes.form.imagesLabel')" label-width="80px">
         <el-upload :auto-upload="false" :on-change="handleFileChange" :on-remove="handleFileRemove"
           :on-preview="handleFilePreview" :file-list="fileList" accept="image/*" multiple list-type="picture-card">
           <el-icon>
@@ -39,9 +39,9 @@
       <el-form-item>
         <el-button type="primary" @click="handleSubmit" :disabled="!canSubmit" :loading="submitting"
           :icon="Paperclip">
-          {{ submitButtonText }}
+          {{ $t(submitButtonText) }}
         </el-button>
-        <el-button v-if="showCancelButton" @click="handleCancel">取消</el-button>
+        <el-button v-if="showCancelButton" @click="handleCancel">{{ $t('common.cancel') }}</el-button>
       </el-form-item>
   </el-card>
 
@@ -85,8 +85,8 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  title: '发布新笔记',
-  submitButtonText: '发布笔记',
+  title: 'notes.form.publishFormTitle',
+  submitButtonText: 'notes.form.publishSubmit',
   showCancelButton: false,
   loading: false,
   usePublishNote: null

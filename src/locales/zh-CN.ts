@@ -1,0 +1,167 @@
+export default {
+    common: {
+        cancel: '取消',
+        confirm: '确认',
+        warning: '警告',
+        back: '返回',
+        success: '成功',
+        error: '失败',
+        info: '提示',
+    },
+    nav: {
+        publish: '发布笔记',
+        view: '查看笔记',
+        aiChat: 'AI 对话',
+        settings: '设置',
+    },
+    titles: {
+        publish: '发布笔记',
+        view: '查看笔记',
+        detail: '查看笔记详情',
+        ai: '智能复习助手',
+        settings: '设置',
+    },
+    notes: {
+        listTitle: '笔记列表',
+        searchPlaceholder: '搜索笔记标题/科目...',
+        pickDate: '选择日期',
+        import: '导入',
+        export: '导出',
+        delete: '删除',
+        empty: '暂无笔记',
+        noMatch: '没有找到匹配的笔记',
+        allNotes: '所有笔记',
+        view: {
+            exportNote: '导出笔记',
+            editNote: '编辑笔记',
+            deleteNote: '删除笔记',
+            saveChanges: '保存修改',
+            notFound: '笔记不存在，正在跳转...',
+        },
+        form: {
+            titleLabel: '标题',
+            titlePlaceholder: '输入笔记标题',
+            subjectLabel: '科目',
+            subjectPlaceholder: '输入或选择科目',
+            contentLabel: '内容',
+            contentPlaceholder: '输入笔记内容（可选）',
+            imagesLabel: '图片',
+            publishFormTitle: '发布新笔记',
+            publishSubmit: '发布笔记',
+            editFormTitle: '编辑笔记',
+        },
+        toast: {
+            publishSuccess: '发布笔记成功',
+            publishFailed: '发布笔记失败',
+            fetchFailed: '获取笔记失败',
+            listFailed: '获取笔记列表失败',
+            filterFailed: '获取筛选笔记失败',
+            searchFailed: '搜索笔记失败',
+            refreshFailed: '刷新笔记数据失败',
+            loadFailed: '加载笔记数据失败',
+            deleteFailed: '删除笔记失败',
+            updateSuccess: '笔记更新成功',
+            updateFailed: '更新笔记失败',
+            deleted: '已删除 {n} 篇笔记',
+        },
+        confirmDelete: '确定要删除"{titles}"笔记吗？',
+    },
+    update: {
+        found: '发现新版本',
+        body: '新版本 {version} 已发布，是否前往下载？',
+        mirror: '国内镜像',
+        download: '前往下载',
+        upToDate: '已是最新版本',
+        check: '检查更新',
+        checking: '检查中...',
+        currentVersion: '当前版本：{version}',
+        later: '稍后',
+    },
+    settings: {
+        tabBasic: '基本',
+        tabAi: 'AI 配置',
+        colorMode: '颜色模式',
+        modeSystem: '跟随系统',
+        modeLight: '浅色',
+        modeDark: '深色',
+        language: '语言/Language',
+        languageSystem: '跟随系统',
+        languageZh: '中文',
+        languageEn: 'English',
+        api: {
+            baseUrl: 'Base URL (Chat Completions)',
+            baseUrlPlaceholder: '例：https://api.deepseek.com',
+            apiKey: 'API Key',
+            apiKeyPlaceholder: '请到官网获取 API Key',
+            modelName: '模型名',
+            modelNamePlaceholder: '例：deepseek-v4-flash',
+            vision: '启用识图',
+            showThinking: '显示思考',
+            reasoning: '思考模式',
+            systemPrompt: '系统提示词',
+            defaultPrompt: `## 角色
+你是一个智能复习助手，使用中文思考和回答
+
+## 行为规范
+1. 用户有多项笔记，你需要根据笔记来考用户知识点
+2. 使用中文回答用户的问题
+3. 调用add_note添加笔记时，禁止通过markdown和html等语法引用图片，其他时候可自由引用图片
+
+## 可用格式
+- Markdown 语法：表格、列表、引用等
+- 数学公式：$行内$ 或 $$块级$$
+- 图片引用：<img src="/uploads/images/<图片名>" style="..." />（style中，如果你想缩放图片，必须额外填写max-height:none）
+
+## 特殊说明
+- 如果用户想删除笔记，先向用户确认再执行删除
+- 今天的毫秒级13位时间戳是：{timestamp}`,
+            promptHint: '{timestamp} 占位符会替换为当前时间戳',
+            reasoningDefault: '默认',
+            reasoningDisabled: '禁用',
+        },
+    },
+    ai: {
+        unconfiguredTitle: 'AI 功能未配置',
+        unconfiguredHintPrefix: '请点击右上角',
+        unconfiguredHintSuffix: '按钮设置 API 配置',
+        thinking: '思考过程',
+        copy: '复制',
+        deleteFromHere: '删除该对话及之后',
+        regenerate: '重新生成',
+        send: '发送',
+        uploading: '上传中...',
+        inputPlaceholderMobile: '输入您的问题...（点发送按钮，回车换行）',
+        inputPlaceholderDesktop: '输入您的问题...（Enter 发送，Shift+Enter 换行）',
+        copied: '已复制',
+        errorPrefix: '抱歉，出错了：{msg}',
+        requestFailed: 'AI 请求失败',
+        networkError: '抱歉，请求失败，请检查网络后重试。',
+        tool: {
+            name: {
+                fetchNoteByTitle: '获取笔记详情',
+                fetchAllNotes: '获取全部笔记',
+                fetchNotesByDay: '获取当日笔记',
+                searchNotes: '搜索笔记',
+                addNote: '添加笔记',
+                deleteNotes: '删除笔记',
+                updateNote: '更新笔记',
+            },
+            arg: {
+                title: '标题',
+                subject: '科目',
+                date: '日期',
+                timestamp: '时间戳',
+                keyword: '关键词',
+                old: '旧',
+                new: '新',
+            },
+        },
+    },
+    file: {
+        exportSuccess: '导出成功：{path}',
+        exportFailed: '导出失败',
+        shareCancelled: '已取消分享',
+        importSuccess: '导入成功',
+        importFailed: '导入失败',
+    },
+}

@@ -5,6 +5,7 @@ import type { LightNote } from '@/types'
 import { useCacheStore } from '@/stores/cache'
 import { useNotesStore } from '@/stores/notes'
 import { handleApiError } from '@/utils/error'
+import { i18n } from '@/locales'
 
 export function useViewNote() {
   const router = useRouter()
@@ -60,10 +61,10 @@ export function useViewNote() {
     if (searchTimer) clearTimeout(searchTimer)
   })
 
-  const humanDate = computed(() => {
-    if (selectedDate.value === null) return '所有笔记'
-    return new Date(selectedDate.value).toLocaleDateString()
-  })
+    const humanDate = computed(() => {
+        if (selectedDate.value === null) return i18n.global.t('notes.allNotes')
+        return new Date(selectedDate.value).toLocaleDateString(i18n.global.locale.value as string)
+    })
 
   const loadByTime = async (t: string) => {
     if (t === 'all' || t == null || t === '') {
@@ -109,7 +110,7 @@ export function useViewNote() {
       try {
         await loadByTime(newTime)
       } catch (error) {
-        handleApiError(error, '获取笔记列表失败')
+        handleApiError(error, i18n.global.t('notes.toast.listFailed'))
       }
     },
     { immediate: true }

@@ -4,6 +4,9 @@ import { defineStore } from 'pinia'
 import { computed, ref, type Ref } from 'vue'
 import { useCacheStore } from '@/stores/cache'
 import { handleApiError, handleApiSuccess } from '@/utils/error'
+import { i18n } from '@/locales'
+
+const t = (key: string, params?: Record<string, unknown>) => params ? i18n.global.t(key, params) : i18n.global.t(key)
 
 export const useNotesStore = defineStore('notes', () => {
     const allNotes: Ref<LightNote[]> = ref([])
@@ -19,7 +22,7 @@ export const useNotesStore = defineStore('notes', () => {
             const response = await axios.get('/api/notes')
             allNotes.value = response.data?.notes ?? []
         } catch (error: any) {
-            handleApiError(error, '刷新笔记数据失败')
+            handleApiError(error, t('notes.toast.refreshFailed'))
         }
     }
 
@@ -27,10 +30,10 @@ export const useNotesStore = defineStore('notes', () => {
         try {
             await axios.post('/api/submit', formData)
             await flashAllNotes()
-            handleApiSuccess('发布笔记成功')
+            handleApiSuccess(t('notes.toast.publishSuccess'))
             return true
         } catch (error: any) {
-            handleApiError(error, '发布笔记失败')
+            handleApiError(error, t('notes.toast.publishFailed'))
             return false
         }
     }
@@ -40,7 +43,7 @@ export const useNotesStore = defineStore('notes', () => {
             const response = await axios.get(`/api/note/${encodeURIComponent(title)}`)
             return response.data.note as Note
         } catch (error: any) {
-            handleApiError(error, '获取笔记失败')
+            handleApiError(error, t('notes.toast.fetchFailed'))
             return null
         }
     }
@@ -50,7 +53,7 @@ export const useNotesStore = defineStore('notes', () => {
             const response = await axios.get(`/api/notes/${time}`)
             return response.data?.notes ?? []
         } catch (error: any) {
-            handleApiError(error, '获取筛选笔记失败')
+            handleApiError(error, t('notes.toast.filterFailed'))
             return []
         }
     }
@@ -60,7 +63,7 @@ export const useNotesStore = defineStore('notes', () => {
             const res = await axios.get('/api/notes/search', { params: { q: query } })
             return res.data?.notes ?? []
         } catch (error: any) {
-            handleApiError(error, '搜索笔记失败')
+            handleApiError(error, t('notes.toast.searchFailed'))
             return []
         }
     }
@@ -68,9 +71,9 @@ export const useNotesStore = defineStore('notes', () => {
     async function deleteNotes(titles: string[]) {
         if (titles.length === 0) return false
         try {
-            const ok = await ElMessageBox.confirm(`确认删除"${titles.join('"、"')}"笔记吗？`, '警告', {
-                confirmButtonText: '确认',
-                cancelButtonText: '取消',
+            const ok = await ElMessageBox.confirm(t('notes.confirmDelete', { titles: titles.join('"、"') }), t('common.warning'), {
+                confirmButtonText: t('common.confirm'),
+                cancelButtonText: t('common.cancel'),
                 type: 'warning'
             }).then(() => true).catch(() => false)
             if (!ok) return false
@@ -84,10 +87,10 @@ export const useNotesStore = defineStore('notes', () => {
             await flashAllNotes()
             const cacheStore = useCacheStore()
             cacheStore.checkedNotes = cacheStore.checkedNotes.filter(t => !titles.includes(t))
-            handleApiSuccess(`已删除 ${titles.length} 篇笔记`)
+            handleApiSuccess(t('notes.toast.deleted', { n: titles.length }))
             return true
         } catch (error: any) {
-            handleApiError(error, '删除笔记失败')
+            handleApiError(error, t('notes.toast.deleteFailed'))
             return false
         }
     }
@@ -96,10 +99,10 @@ export const useNotesStore = defineStore('notes', () => {
         try {
             await axios.put(`/api/note/${encodeURIComponent(title)}`, formData)
             await flashAllNotes()
-            handleApiSuccess('笔记更新成功')
+            handleApiSuccess(t('notes.toast.updateSuccess'))
             return true
         } catch (error: any) {
-            handleApiError(error, '更新笔记失败')
+            handleApiError(error, t('notes.toast.updateFailed'))
             return false
         }
     }

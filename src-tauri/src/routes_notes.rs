@@ -7,6 +7,7 @@ use axum::{
 use serde::Deserialize;
 
 use crate::db::AppState;
+use crate::i18n::Lang;
 use crate::models::ApiResponse;
 use crate::notes_file::unique_filepath;
 
@@ -38,12 +39,13 @@ pub async fn get_notes_by_day(
 
 pub async fn get_note_by_title(
     State(state): State<Arc<AppState>>,
+    lang: Lang,
     Path(title): Path<String>,
 ) -> Result<Json<ApiResponse>, (StatusCode, Json<ApiResponse>)> {
     let decoded = urlencoding::decode(&title).unwrap_or(std::borrow::Cow::Borrowed(&title));
     match state.fetch_notes_by_titles(&[decoded.to_string()]) {
         Ok(mut notes) if !notes.is_empty() => Ok(Json(ApiResponse::with_note(notes.remove(0)))),
-        Ok(_) => Err((StatusCode::NOT_FOUND, Json(ApiResponse::error("笔记不存在")))),
+        Ok(_) => Err((StatusCode::NOT_FOUND, Json(ApiResponse::error(&lang.t("笔记不存在", "Note not found"))))),
         Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error(&e)))),
     }
 }
@@ -73,6 +75,7 @@ fn allowed_file(filename: &str) -> bool {
 
 pub async fn submit_note(
     State(state): State<Arc<AppState>>,
+    lang: Lang,
     mut multipart: Multipart,
 ) -> Result<Json<ApiResponse>, (StatusCode, Json<ApiResponse>)> {
     let mut title = String::new();
@@ -101,7 +104,7 @@ pub async fn submit_note(
     }
 
     if title.trim().is_empty() || subject.trim().is_empty() {
-        return Err((StatusCode::BAD_REQUEST, Json(ApiResponse::error("缺少必要字段: title, subject"))));
+        return Err((StatusCode::BAD_REQUEST, Json(ApiResponse::error(&lang.t("缺少必要字段: title, subject", "Missing required fields: title, subject")))));
     }
 
     let safe = sanitize_title(&title);
@@ -121,8 +124,8 @@ pub async fn submit_note(
     }
 
     let ts = if timestamp.is_empty() { format!("{}", chrono::Utc::now().timestamp_millis()) } else { timestamp };
-    match state.add_note(&title, &subject, &content, &ts, &saved_images).await {
-        Ok(()) => Ok(Json(ApiResponse::success_msg("笔记发布成功"))),
+    match state.add_note(&title, &subject, &content, &ts, &saved_images, &lang.0).await {
+        Ok(()) => Ok(Json(ApiResponse::success_msg(&lang.t("笔记发布成功", "Note published")))),
         Err(e) => {
             for img in &saved_images {
                 let _ = std::fs::remove_file(state.paths.uploads_folder.join(img));
@@ -134,6 +137,7 @@ pub async fn submit_note(
 
 pub async fn update_note_route(
     State(state): State<Arc<AppState>>,
+    lang: Lang,
     Path(old_title): Path<String>,
     mut multipart: Multipart,
 ) -> Result<Json<ApiResponse>, (StatusCode, Json<ApiResponse>)> {
@@ -174,7 +178,7 @@ pub async fn update_note_route(
     }
 
     if title.trim().is_empty() || subject.trim().is_empty() {
-        return Err((StatusCode::BAD_REQUEST, Json(ApiResponse::error("缺少必要字段: title, subject"))));
+        return Err((StatusCode::BAD_REQUEST, Json(ApiResponse::error(&lang.t("缺少必要字段: title, subject", "Missing required fields: title, subject")))));
     }
 
     let safe = sanitize_title(&title);
@@ -195,14 +199,14 @@ pub async fn update_note_route(
 
     let all_images: Vec<String> = existing_images.into_iter().chain(new_images).collect();
 
-    match state.update_note(&decoded_old, &title, &subject, &content, &all_images).await {
+    match state.update_note(&decoded_old, &title, &subject, &content, &all_images, &lang.0).await {
         Ok(()) => {
             for img in &old_imgs {
                 if !all_images.contains(img) {
                     let _ = std::fs::remove_file(state.paths.uploads_folder.join(img));
                 }
             }
-            Ok(Json(ApiResponse::success_msg("笔记更新成功")))
+            Ok(Json(ApiResponse::success_msg(&lang.t("笔记更新成功", "Note updated"))))
         }
         Err(e) => Err((StatusCode::BAD_REQUEST, Json(ApiResponse::error(&e)))),
     }
@@ -210,16 +214,17 @@ pub async fn update_note_route(
 
 pub async fn delete_note_route(
     State(state): State<Arc<AppState>>,
+    lang: Lang,
     Path(title): Path<String>,
 ) -> Result<Json<ApiResponse>, (StatusCode, Json<ApiResponse>)> {
     let decoded = urlencoding::decode(&title).unwrap_or(std::borrow::Cow::Borrowed(&title)).to_string();
     if decoded.trim().is_empty() {
-        return Err((StatusCode::BAD_REQUEST, Json(ApiResponse::error("请选择要删除的笔记"))));
+        return Err((StatusCode::BAD_REQUEST, Json(ApiResponse::error(&lang.t("请选择要删除的笔记", "Please select a note to delete")))));
     }
-    match state.delete_note(&decoded).await {
+    match state.delete_note(&decoded, &lang.0).await {
         Ok(()) => Ok(Json(ApiResponse {
             status: "success".into(),
-            message: Some(format!("已删除笔记「{}」", decoded)),
+            message: Some(lang.t("已删除笔记「{}」", "Note \"{}\" deleted").replace("{}", &decoded)),
             deleted_count: Some(1),
             ..Default::default()
         })),

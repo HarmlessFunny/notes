@@ -7,10 +7,12 @@ use axum::{
 };
 use crate::db::AppState;
 use crate::export::build_export_zip;
+use crate::i18n::Lang;
 use crate::models::ApiResponse;
 
 pub async fn export_notes(
     State(state): State<Arc<AppState>>,
+    lang: Lang,
     RawQuery(raw): RawQuery,
 ) -> Result<impl IntoResponse, (StatusCode, Json<ApiResponse>)> {
     let titles: Vec<String> = raw.as_deref().unwrap_or("")
@@ -28,19 +30,19 @@ pub async fn export_notes(
         .collect();
 
     if titles.is_empty() {
-        return Err((StatusCode::BAD_REQUEST, Json(ApiResponse::error("请选择要导出的笔记"))));
+        return Err((StatusCode::BAD_REQUEST, Json(ApiResponse::error(&lang.t("请选择要导出的笔记", "Please select notes to export")))));
     }
 
     let notes = state.fetch_notes_by_titles(&titles)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error(&e))))?;
 
     if notes.is_empty() {
-        return Err((StatusCode::NOT_FOUND, Json(ApiResponse::error("笔记不存在"))));
+        return Err((StatusCode::NOT_FOUND, Json(ApiResponse::error(&lang.t("笔记不存在", "Note not found")))));
     }
 
     let label = if notes.len() == 1 { notes[0].title.clone() } else { "notes-export".to_string() };
 
-    let zip_bytes = build_export_zip(&notes, &state.paths)
+    let zip_bytes = build_export_zip(&notes, &state.paths, &lang.0)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error(&e))))?;
 
     let filename = format!("{}.zip", label);

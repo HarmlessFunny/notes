@@ -1,5 +1,6 @@
 import { version } from '../../package.json'
 import { openUrl } from '@tauri-apps/plugin-opener'
+import { i18n } from '@/locales'
 
 const GITHUB_API = 'https://api.github.com/repos/HarmlessFunny/notes/releases/latest'
 const MIRROR_PREFIX = 'https://gh-proxy.org/'
@@ -45,7 +46,7 @@ export async function checkForUpdate(showUpToDate = false): Promise<UpdateInfo |
 
     if (!latestVersion) return null
     if (!isNewer(latestVersion, version)) {
-      if (showUpToDate) ElMessage.info('已是最新版本')
+      if (showUpToDate) ElMessage.info(i18n.global.t('update.upToDate'))
       return null
     }
     const downloadUrl = buildDownloadUrl(tag)

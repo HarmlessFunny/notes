@@ -142,14 +142,14 @@ pub async fn execute_tool(state: &Arc<AppState>, name: &str, args: &Value) -> Va
             let subject = args["subject"].as_str().unwrap_or("");
             let content = args["content"].as_str().unwrap_or("");
             let ts = format!("{}", chrono::Utc::now().timestamp_millis());
-            match state.add_note(title, subject, content, &ts, &[]).await {
+            match state.add_note(title, subject, content, &ts, &[], "zh").await {
                 Ok(()) => json!({"status": "success", "message": "笔记已添加"}),
                 Err(e) => json!({"status": "error", "message": e}),
             }
         }
         "delete_notes" => {
             let title = args["title"].as_str().unwrap_or("");
-            match state.delete_note(title).await {
+            match state.delete_note(title, "zh").await {
                 Ok(()) => json!({"status": "success", "message": format!("已删除笔记「{}」", title)}),
                 Err(e) => json!({"status": "error", "message": e}),
             }
@@ -164,7 +164,7 @@ pub async fn execute_tool(state: &Arc<AppState>, name: &str, args: &Value) -> Va
                 .unwrap_or_else(|| {
                     notes_file::read_note_imgs(&state.paths, old_title)
                 });
-            match state.update_note(old_title, new_title, subject, content, &images).await {
+            match state.update_note(old_title, new_title, subject, content, &images, "zh").await {
                 Ok(()) => json!({"status": "success", "message": "笔记已更新"}),
                 Err(e) => json!({"status": "error", "message": e}),
             }

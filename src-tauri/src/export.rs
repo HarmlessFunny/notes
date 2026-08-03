@@ -1,7 +1,7 @@
 use crate::config::AppPaths;
 use crate::models::Note;
 
-pub fn build_export_zip(notes: &[Note], paths: &AppPaths) -> Result<Vec<u8>, String> {
+pub fn build_export_zip(notes: &[Note], paths: &AppPaths, lang: &str) -> Result<Vec<u8>, String> {
     let mut buf = std::io::Cursor::new(Vec::new());
     let mut zip = zip::ZipWriter::new(&mut buf);
     let options = zip::write::FileOptions::<()>::default()
@@ -14,12 +14,12 @@ pub fn build_export_zip(notes: &[Note], paths: &AppPaths) -> Result<Vec<u8>, Str
     })).collect();
     let db_content = serde_json::to_string_pretty(&serde_json::json!({
         "notes": db_notes,
-    })).map_err(|e| format!("序列化失败: {}", e))?;
+    })).map_err(|e| format!("{}: {}", crate::i18n::text(lang, "序列化失败", "Serialization failed"), e))?;
 
     zip.start_file("database.json", options)
-        .map_err(|e| format!("ZIP写入失败: {}", e))?;
+        .map_err(|e| format!("{}: {}", crate::i18n::text(lang, "ZIP写入失败", "ZIP write failed"), e))?;
     std::io::Write::write_all(&mut zip, db_content.as_bytes())
-        .map_err(|e| format!("ZIP写入失败: {}", e))?;
+        .map_err(|e| format!("{}: {}", crate::i18n::text(lang, "ZIP写入失败", "ZIP write failed"), e))?;
 
     for note in notes {
         let mut lines = vec![format!("# {}/{}", note.subject, note.title)];
@@ -32,24 +32,24 @@ pub fn build_export_zip(notes: &[Note], paths: &AppPaths) -> Result<Vec<u8>, Str
         let md_content = lines.join("\n");
         let entry_name = format!("notes/{}.md", note.title);
         zip.start_file(&entry_name, options)
-            .map_err(|e| format!("ZIP写入失败: {}", e))?;
+            .map_err(|e| format!("{}: {}", crate::i18n::text(lang, "ZIP写入失败", "ZIP write failed"), e))?;
         std::io::Write::write_all(&mut zip, md_content.as_bytes())
-            .map_err(|e| format!("ZIP写入失败: {}", e))?;
+            .map_err(|e| format!("{}: {}", crate::i18n::text(lang, "ZIP写入失败", "ZIP write failed"), e))?;
 
         for img in &note.imgs {
             let img_path = paths.uploads_folder.join(img);
             if img_path.exists() {
                 let data = std::fs::read(&img_path)
-                    .map_err(|e| format!("读取图片失败: {}", e))?;
+                    .map_err(|e| format!("{}: {}", crate::i18n::text(lang, "读取图片失败", "Failed to read image"), e))?;
                 let img_entry = format!("uploads/images/{}", img);
                 zip.start_file(&img_entry, options)
-                    .map_err(|e| format!("ZIP写入失败: {}", e))?;
+                    .map_err(|e| format!("{}: {}", crate::i18n::text(lang, "ZIP写入失败", "ZIP write failed"), e))?;
                 std::io::Write::write_all(&mut zip, &data)
-                    .map_err(|e| format!("ZIP写入失败: {}", e))?;
+                    .map_err(|e| format!("{}: {}", crate::i18n::text(lang, "ZIP写入失败", "ZIP write failed"), e))?;
             }
         }
     }
 
-    zip.finish().map_err(|e| format!("ZIP完成失败: {}", e))?;
+    zip.finish().map_err(|e| format!("{}: {}", crate::i18n::text(lang, "ZIP完成失败", "ZIP finalize failed"), e))?;
     Ok(buf.into_inner())
 }

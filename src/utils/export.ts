@@ -1,6 +1,9 @@
 import { save } from '@tauri-apps/plugin-dialog'
 import { invoke } from '@tauri-apps/api/core'
 import { shareFile } from '@choochmeque/tauri-plugin-sharekit-api'
+import { i18n, currentLang } from '@/locales'
+
+const t = (key: string, params?: Record<string, unknown>) => params ? i18n.global.t(key, params) : i18n.global.t(key)
 
 export async function exportNotesToZip(titles: string[]): Promise<void> {
   if (titles.length === 0) return
@@ -16,20 +19,20 @@ export async function exportNotesToZip(titles: string[]): Promise<void> {
       if (!path) return
     }
 
-    const savedPath = await invoke<string>('export_notes', { titles, path: path ?? null })
+    const savedPath = await invoke<string>('export_notes', { titles, path: path ?? null, lang: currentLang() })
 
     if (isAndroid) {
       await shareFile(savedPath, { mimeType: 'application/zip', title: 'notes.zip' })
     } else {
-      ElMessage.success(`导出成功: ${savedPath}`)
+      ElMessage.success(t('file.exportSuccess', { path: savedPath }))
     }
   } catch (e: any) {
-    console.error('导出失败:', e)
+    console.error('Export failed:', e)
     if (/cancel/i.test(e?.message || '')) {
-      ElMessage.info('已取消分享')
+      ElMessage.info(t('file.shareCancelled'))
       return
     }
-    ElMessage.error(e?.message || '导出失败')
+    ElMessage.error(e?.message || t('file.exportFailed'))
   }
 }
 

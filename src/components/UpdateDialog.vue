@@ -1,10 +1,10 @@
 <template>
-  <el-dialog v-model="visible" title="发现新版本" width="420px" align-center append-to-body :close-on-click-modal="false">
-    <p class="update-tip">新版本 {{ info?.latestVersion }} 已发布，是否前往下载？</p>
+  <el-dialog v-model="visible" :title="$t('update.found')" width="420px" align-center append-to-body :close-on-click-modal="false">
+    <p class="update-tip">{{ $t('update.body', { version: info?.latestVersion }) }}</p>
     <template #footer>
-      <el-button @click="visible = false">{{ cancelText }}</el-button>
-      <el-button type="primary" plain @click="openMirror">国内镜像</el-button>
-      <el-button type="primary" @click="openDownload">前往下载</el-button>
+      <el-button @click="visible = false">{{ $t(cancelText) }}</el-button>
+      <el-button type="primary" plain @click="openMirror">{{ $t('update.mirror') }}</el-button>
+      <el-button type="primary" @click="openDownload">{{ $t('update.download') }}</el-button>
     </template>
   </el-dialog>
 </template>
@@ -21,7 +21,7 @@ const props = withDefaults(
     info: UpdateInfo | null
     cancelText?: string
   }>(),
-  { cancelText: '稍后' }
+  { cancelText: 'update.later' }
 )
 const emit = defineEmits<{ (e: 'update:modelValue', value: boolean): void }>()
 

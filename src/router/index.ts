@@ -7,8 +7,12 @@ import PublishNote from '@/views/PublishNote.vue'
 import ViewNote from '@/views/ViewNote.vue'
 import NoteDetail from '@/views/NoteDetail.vue'
 import AIReview from '@/views/AIReview.vue'
+import SettingsLayout from '@/views/settings/SettingsLayout.vue'
+import SettingsBase from '@/views/settings/SettingsBase.vue'
+import SettingsAi from '@/views/settings/SettingsAi.vue'
 import { useCacheStore } from '@/stores/cache.ts'
 import { handleApiError } from '@/utils/error.ts'
+import { i18n } from '@/locales'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -16,7 +20,7 @@ const routes: RouteRecordRaw[] = [
     name: 'publish',
     component: PublishNote,
     meta: {
-      title: '发布笔记'
+      title: 'titles.publish'
     }
   },
   {
@@ -24,7 +28,7 @@ const routes: RouteRecordRaw[] = [
     name: 'view',
     component: ViewNote,
     meta: {
-      title: '查看笔记'
+      title: 'titles.view'
     }
   },
   {
@@ -32,7 +36,7 @@ const routes: RouteRecordRaw[] = [
     name: 'viewDetail',
     component: NoteDetail,
     meta: {
-      title: '查看笔记详情'
+      title: 'titles.detail'
     }
   },
   {
@@ -40,8 +44,40 @@ const routes: RouteRecordRaw[] = [
     name: 'aiReview',
     component: AIReview,
     meta: {
-      title: '智能复习助手'
+      title: 'titles.ai'
     }
+  },
+  {
+    path: '/settings',
+    redirect: '/settings/base'
+  },
+  {
+    path: '/settings/base',
+    component: SettingsLayout,
+    meta: {
+      title: 'titles.settings'
+    },
+    children: [
+      {
+        path: '',
+        name: 'settingsBase',
+        component: SettingsBase
+      }
+    ]
+  },
+  {
+    path: '/settings/ai',
+    component: SettingsLayout,
+    meta: {
+      title: 'titles.settings'
+    },
+    children: [
+      {
+        path: '',
+        name: 'settingsAi',
+        component: SettingsAi
+      }
+    ]
   },
   // 404页面
   {
@@ -59,7 +95,7 @@ const router = createRouter({
 router.beforeEach(async (to, from) => {
   // 设置页面标题
   if (to.meta.title) {
-    document.title = to.meta.title as string
+    document.title = i18n.global.t(to.meta.title as string)
   }
 
   // 确保已加载 AI 状态（决定 AI 对话路由是否可访问）
@@ -83,7 +119,7 @@ router.beforeEach(async (to, from) => {
       try {
         await notesStore.flashAllNotes()
       } catch (error) {
-        handleApiError(error, '加载笔记数据失败')
+        handleApiError(error, i18n.global.t('notes.toast.loadFailed'))
       }
     }
   }

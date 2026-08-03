@@ -68,20 +68,20 @@ fn build_openai_body(
     body
 }
 
-fn build_tool_summary(result: &Value) -> String {
+fn build_tool_summary(result: &Value, lang: &str) -> String {
     if result["status"].as_str() != Some("success") {
-        return result["message"].as_str().unwrap_or("工具执行失败").to_string();
+        return result["message"].as_str().unwrap_or(&crate::i18n::text(lang, "工具执行失败", "Tool execution failed")).to_string();
     }
     if let Some(m) = result["message"].as_str() {
         return m.to_string();
     }
     if let Some(notes) = result["notes"].as_array() {
-        return format!("获取到 {} 篇笔记", notes.len());
+        return crate::i18n::text(lang, "获取到 {} 篇笔记", "Fetched {} notes").replace("{}", &notes.len().to_string());
     }
     if let Some(title) = result["note"]["title"].as_str() {
-        return format!("获取笔记「{}」", title);
+        return crate::i18n::text(lang, "获取笔记「{}」", "Fetched note \"{}\"").replace("{}", title);
     }
-    "执行成功".to_string()
+    crate::i18n::text(lang, "执行成功", "Executed successfully")
 }
 
 fn convert_image_to_base64(uploads_dir: &std::path::Path, url: &str) -> String {
@@ -143,6 +143,7 @@ pub fn stream_ai_chat(
     state: Arc<AppState>,
     config: AiConfig,
     messages: Vec<ChatMessage>,
+    lang: String,
 ) -> impl Stream<Item = Result<Event, Infallible>> {
     let stream = async_stream::stream! {
         let client = match Client::builder()
@@ -153,7 +154,7 @@ pub fn stream_ai_chat(
             Err(e) => {
                 yield make_event(&SseEvent {
                     event_type: "error".into(),
-                    content: Some(format!("创建 HTTP 客户端失败: {}", e)),
+                    content: Some(crate::i18n::text(&lang, "创建 HTTP 客户端失败: {}", "Failed to create HTTP client: {}").replace("{}", &e.to_string())),
                     raw_json: None,
                 });
                 return;
@@ -187,7 +188,7 @@ pub fn stream_ai_chat(
                 Err(e) => {
                     yield make_event(&SseEvent {
                         event_type: "error".into(),
-                        content: Some(format!("请求失败: {}", e)),
+                        content: Some(crate::i18n::text(&lang, "请求失败: {}", "Request failed: {}").replace("{}", &e.to_string())),
                         raw_json: None,
                     });
                     return;
@@ -199,7 +200,7 @@ pub fn stream_ai_chat(
                 let text = response.text().await.unwrap_or_default();
                 yield make_event(&SseEvent {
                     event_type: "error".into(),
-                    content: Some(format!("API 错误 ({}): {}", status, text)),
+                    content: Some(format!("{}: {}", crate::i18n::text(&lang, "API 错误 ({})", "API error ({})").replace("{}", &status.to_string()), text)),
                     raw_json: None,
                 });
                 return;
@@ -345,7 +346,7 @@ pub fn stream_ai_chat(
                         "name": func_name,
                         "arguments": args,
                         "success": result["status"].as_str() == Some("success"),
-                        "summary": build_tool_summary(&result),
+                        "summary": build_tool_summary(&result, &lang),
                         "round": round
                     }).to_string()),
                     raw_json: None,

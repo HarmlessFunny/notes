@@ -3,6 +3,7 @@ import App from './App.vue'
 import router from './router'
 import { createPinia } from 'pinia'
 import axios from 'axios'
+import { i18n, currentLang } from '@/locales'
 
 // Element Plus 暗色模式 CSS 变量
 import 'element-plus/theme-chalk/dark/css-vars.css'
@@ -14,16 +15,26 @@ declare global {
 const API_BASE = window.__API_BASE__ || 'http://127.0.0.1:5000'
 window.__API_BASE__ = API_BASE
 axios.defaults.baseURL = API_BASE
+axios.interceptors.request.use(config => {
+  if (config.url && !/^https?:\/\//i.test(config.url)) {
+    config.headers['X-Lang'] = currentLang()
+  }
+  return config
+})
 const origFetch = window.fetch.bind(window)
 window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
   if (typeof input === 'string' && (input.startsWith('/api/') || input.startsWith('/uploads/'))) {
     input = API_BASE + input
+    const headers = new Headers(init?.headers)
+    headers.set('X-Lang', currentLang())
+    return origFetch(input, { ...init, headers })
   }
   return origFetch(input, init)
 }
 
 const app = createApp(App)
 const pinia = createPinia()
+app.use(i18n)
 app.use(router)
 app.use(pinia)
 app.mount('#app')

@@ -1,9 +1,11 @@
-// import { ElNotification } from 'element-plus'
+import { i18n } from '@/locales'
+
+const t = (key: string) => i18n.global.t(key)
 
 export function handleApiError(error: any, fallbackMessage: string): void {
     const message = error?.response?.data?.message || error?.message || fallbackMessage
     ElNotification({
-        title: '失败',
+        title: t('common.error'),
         message,
         type: 'error'
     })
@@ -11,7 +13,7 @@ export function handleApiError(error: any, fallbackMessage: string): void {
 
 export function handleApiSuccess(message: string): void {
     ElNotification({
-        title: '成功',
+        title: t('common.success'),
         message,
         type: 'success'
     })
@@ -19,7 +21,7 @@ export function handleApiSuccess(message: string): void {
 
 export function handleApiWarning(message: string): void {
     ElNotification({
-        title: '警告',
+        title: t('common.warning'),
         message,
         type: 'warning'
     })
@@ -27,7 +29,7 @@ export function handleApiWarning(message: string): void {
 
 export function handleApiInfo(message: string): void {
     ElNotification({
-        title: '提示',
+        title: t('common.info'),
         message,
         type: 'info'
     })

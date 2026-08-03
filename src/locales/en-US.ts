@@ -1,0 +1,170 @@
+import type zhCN from './zh-CN'
+
+const enUS: typeof zhCN = {    common: {
+        cancel: 'Cancel',
+        confirm: 'Confirm',
+        warning: 'Warning',
+        back: 'Back',
+        success: 'Success',
+        error: 'Error',
+        info: 'Info',
+    },
+    nav: {
+        publish: 'New Note',
+        view: 'My Notes',
+        aiChat: 'AI Chat',
+        settings: 'Settings',
+    },
+    titles: {
+        publish: 'New Note',
+        view: 'My Notes',
+        detail: 'Note Detail',
+        ai: 'AI Study Assistant',
+        settings: 'Settings',
+    },
+    notes: {
+        listTitle: 'Notes',
+        searchPlaceholder: 'Search title/subject...',
+        pickDate: 'Pick a date',
+        import: 'Import',
+        export: 'Export',
+        delete: 'Delete',
+        empty: 'No notes yet',
+        noMatch: 'No matching notes',
+        allNotes: 'All notes',
+        view: {
+            exportNote: 'Export',
+            editNote: 'Edit',
+            deleteNote: 'Delete',
+            saveChanges: 'Save changes',
+            notFound: 'Note not found, redirecting...',
+        },
+        form: {
+            titleLabel: 'Title',
+            titlePlaceholder: 'Enter note title',
+            subjectLabel: 'Subject',
+            subjectPlaceholder: 'Type or choose a subject',
+            contentLabel: 'Content',
+            contentPlaceholder: 'Enter note content (optional)',
+            imagesLabel: 'Images',
+            publishFormTitle: 'New Note',
+            publishSubmit: 'Publish',
+            editFormTitle: 'Edit Note',
+        },
+        toast: {
+            publishSuccess: 'Note published',
+            publishFailed: 'Failed to publish',
+            fetchFailed: 'Failed to fetch note',
+            listFailed: 'Failed to load notes',
+            filterFailed: 'Failed to filter notes',
+            searchFailed: 'Search failed',
+            refreshFailed: 'Failed to refresh notes',
+            loadFailed: 'Failed to load notes data',
+            deleteFailed: 'Failed to delete notes',
+            updateSuccess: 'Note updated',
+            updateFailed: 'Failed to update note',
+            deleted: 'Deleted {n} notes',
+        },
+        confirmDelete: 'Delete the note(s): "{titles}"?',
+    },
+    update: {
+        found: 'New version available',
+        body: 'New version {version} is out. Download it now?',
+        mirror: 'China mirror',
+        download: 'Download',
+        upToDate: 'You are up to date',
+        check: 'Check for updates',
+        checking: 'Checking...',
+        currentVersion: 'Current version: {version}',
+        later: 'Later',
+    },
+    settings: {
+        tabBasic: 'General',
+        tabAi: 'AI Config',
+        colorMode: 'Color mode',
+        modeSystem: 'System',
+        modeLight: 'Light',
+        modeDark: 'Dark',
+        language: 'Language/语言',
+        languageSystem: 'System',
+        languageZh: '中文',
+        languageEn: 'English',
+        api: {
+            baseUrl: 'Base URL (Chat Completions)',
+            baseUrlPlaceholder: 'e.g. https://api.deepseek.com',
+            apiKey: 'API Key',
+            apiKeyPlaceholder: 'Get an API Key from the provider',
+            modelName: 'Model',
+            modelNamePlaceholder: 'e.g. deepseek-v4-flash',
+            vision: 'Vision',
+            showThinking: 'Show thinking',
+            reasoning: 'Reasoning effort',
+            systemPrompt: 'System prompt',
+            defaultPrompt: `## Role
+You are an intelligent review assistant, using English for thinking and responding.
+
+## Code of Conduct
+1. The user has multiple notes; you need to test the user on knowledge points based on the notes.
+2. Respond to user questions in English.
+3. When calling add_note to add a note, do not use Markdown or HTML syntax to reference images; otherwise, you are free to reference images.
+
+## Available Formats
+- Markdown syntax: tables, lists, quotes, etc.
+- Mathematical formulas: $inline$ or $$block-level$$
+- Image reference: <img src="/uploads/images/<image_name>" style="..." /> (in style, if you want to scale the image, you must additionally set max-height:none)
+
+## Special Notes
+- If the user wants to delete a note, confirm with the user before executing the deletion.
+- Today's millisecond-level 13-digit timestamp is: {timestamp}`,
+            promptHint: '{timestamp} is replaced with the current timestamp',
+            reasoningDefault: 'Default',
+            reasoningDisabled: 'Disabled',
+        },
+    },
+    ai: {
+        unconfiguredTitle: 'AI is not configured',
+        unconfiguredHintPrefix: 'Click the',
+        unconfiguredHintSuffix: 'button in the top-right to set up the API',
+        thinking: 'Thinking',
+        copy: 'Copy',
+        deleteFromHere: 'Delete this and following messages',
+        regenerate: 'Regenerate',
+        send: 'Send',
+        uploading: 'Uploading...',
+        inputPlaceholderMobile: 'Type your question... (tap send; Enter for new line)',
+        inputPlaceholderDesktop: 'Type your question... (Enter to send, Shift+Enter for new line)',
+        copied: 'Copied',
+        errorPrefix: 'Sorry, something went wrong: {msg}',
+        requestFailed: 'AI request failed',
+        networkError: 'Sorry, the request failed. Please check your network and retry.',
+        tool: {
+            name: {
+                fetchNoteByTitle: 'Get note detail',
+                fetchAllNotes: 'List all notes',
+                fetchNotesByDay: 'Fetch notes by day',
+                searchNotes: 'Search notes',
+                addNote: 'Add note',
+                deleteNotes: 'Delete note',
+                updateNote: 'Update note',
+            },
+            arg: {
+                title: 'Title',
+                subject: 'Subject',
+                date: 'Date',
+                timestamp: 'Timestamp',
+                keyword: 'Keyword',
+                old: 'Old',
+                new: 'New',
+            },
+        },
+    },
+    file: {
+        exportSuccess: 'Exported: {path}',
+        exportFailed: 'Export failed',
+        shareCancelled: 'Share cancelled',
+        importSuccess: 'Import succeeded',
+        importFailed: 'Import failed',
+    },
+}
+
+export default enUS

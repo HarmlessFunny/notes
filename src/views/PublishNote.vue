@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <NoteForm ref="noteFormRef" title="发布新笔记" submit-button-text="发布笔记" :use-publish-note="publishNoteHook"
+    <NoteForm ref="noteFormRef" title="notes.form.publishFormTitle" submit-button-text="notes.form.publishSubmit" :use-publish-note="publishNoteHook"
       @submit="handleFormSubmit" />
   </div>
 </template>

@@ -10,6 +10,7 @@ use futures::stream::Stream;
 use serde::Deserialize;
 
 use crate::db::AppState;
+use crate::i18n::Lang;
 use crate::models::{AiConfig, ApiResponse, ChatMessage};
 use crate::ai_stream;
 use crate::notes_file::unique_filepath;
@@ -39,6 +40,7 @@ pub async fn ai_status(
 
 pub async fn ai_chat_stream(
     State(state): State<Arc<AppState>>,
+    lang: Lang,
     headers: HeaderMap,
     Json(body): Json<AiChatBody>,
 ) -> Result<
@@ -47,13 +49,13 @@ pub async fn ai_chat_stream(
 > {
     let config = AiConfig::from_headers(&headers);
     if !config.is_valid() {
-        return Err((StatusCode::BAD_REQUEST, Json(ApiResponse::error("AI 功能未配置，请先设置 API 配置"))));
+        return Err((StatusCode::BAD_REQUEST, Json(ApiResponse::error(&lang.t("AI 功能未配置，请先设置 API 配置", "AI features are not configured. Please set up the API config first")))));
     }
     if body.messages.is_empty() {
-        return Err((StatusCode::BAD_REQUEST, Json(ApiResponse::error("请输入问题"))));
+        return Err((StatusCode::BAD_REQUEST, Json(ApiResponse::error(&lang.t("请输入问题", "Please enter a question")))));
     }
 
-    let stream = ai_stream::stream_ai_chat(state, config, body.messages);
+    let stream = ai_stream::stream_ai_chat(state, config, body.messages, lang.0);
     Ok(Sse::new(stream).keep_alive(
         axum::response::sse::KeepAlive::new()
             .interval(std::time::Duration::from_secs(15))

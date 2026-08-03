@@ -6,9 +6,11 @@ use axum::{
     http::{Response, Uri},
 };
 use crate::db::AppState;
+use crate::i18n::Lang;
 
 pub async fn serve_image(
     State(state): State<Arc<AppState>>,
+    lang: Lang,
     Path(filename): Path<String>,
 ) -> Response<Body> {
     let user_path = state.paths.uploads_folder.join(&filename);
@@ -19,7 +21,7 @@ pub async fn serve_image(
     if dist_path.exists() {
         return serve_file(&dist_path).await;
     }
-    let body = serde_json::to_string(&crate::models::ApiResponse::error("图片不存在")).unwrap_or_default();
+    let body = serde_json::to_string(&crate::models::ApiResponse::error(&lang.t("图片不存在", "Image not found"))).unwrap_or_default();
     Response::builder()
         .status(404)
         .header("content-type", "application/json")

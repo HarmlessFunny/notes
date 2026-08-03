@@ -120,16 +120,16 @@ impl AppState {
         (later_date - earlier_date).num_days() as i32
     }
 
-    fn validate_title(title: &str) -> Option<String> {
+    fn validate_title(title: &str, lang: &str) -> Option<String> {
         if title.trim().is_empty() {
-            return Some("标题不能为空".into());
+            return Some(crate::i18n::text(lang, "标题不能为空", "Title cannot be empty"));
         }
         let illegal: &[char] = &['\\', '/', ':', '*', '?', '"', '<', '>', '|'];
         if title.contains(illegal) {
-            return Some("标题不能包含以下字符：\\ / : * ? \" < > |".into());
+            return Some(crate::i18n::text(lang, "标题不能包含以下字符：\\ / : * ? \" < > |", "Title cannot contain: \\ / : * ? \" < > |"));
         }
         if title.len() > 200 {
-            return Some("标题过长（最多 200 字符）".into());
+            return Some(crate::i18n::text(lang, "标题过长（最多 200 字符）", "Title is too long (max 200 characters)"));
         }
         None
     }
@@ -205,8 +205,8 @@ impl AppState {
         Ok(matched)
     }
 
-    pub async fn add_note(&self, title: &str, subject: &str, content: &str, timestamp: &str, imgs: &[String]) -> Result<(), String> {
-        if let Some(err) = Self::validate_title(title) {
+    pub async fn add_note(&self, title: &str, subject: &str, content: &str, timestamp: &str, imgs: &[String], lang: &str) -> Result<(), String> {
+        if let Some(err) = Self::validate_title(title, lang) {
             return Err(err);
         }
         let ts = if timestamp.is_empty() {
@@ -217,7 +217,7 @@ impl AppState {
 
         let mut db = self.load_database_raw()?;
         if db.notes.iter().any(|n| n.title == title) {
-            return Err(format!("标题「{}」已存在，请更换标题", title));
+            return Err(crate::i18n::text(lang, "标题「{}」已存在，请更换标题", "A note titled \"{}\" already exists, please pick another title").replace("{}", title));
         }
 
         db.notes.push(NoteMeta {
@@ -226,31 +226,31 @@ impl AppState {
             time: ts,
         });
         self.save_database_raw(&db)?;
-        notes_file::save_note_file(&self.paths, title, subject, content, imgs)?;
+        notes_file::save_note_file(&self.paths, title, subject, content, imgs, lang)?;
 
         let mut cache = self.content_cache.write().await;
         cache.insert(title.to_string(), notes_file::strip_md_content(content));
         Ok(())
     }
 
-    pub async fn update_note(&self, old_title: &str, new_title: &str, subject: &str, content: &str, imgs: &[String]) -> Result<(), String> {
-        if let Some(err) = Self::validate_title(new_title) {
+    pub async fn update_note(&self, old_title: &str, new_title: &str, subject: &str, content: &str, imgs: &[String], lang: &str) -> Result<(), String> {
+        if let Some(err) = Self::validate_title(new_title, lang) {
             return Err(err);
         }
 
         let mut db = self.load_database_raw()?;
         let idx = db.notes.iter().position(|n| n.title == old_title)
-            .ok_or_else(|| "笔记不存在".to_string())?;
+            .ok_or_else(|| crate::i18n::text(lang, "笔记不存在", "Note not found"))?;
 
         if new_title != old_title && db.notes.iter().enumerate().any(|(i, n)| n.title == new_title && i != idx) {
-            return Err(format!("标题「{}」已存在，请更换标题", new_title));
+            return Err(crate::i18n::text(lang, "标题「{}」已存在，请更换标题", "A note titled \"{}\" already exists, please pick another title").replace("{}", new_title));
         }
 
         db.notes[idx].title = new_title.to_string();
         db.notes[idx].subject = subject.to_string();
         self.save_database_raw(&db)?;
 
-        notes_file::save_note_file(&self.paths, new_title, subject, content, imgs)?;
+        notes_file::save_note_file(&self.paths, new_title, subject, content, imgs, lang)?;
 
         let mut cache = self.content_cache.write().await;
         if new_title != old_title {
@@ -261,13 +261,13 @@ impl AppState {
         Ok(())
     }
 
-    pub async fn delete_note(&self, title: &str) -> Result<(), String> {
+    pub async fn delete_note(&self, title: &str, lang: &str) -> Result<(), String> {
         if title.trim().is_empty() {
-            return Err("标题不能为空".into());
+            return Err(crate::i18n::text(lang, "标题不能为空", "Title cannot be empty"));
         }
         let mut db = self.load_database_raw()?;
         let idx = db.notes.iter().position(|n| n.title == title)
-            .ok_or_else(|| "笔记不存在".to_string())?;
+            .ok_or_else(|| crate::i18n::text(lang, "笔记不存在", "Note not found"))?;
 
         let mut cache = self.content_cache.write().await;
         cache.remove(title);

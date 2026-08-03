@@ -3,8 +3,9 @@ import { ref } from 'vue'
 import { createAbortableStream } from '@/utils/stream'
 import type { ToolCallInfo } from '@/utils/stream'
 import { useCacheStore } from '@/stores/cache'
-import { getAiConfigHeaders, DEFAULT_SYSTEM_PROMPT } from '@/types'
+import { getAiConfigHeaders } from '@/types'
 import type { ContentPart } from '@/types'
+import { i18n } from '@/locales'
 
 export interface ChatMsg {
     role: 'user' | 'assistant' | 'system'
@@ -29,7 +30,7 @@ let chatLoaded = false
 
 function buildSystemMessage() {
     const store = useCacheStore()
-    const prompt = store.aiConfig.systemPrompt || DEFAULT_SYSTEM_PROMPT
+    const prompt = store.aiConfig.systemPrompt || i18n.global.t('settings.api.defaultPrompt')
     return { role: 'system', content: prompt.replaceAll('{timestamp}', String(Date.now())) }
 }
 
@@ -157,7 +158,7 @@ export function useAIReview() {
                 chatMessages.value[aiIndex]!.tools!.push(info)
             },
             onError: (error) => {
-                chatMessages.value[aiIndex]!.content = `抱歉，出错了: ${error.message}`
+                chatMessages.value[aiIndex]!.content = i18n.global.t('ai.errorPrefix', { msg: error.message })
             },
         }, getHeaders())
 
@@ -168,8 +169,8 @@ export function useAIReview() {
             await saveChat()
         } catch (error: any) {
             if (error?.name === 'AbortError') return
-            handleApiError(error, 'AI 请求失败')
-            chatMessages.value[aiIndex]!.content = '抱歉，请求失败，请检查网络后重试。'
+            handleApiError(error, i18n.global.t('ai.requestFailed'))
+            chatMessages.value[aiIndex]!.content = i18n.global.t('ai.networkError')
         } finally {
             sending.value = false
             currentStream = null
@@ -203,7 +204,7 @@ export function useAIReview() {
                 chatMessages.value[aiIndex]!.tools!.push(info)
             },
             onError: (error) => {
-                chatMessages.value[aiIndex]!.content = `抱歉，出错了: ${error.message}`
+                chatMessages.value[aiIndex]!.content = i18n.global.t('ai.errorPrefix', { msg: error.message })
             },
         }, getHeaders())
 
@@ -214,8 +215,8 @@ export function useAIReview() {
             await saveChat()
         } catch (error: any) {
             if (error?.name === 'AbortError') return
-            handleApiError(error, 'AI 请求失败')
-            chatMessages.value[aiIndex]!.content = '抱歉，请求失败，请检查网络后重试。'
+            handleApiError(error, i18n.global.t('ai.requestFailed'))
+            chatMessages.value[aiIndex]!.content = i18n.global.t('ai.networkError')
         } finally {
             sending.value = false
             currentStream = null

@@ -36,7 +36,7 @@ pub fn read_note_imgs(paths: &AppPaths, title: &str) -> Vec<String> {
         .collect()
 }
 
-pub fn save_note_file(paths: &AppPaths, title: &str, subject: &str, content: &str, imgs: &[String]) -> Result<(), String> {
+pub fn save_note_file(paths: &AppPaths, title: &str, subject: &str, content: &str, imgs: &[String], lang: &str) -> Result<(), String> {
     let header = format!("# {}/{}", subject, title);
     let mut parts = vec![];
     if !content.is_empty() {
@@ -51,7 +51,7 @@ pub fn save_note_file(paths: &AppPaths, title: &str, subject: &str, content: &st
         format!("{}\n{}", header, parts.join("\n"))
     };
     let md_path = paths.notes_folder.join(format!("{}.md", title));
-    std::fs::write(&md_path, &file_content).map_err(|e| format!("保存笔记文件失败: {}", e))
+    std::fs::write(&md_path, &file_content).map_err(|e| format!("{}: {}", crate::i18n::text(lang, "保存笔记文件失败", "Failed to save note file"), e))
 }
 
 pub fn strip_md_content(content: &str) -> String {

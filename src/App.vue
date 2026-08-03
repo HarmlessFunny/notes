@@ -1,4 +1,5 @@
 <template>
+  <el-config-provider :locale="elLocale">
   <div id="app">
     <!-- 导航栏 -->
     <div class="navbar-wrapper">
@@ -7,24 +8,24 @@
           <el-icon>
             <Edit />
           </el-icon>
-          <span>发布笔记</span>
+          <span>{{ $t('nav.publish') }}</span>
         </el-menu-item>
         <el-menu-item index="view">
           <el-icon>
             <Notebook />
           </el-icon>
-          <span>查看笔记</span>
+          <span>{{ $t('nav.view') }}</span>
         </el-menu-item>
         <el-menu-item v-if="cacheStore.aiAvailable" index="aiReview">
           <el-icon>
             <ChatDotRound />
           </el-icon>
-          <span>AI 对话</span>
+          <span>{{ $t('nav.aiChat') }}</span>
         </el-menu-item>
       </el-menu>
       <div class="navbar-actions">
-        <el-tooltip content="设置" placement="bottom">
-          <el-button class="action-icon-btn" :icon="Setting" text @click="showSettings = true" />
+        <el-tooltip :content="$t('nav.settings')" placement="bottom">
+          <el-button class="action-icon-btn" :icon="Setting" text @click="handleOpenSettings" />
         </el-tooltip>
       </div>
     </div>
@@ -37,25 +38,27 @@
         </keep-alive>
       </router-view>
     </main>
-    <SettingsDialog v-model:visible="showSettings" />
-    <UpdateDialog v-model="showUpdate" :info="updateInfo" cancel-text="稍后" />
+    <UpdateDialog v-model="showUpdate" :info="updateInfo" cancel-text="update.later" />
   </div>
+  </el-config-provider>
 </template>
 
 <script setup lang="ts">
 defineOptions({ name: 'App' })
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Edit, Notebook, ChatDotRound, Setting } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { useCacheStore } from '@/stores/cache'
-import SettingsDialog from '@/components/SettingsDialog.vue'
 import UpdateDialog from '@/components/UpdateDialog.vue'
 import { checkForUpdate, type UpdateInfo } from '@/utils/update'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
+import en from 'element-plus/es/locale/lang/en'
 
 const cacheStore = useCacheStore()
-const showSettings = ref(false)
 const showUpdate = ref(false)
 const updateInfo = ref<UpdateInfo | null>(null)
+
+const elLocale = computed(() => (cacheStore.effectiveLocale === 'zh-CN' ? zhCn : en))
 
 const router = useRouter()
 
@@ -70,6 +73,10 @@ async function checkSilentUpdate() {
   if (!info) return
   updateInfo.value = info
   showUpdate.value = true
+}
+
+function handleOpenSettings() {
+  router.push('/settings/base')
 }
 
 function handleMenuSelect(index: string) {

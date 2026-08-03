@@ -1,10 +1,14 @@
 import { defineStore } from 'pinia'
-import { ref, watch, type Ref } from 'vue'
+import { ref, computed, watch, type Ref } from 'vue'
 import axios from 'axios'
 import type { NoteFormData, UploadFile, AiConfig, ThemeMode } from '@/types'
 import { loadAiConfig, saveAiConfig as saveAiConfigToStorage, getAiConfigHeaders, AI_CONFIG_KEY } from '@/types'
+import { detectSystemLocale, setLocale, type Locale } from '@/locales'
 
 const THEME_KEY = 'notes-theme-mode'
+const LOCALE_KEY = 'notes-locale'
+
+export type LocaleSetting = 'system' | Locale
 
 export const useCacheStore = defineStore('cache', () => {
     const openSubjects: Ref<string[]> = ref([])
@@ -13,6 +17,16 @@ export const useCacheStore = defineStore('cache', () => {
     const visionEnabled: Ref<boolean> = ref(true)
     const aiStatusLoaded: Ref<boolean> = ref(false)
     const themeMode = ref<ThemeMode>((localStorage.getItem(THEME_KEY) as ThemeMode) || 'system')
+
+    const localeSetting = ref<LocaleSetting>((localStorage.getItem(LOCALE_KEY) as LocaleSetting) || 'system')
+
+    const effectiveLocale = computed<Locale>(() =>
+        localeSetting.value === 'system' ? detectSystemLocale() : localeSetting.value
+    )
+
+    watch(effectiveLocale, (locale) => {
+        setLocale(locale)
+    }, { immediate: true })
 
     const aiConfig = ref<AiConfig>(loadAiConfig())
 
@@ -48,6 +62,10 @@ export const useCacheStore = defineStore('cache', () => {
         localStorage.setItem(THEME_KEY, val)
         applyTheme(val)
     }, { immediate: true })
+
+    watch(localeSetting, (val) => {
+        localStorage.setItem(LOCALE_KEY, val)
+    })
 
     const darkModeHandler = () => {
         if (themeMode.value === 'system') applyTheme('system')
@@ -95,6 +113,8 @@ export const useCacheStore = defineStore('cache', () => {
         aiStatusLoaded,
         themeMode,
         aiConfig,
+        localeSetting,
+        effectiveLocale,
         loadAiStatus,
         updateAiConfig,
         testAiConfig,

@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { i18n } from '@/locales'
 
 export async function importNotesFromZip(): Promise<boolean> {
   return new Promise((resolve) => {
@@ -18,10 +19,10 @@ export async function importNotesFromZip(): Promise<boolean> {
           headers: { 'Content-Type': 'multipart/form-data' }
         })
 
-        ElMessage.success(response.data?.message || '导入成功')
+        ElMessage.success(response.data?.message || i18n.global.t('file.importSuccess'))
         resolve(true)
       } catch (error: any) {
-        ElMessage.error(error?.response?.data?.message || '导入失败')
+        ElMessage.error(error?.response?.data?.message || i18n.global.t('file.importFailed'))
         resolve(false)
       }
     }

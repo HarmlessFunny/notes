@@ -4,7 +4,7 @@
             <div class="header-section">
                 <div class="title-row">
                     <el-button text @click="router.back()" :icon="ArrowLeft" class="back-button">
-                        返回
+                        {{ $t('common.back') }}
                     </el-button>
                     <el-breadcrumb separator="/">
                         <el-breadcrumb-item>{{ note.subject }}</el-breadcrumb-item>
@@ -14,13 +14,13 @@
                 <div class="header-row">
                     <div class="buttons">
                         <el-button type="warning" @click="handleExportZip" :icon="Document" :loading="exportLoading" :disabled="exportLoading">
-                            导出笔记
+                            {{ $t('notes.view.exportNote') }}
                         </el-button>
                         <el-button type="primary" @click="showEditForm = true" :icon="Edit">
-                            编辑笔记
+                            {{ $t('notes.view.editNote') }}
                         </el-button>
                         <el-button type="danger" @click="deleteCurrentNote" :icon="Delete">
-                            删除笔记
+                            {{ $t('notes.view.deleteNote') }}
                         </el-button>
                     </div>
                 </div>
@@ -35,14 +35,14 @@
                 </div>
             </div>
         </template>
-        <NoteForm v-else title="编辑笔记" submit-button-text="保存修改" show-cancel-button :loading="editSubmitting" :initial-data="{
+        <NoteForm v-else title="notes.form.editFormTitle" submit-button-text="notes.view.saveChanges" show-cancel-button :loading="editSubmitting" :initial-data="{
             title: note!.title,
             subject: note!.subject,
             content: note!.content,
         }" :initial-images="note!.imgs" @submit="handleEditSubmit" @cancel="showEditForm = false" />
     </div>
     <div v-else class="container">
-        <el-empty description="笔记不存在，正在跳转..." />
+        <el-empty :description="$t('notes.view.notFound')" />
     </div>
     <el-image-viewer v-if="showPreview" :url-list="(note?.imgs ?? []).map(item => `${baseUrl}/uploads/images/${item}`)" show-progress
         hide-on-click-modal :max-scale="7" :min-scale="0.2" :initial-index="previewIndex" @close="showPreview = false"

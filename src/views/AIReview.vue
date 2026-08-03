@@ -2,8 +2,8 @@
     <div class="container">
         <div v-if="!configured" class="unconfigured-hint">
             <el-icon :size="48" color="var(--el-text-color-placeholder)"><ChatDotRound /></el-icon>
-            <h3>AI 功能未配置</h3>
-            <p>请点击右上角 <el-icon><Setting /></el-icon> 按钮设置 API 配置</p>
+            <h3>{{ $t('ai.unconfiguredTitle') }}</h3>
+            <p>{{ $t('ai.unconfiguredHintPrefix') }} <el-icon><Setting /></el-icon> {{ $t('ai.unconfiguredHintSuffix') }}</p>
         </div>
         <template v-else>
         <div ref="messageListRef" class="message-list">
@@ -14,7 +14,7 @@
                             <div v-if="message.thinking && showThinking" class="thinking-block">
                                 <div class="thinking-header" @click="toggleThinking(message)">
                                     <el-icon :size="12"><Cpu /></el-icon>
-                                    <span>思考过程</span>
+                                    <span>{{ $t('ai.thinking') }}</span>
                                     <el-icon :size="12" class="thinking-toggle-icon">
                                         <ArrowDown v-if="isThinkingExpanded(message)" />
                                         <ArrowRight v-else />
@@ -40,18 +40,18 @@
                             </template>
                         </template>
                         <div v-if="message.role === 'user'" class="message-actions">
-                            <el-icon class="action-btn" title="复制" @click.stop="copyMessage(message)">
+                            <el-icon class="action-btn" :title="$t('ai.copy')" @click.stop="copyMessage(message)">
                                 <CopyDocument />
                             </el-icon>
-                            <el-icon class="action-btn delete-btn" title="删除该对话及之后" @click.stop="truncateMessages(index)">
+                            <el-icon class="action-btn delete-btn" :title="$t('ai.deleteFromHere')" @click.stop="truncateMessages(index)">
                                 <Delete />
                             </el-icon>
                         </div>
                         <div v-if="message.role === 'assistant' && !sending" class="message-actions">
-                            <el-icon class="action-btn" title="复制" @click.stop="copyMessage(message)">
+                            <el-icon class="action-btn" :title="$t('ai.copy')" @click.stop="copyMessage(message)">
                                 <CopyDocument />
                             </el-icon>
-                            <el-icon class="action-btn" title="重新生成" @click.stop="retryMessage(index)">
+                            <el-icon class="action-btn" :title="$t('ai.regenerate')" @click.stop="retryMessage(index)">
                                 <Refresh />
                             </el-icon>
                         </div>
@@ -75,7 +75,7 @@
                     @keydown="onInputKeydown" />
                 <el-button type="primary" class="send-btn" :icon="Top" @click="sendMessage" :loading="sending"
                     :disabled="(!inputMessage.trim() && !selectedImages.length) || sending || uploading">
-                    {{ uploading ? '上传中...' : '发送' }}
+                    {{ uploading ? $t('ai.uploading') : $t('ai.send') }}
                 </el-button>
             </div>
         </div>
@@ -93,6 +93,9 @@ import { useAIReview } from '@/hooks/useAIReview'
 import type { ChatMsg } from '@/hooks/useAIReview'
 import type { ToolCallInfo } from '@/utils/stream'
 import { useCacheStore } from '@/stores/cache'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const store = useCacheStore()
 const visionEnabled = computed(() => store.visionEnabled)
@@ -101,8 +104,8 @@ const showThinking = computed(() => store.aiConfig.showThinking)
 
 const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches
 const inputPlaceholder = computed(() => isCoarsePointer
-    ? '输入您的问题...（点发送按钮，回车换行）'
-    : '输入您的问题...（Enter 发送，Shift+Enter 换行）')
+    ? t('ai.inputPlaceholderMobile')
+    : t('ai.inputPlaceholderDesktop'))
 
 const expandedThinking = reactive(new Set<ChatMsg>())
 function toggleThinking(msg: ChatMsg) {
@@ -118,15 +121,15 @@ function isThinkingExpanded(msg: ChatMsg) {
         || (sending.value && msg === chatMessages.value[chatMessages.value.length - 1])
 }
 
-const toolNames: Record<string, string> = {
-    fetch_note_by_title: '获取笔记详情',
-    fetch_all_notes: '获取全部笔记',
-    fetch_notes_by_day: '获取当日笔记',
-    search_notes: '搜索笔记',
-    add_note: '添加笔记',
-    delete_notes: '删除笔记',
-    update_note: '更新笔记',
-}
+const toolNames = computed<Record<string, string>>(() => ({
+    fetch_note_by_title: t('ai.tool.name.fetchNoteByTitle'),
+    fetch_all_notes: t('ai.tool.name.fetchAllNotes'),
+    fetch_notes_by_day: t('ai.tool.name.fetchNotesByDay'),
+    search_notes: t('ai.tool.name.searchNotes'),
+    add_note: t('ai.tool.name.addNote'),
+    delete_notes: t('ai.tool.name.deleteNotes'),
+    update_note: t('ai.tool.name.updateNote'),
+}))
 
 const MUTATION_TOOLS = new Set(['add_note', 'delete_notes', 'update_note'])
 function isMutationTool(name: string) {
@@ -139,7 +142,7 @@ function formatArgs(tool: ToolCallInfo): string {
 
     switch (tool.name) {
         case 'fetch_note_by_title':
-            return `标题: ${arg('title')}`
+            return `${t('ai.tool.arg.title')}: ${arg('title')}`
         case 'fetch_all_notes':
             return ''
         case 'fetch_notes_by_day': {
@@ -147,21 +150,21 @@ function formatArgs(tool: ToolCallInfo): string {
             if (Number.isFinite(ts) && ts > 0) {
                 const d = new Date(ts)
                 const pad = (n: number) => String(n).padStart(2, '0')
-                return `日期: ${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+                return `${t('ai.tool.arg.date')}: ${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
             }
-            return `时间戳: ${arg('someday')}`
+            return `${t('ai.tool.arg.timestamp')}: ${arg('someday')}`
         }
         case 'search_notes':
-            return `关键词: ${arg('keyword')}`
+            return `${t('ai.tool.arg.keyword')}: ${arg('keyword')}`
         case 'add_note': {
-            const parts = [`标题: ${arg('title')}`]
-            if (arg('subject')) parts.push(`科目: ${arg('subject')}`)
+            const parts = [`${t('ai.tool.arg.title')}: ${arg('title')}`]
+            if (arg('subject')) parts.push(`${t('ai.tool.arg.subject')}: ${arg('subject')}`)
             return parts.join(' · ')
         }
         case 'delete_notes':
-            return `标题: ${arg('title')}`
+            return `${t('ai.tool.arg.title')}: ${arg('title')}`
         case 'update_note':
-            return `旧: ${arg('old_title')} → 新: ${arg('new_title')}`
+            return `${t('ai.tool.arg.old')}: ${arg('old_title')} → ${t('ai.tool.arg.new')}: ${arg('new_title')}`
         default:
             return JSON.stringify(args)
     }
@@ -190,7 +193,7 @@ async function copyMessage(message: ChatMsg) {
         document.execCommand('copy')
         document.body.removeChild(ta)
     }
-    ElMessage.success('已复制')
+    ElMessage.success(t('ai.copied'))
 }
 
 const {

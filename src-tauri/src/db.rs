@@ -261,34 +261,29 @@ impl AppState {
         Ok(())
     }
 
-    pub async fn delete_notes(&self, titles: &[String]) -> Result<usize, String> {
-        if titles.is_empty() {
-            return Err("标题列表不能为空".into());
+    pub async fn delete_note(&self, title: &str) -> Result<(), String> {
+        if title.trim().is_empty() {
+            return Err("标题不能为空".into());
         }
         let mut db = self.load_database_raw()?;
-        let title_set: std::collections::HashSet<String> = titles.iter().cloned().collect();
+        let idx = db.notes.iter().position(|n| n.title == title)
+            .ok_or_else(|| "笔记不存在".to_string())?;
 
-        let to_delete: Vec<NoteMeta> = db.notes.iter()
-            .filter(|n| title_set.contains(&n.title))
-            .cloned()
-            .collect();
-
-        for note in &to_delete {
-            let mut cache = self.content_cache.write().await;
-            cache.remove(&note.title);
-            let imgs = notes_file::read_note_imgs(&self.paths, &note.title);
-            for img in &imgs {
-                let img_path = self.paths.uploads_folder.join(img);
-                let _ = std::fs::remove_file(img_path);
-            }
-            let md_path = self.paths.notes_folder.join(format!("{}.md", note.title));
-            let _ = std::fs::remove_file(md_path);
+        let mut cache = self.content_cache.write().await;
+        cache.remove(title);
+        let imgs = notes_file::read_note_imgs(&self.paths, title);
+        for img in &imgs {
+            let img_path = self.paths.uploads_folder.join(img);
+            let _ = std::fs::remove_file(img_path);
         }
+        let md_path = self.paths.notes_folder.join(format!("{}.md", title));
+        let _ = std::fs::remove_file(md_path);
 
-        db.notes.retain(|n| !title_set.contains(&n.title));
+        db.notes.remove(idx);
         self.save_database_raw(&db)?;
+        drop(cache);
         self.refresh_cache().await;
-        Ok(to_delete.len())
+        Ok(())
     }
 
     pub fn fetch_ai_chat(&self) -> Result<Vec<ChatMessage>, String> {
@@ -303,9 +298,5 @@ impl AppState {
     pub fn save_ai_chat(&self, messages: &[ChatMessage]) -> Result<(), String> {
         let json = serde_json::to_string_pretty(messages).map_err(|e| format!("序列化 AI 聊天失败: {}", e))?;
         std::fs::write(&self.paths.ai_chat_file, json).map_err(|e| format!("写入 AI 聊天失败: {} (路径: {})", e, self.paths.ai_chat_file.display()))
-    }
-
-    pub fn delete_ai_chat(&self) -> Result<(), String> {
-        self.save_ai_chat(&[])
     }
 }

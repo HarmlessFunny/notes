@@ -121,7 +121,7 @@ function isThinkingExpanded(msg: ChatMsg) {
 const toolNames: Record<string, string> = {
     fetch_note_by_title: '获取笔记详情',
     fetch_all_notes: '获取全部笔记',
-    fetch_notes_by_day: '获取当日复习笔记',
+    fetch_notes_by_day: '获取当日笔记',
     search_notes: '搜索笔记',
     add_note: '添加笔记',
     delete_notes: '删除笔记',
@@ -158,10 +158,8 @@ function formatArgs(tool: ToolCallInfo): string {
             if (arg('subject')) parts.push(`科目: ${arg('subject')}`)
             return parts.join(' · ')
         }
-        case 'delete_notes': {
-            const titles = Array.isArray(args.titles) ? args.titles as unknown[] : []
-            return `删除 ${titles.length} 篇`
-        }
+        case 'delete_notes':
+            return `标题: ${arg('title')}`
         case 'update_note':
             return `旧: ${arg('old_title')} → 新: ${arg('new_title')}`
         default:

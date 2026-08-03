@@ -15,10 +15,7 @@ pub struct SearchQuery {
     q: Option<String>,
 }
 
-#[derive(Deserialize)]
-pub struct DeleteBody {
-    titles: Vec<String>,
-}
+
 
 pub async fn get_all_notes(
     State(state): State<Arc<AppState>>,
@@ -211,20 +208,21 @@ pub async fn update_note_route(
     }
 }
 
-pub async fn delete_notes_route(
+pub async fn delete_note_route(
     State(state): State<Arc<AppState>>,
-    Json(body): Json<DeleteBody>,
+    Path(title): Path<String>,
 ) -> Result<Json<ApiResponse>, (StatusCode, Json<ApiResponse>)> {
-    if body.titles.is_empty() {
+    let decoded = urlencoding::decode(&title).unwrap_or(std::borrow::Cow::Borrowed(&title)).to_string();
+    if decoded.trim().is_empty() {
         return Err((StatusCode::BAD_REQUEST, Json(ApiResponse::error("请选择要删除的笔记"))));
     }
-    match state.delete_notes(&body.titles).await {
-        Ok(count) => Ok(Json(ApiResponse {
+    match state.delete_note(&decoded).await {
+        Ok(()) => Ok(Json(ApiResponse {
             status: "success".into(),
-            message: Some(format!("已删除 {} 篇笔记", count)),
-            deleted_count: Some(count),
+            message: Some(format!("已删除笔记「{}」", decoded)),
+            deleted_count: Some(1),
             ..Default::default()
         })),
-        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error(&e)))),
+        Err(e) => Err((StatusCode::NOT_FOUND, Json(ApiResponse::error(&e)))),
     }
 }

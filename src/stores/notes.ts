@@ -66,6 +66,7 @@ export const useNotesStore = defineStore('notes', () => {
     }
 
     async function deleteNotes(titles: string[]) {
+        if (titles.length === 0) return false
         try {
             const ok = await ElMessageBox.confirm(`确认删除"${titles.join('"、"')}"笔记吗？`, '警告', {
                 confirmButtonText: '确认',
@@ -77,11 +78,13 @@ export const useNotesStore = defineStore('notes', () => {
             return false
         }
         try {
-            const response = await axios.delete('/api/notes/delete', { data: { titles } })
+            for (const title of titles) {
+                await axios.delete(`/api/note/${encodeURIComponent(title)}`)
+            }
             await flashAllNotes()
             const cacheStore = useCacheStore()
             cacheStore.checkedNotes = cacheStore.checkedNotes.filter(t => !titles.includes(t))
-            handleApiSuccess(response.data.message)
+            handleApiSuccess(`已删除 ${titles.length} 篇笔记`)
             return true
         } catch (error: any) {
             handleApiError(error, '删除笔记失败')

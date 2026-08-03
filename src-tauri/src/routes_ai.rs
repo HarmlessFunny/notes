@@ -80,15 +80,6 @@ pub async fn save_ai_chat(
     }
 }
 
-pub async fn delete_ai_chat(
-    State(state): State<Arc<AppState>>,
-) -> Json<ApiResponse> {
-    match state.delete_ai_chat() {
-        Ok(()) => Json(ApiResponse::success()),
-        Err(e) => Json(ApiResponse::error(&e)),
-    }
-}
-
 pub async fn upload_ai_image(
     State(state): State<Arc<AppState>>,
     mut multipart: Multipart,

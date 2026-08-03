@@ -76,13 +76,13 @@ pub fn get_tool_definitions() -> Vec<Value> {
             "type": "function",
             "function": {
                 "name": "delete_notes",
-                "description": "根据标题列表批量删除笔记",
+                "description": "根据标题删除单篇笔记",
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "titles": {"type": "array", "items": {"type": "string"}, "description": "笔记标题数组"}
+                        "title": {"type": "string", "description": "笔记标题"}
                     },
-                    "required": ["titles"]
+                    "required": ["title"]
                 }
             }
         }),
@@ -148,11 +148,9 @@ pub async fn execute_tool(state: &Arc<AppState>, name: &str, args: &Value) -> Va
             }
         }
         "delete_notes" => {
-            let titles: Vec<String> = args["titles"].as_array()
-                .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
-                .unwrap_or_default();
-            match state.delete_notes(&titles).await {
-                Ok(count) => json!({"status": "success", "message": format!("已删除 {} 篇笔记", count)}),
+            let title = args["title"].as_str().unwrap_or("");
+            match state.delete_note(title).await {
+                Ok(()) => json!({"status": "success", "message": format!("已删除笔记「{}」", title)}),
                 Err(e) => json!({"status": "error", "message": e}),
             }
         }

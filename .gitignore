@@ -81,9 +81,7 @@ src-tauri/target/
 src-tauri/gen/android/app/build/
 
 # Database / user data
-data/database.json
-data/uploads/
-data/notes/
+data/
 
 # Release output
 release/

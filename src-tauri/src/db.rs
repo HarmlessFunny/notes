@@ -26,7 +26,7 @@ impl AppState {
             eprintln!("[notes] create uploads_folder failed: {e} (path: {:?})", self.paths.uploads_folder);
         }
         if !self.paths.db_file.exists() {
-            let db = Database { notes: vec![], ai_chat: vec![] };
+            let db = Database { notes: vec![] };
             match serde_json::to_string_pretty(&db) {
                 Ok(json) => {
                     if let Err(e) = std::fs::write(&self.paths.db_file, json) {
@@ -36,6 +36,7 @@ impl AppState {
                 Err(e) => eprintln!("[notes] serialize database.json failed: {e}"),
             }
         }
+        self.migrate_legacy_ai_chat();
         // No contention during initialization, safe sync refresh
         if let Ok(db) = self.load_database_raw() {
             let mut cache = std::collections::HashMap::new();
@@ -61,16 +62,50 @@ impl AppState {
 
     pub fn load_database_raw(&self) -> Result<Database, String> {
         let data = std::fs::read_to_string(&self.paths.db_file).map_err(|e| format!("读取数据库失败: {} (路径: {})", e, self.paths.db_file.display()))?;
-        let mut db: Database = serde_json::from_str(&data).map_err(|e| format!("解析数据库失败: {}", e))?;
-        if db.ai_chat.is_empty() {
-            db.ai_chat = vec![];
-        }
+        let db: Database = serde_json::from_str(&data).map_err(|e| format!("解析数据库失败: {}", e))?;
         Ok(db)
     }
 
     pub fn save_database_raw(&self, db: &Database) -> Result<(), String> {
         let json = serde_json::to_string_pretty(db).map_err(|e| format!("序列化数据库失败: {}", e))?;
         std::fs::write(&self.paths.db_file, json).map_err(|e| format!("写入数据库失败: {}", e))
+    }
+
+    fn migrate_legacy_ai_chat(&self) {
+        if self.paths.ai_chat_file.exists() {
+            return;
+        }
+        let Ok(data) = std::fs::read_to_string(&self.paths.db_file) else {
+            return;
+        };
+        let Ok(mut root) = serde_json::from_str::<serde_json::Value>(&data) else {
+            return;
+        };
+        let ai_chat = root.get("ai_chat").cloned().unwrap_or_else(|| serde_json::json!([]));
+        let json = match serde_json::to_string_pretty(&ai_chat) {
+            Ok(v) => v,
+            Err(e) => {
+                eprintln!("[notes] serialize ai_chat.json failed: {e}");
+                return;
+            }
+        };
+        if let Err(e) = std::fs::write(&self.paths.ai_chat_file, json) {
+            eprintln!("[notes] write ai_chat.json failed: {e}");
+            return;
+        }
+        if root.get("ai_chat").is_some() {
+            if let Some(obj) = root.as_object_mut() {
+                obj.remove("ai_chat");
+            }
+            match serde_json::to_string_pretty(&root) {
+                Ok(db_json) => {
+                    if let Err(e) = std::fs::write(&self.paths.db_file, db_json) {
+                        eprintln!("[notes] rewrite database.json failed: {e}");
+                    }
+                }
+                Err(e) => eprintln!("[notes] serialize database.json failed: {e}"),
+            }
+        }
     }
 
     fn days_difference(later: &str, earlier: &str) -> i32 {
@@ -257,19 +292,20 @@ impl AppState {
     }
 
     pub fn fetch_ai_chat(&self) -> Result<Vec<ChatMessage>, String> {
-        let db = self.load_database_raw()?;
-        Ok(db.ai_chat)
+        if !self.paths.ai_chat_file.exists() {
+            return Ok(vec![]);
+        }
+        let data = std::fs::read_to_string(&self.paths.ai_chat_file)
+            .map_err(|e| format!("读取 AI 聊天失败: {} (路径: {})", e, self.paths.ai_chat_file.display()))?;
+        serde_json::from_str(&data).map_err(|e| format!("解析 AI 聊天失败: {}", e))
     }
 
     pub fn save_ai_chat(&self, messages: &[ChatMessage]) -> Result<(), String> {
-        let mut db = self.load_database_raw()?;
-        db.ai_chat = messages.to_vec();
-        self.save_database_raw(&db)
+        let json = serde_json::to_string_pretty(messages).map_err(|e| format!("序列化 AI 聊天失败: {}", e))?;
+        std::fs::write(&self.paths.ai_chat_file, json).map_err(|e| format!("写入 AI 聊天失败: {} (路径: {})", e, self.paths.ai_chat_file.display()))
     }
 
     pub fn delete_ai_chat(&self) -> Result<(), String> {
-        let mut db = self.load_database_raw()?;
-        db.ai_chat = vec![];
-        self.save_database_raw(&db)
+        self.save_ai_chat(&[])
     }
 }

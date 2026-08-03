@@ -14,7 +14,6 @@ pub fn build_export_zip(notes: &[Note], paths: &AppPaths) -> Result<Vec<u8>, Str
     })).collect();
     let db_content = serde_json::to_string_pretty(&serde_json::json!({
         "notes": db_notes,
-        "ai_chat": []
     })).map_err(|e| format!("序列化失败: {}", e))?;
 
     zip.start_file("database.json", options)

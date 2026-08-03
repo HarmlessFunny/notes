@@ -10,7 +10,6 @@ pub struct NoteMeta {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Database {
     pub notes: Vec<NoteMeta>,
-    pub ai_chat: Vec<ChatMessage>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

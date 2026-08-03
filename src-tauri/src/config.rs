@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 pub struct AppPaths {
     pub db_file: PathBuf,
+    pub ai_chat_file: PathBuf,
     pub notes_folder: PathBuf,
     pub uploads_folder: PathBuf,
     pub dist_folder: PathBuf,
@@ -23,6 +24,7 @@ impl AppPaths {
         };
         Self {
             db_file: base.join("database.json"),
+            ai_chat_file: base.join("ai_chat.json"),
             notes_folder: base.join("notes"),
             uploads_folder: base.join("uploads").join("images"),
             dist_folder,

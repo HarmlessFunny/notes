@@ -54,7 +54,7 @@
 
 <script setup lang="ts">
 defineOptions({ name: 'SettingsAi' })
-import { reactive, computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { reactive, computed, ref, watch, onBeforeUnmount } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import type { AiConfig } from '@/types'
 import { useCacheStore } from '@/stores/cache'
@@ -136,29 +136,16 @@ const reasoningLevel = computed({
 })
 
 const form = reactive<AiConfig>({
-    apiKey: '',
-    baseUrl: '',
-    modelName: '',
-    visionEnabled: true,
-    systemPrompt: '',
-    reasoningEffort: 'default',
-    showThinking: true,
+    apiKey: store.aiConfig.apiKey,
+    baseUrl: store.aiConfig.baseUrl,
+    modelName: store.aiConfig.modelName,
+    visionEnabled: store.aiConfig.visionEnabled,
+    systemPrompt: store.aiConfig.systemPrompt ?? '',
+    reasoningEffort: store.aiConfig.reasoningEffort ?? 'default',
+    showThinking: store.aiConfig.showThinking ?? true,
 })
 
 const dirty = ref(false)
-
-// 进入页面时从已保存配置初始化表单
-onMounted(() => {
-    const cfg = store.aiConfig
-    form.apiKey = cfg.apiKey
-    form.baseUrl = cfg.baseUrl
-    form.modelName = cfg.modelName
-    form.visionEnabled = cfg.visionEnabled
-    form.systemPrompt = cfg.systemPrompt ?? ''
-    form.reasoningEffort = cfg.reasoningEffort ?? 'default'
-    form.showThinking = cfg.showThinking ?? true
-    dirty.value = false
-})
 
 // 修改即自动保存（写入 store + localStorage）
 watch(form, () => {

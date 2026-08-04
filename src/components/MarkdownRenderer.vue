@@ -140,6 +140,15 @@ const sanitizedHtml = computed(() => {
 .markdown-body {
     box-sizing: border-box;
     padding: 0;
+    background-color: transparent;
+}
+
+/* 超宽块级公式原地横向滚动，避免撑破容器产生整页横向滚动条 */
+.markdown-body .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-width: 100%;
+    padding: 2px 0;
 }
 
 /* 暗色模式覆盖 */

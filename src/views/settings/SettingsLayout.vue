@@ -27,7 +27,7 @@ function handleTabChange(name: string | number) {
 
 <style scoped>
 .container {
-    padding: 30px 10px;
+    padding: 15px 10px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.8;
     color: var(--el-text-color-primary);

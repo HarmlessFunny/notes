@@ -22,7 +22,6 @@ export default {
         settings: '设置',
     },
     notes: {
-        listTitle: '笔记列表',
         searchPlaceholder: '搜索笔记标题/科目...',
         pickDate: '选择日期',
         import: '导入',

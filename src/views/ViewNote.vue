@@ -2,18 +2,22 @@
   <div class="container">
     <el-card class="notes-card" shadow="hover">
       <template #header>
-        <span class="card-title">{{ $t('notes.listTitle') }}：{{ humanDate }}</span>
+        <div class="card-header">
+          <span class="card-title">{{ humanDate }}</span>
+          <el-date-picker v-model="selectedDate" type="date" :placeholder="$t('notes.pickDate')" :format="dateFormat" value-format="x"
+            @change="handleDateChange(selectedDate)" />
+        </div>
       </template>
 
       <div class="notes-toolbar">
         <el-input ref="searchInputRef" v-model="searchQuery" :placeholder="$t('notes.searchPlaceholder')" clearable class="search-input"
           :prefix-icon="Search" />
-        <el-date-picker v-model="selectedDate" type="date" :placeholder="$t('notes.pickDate')" :format="dateFormat" value-format="x"
-          @change="handleDateChange(selectedDate)" />
-        <el-button type="success" @click="handleImport" :icon="Upload">{{ $t('notes.import') }}</el-button>
-        <div class="toolbar-actions" v-if="selectedDate === null && checkedNotes.length > 0">
-          <el-button type="warning" @click="handleExportChecked" :icon="Download" :loading="exportLoading" :disabled="exportLoading">{{ $t('notes.export') }}</el-button>
-          <el-button type="danger" @click="deleteChecked">{{ $t('notes.delete') }}</el-button>
+        <div class="toolbar-actions">
+          <el-button type="success" @click="handleImport" :icon="Upload">{{ $t('notes.import') }}</el-button>
+          <template v-if="selectedDate === null && checkedNotes.length > 0">
+            <el-button type="warning" @click="handleExportChecked" :icon="Download" :loading="exportLoading" :disabled="exportLoading">{{ $t('notes.export') }}</el-button>
+            <el-button type="danger" @click="deleteChecked" :icon="Delete">{{ $t('notes.delete') }}</el-button>
+          </template>
         </div>
       </div>
 
@@ -46,7 +50,7 @@
 
 <script setup lang="ts">
 defineOptions({ name: 'ViewNote' })
-import { Search, Download, Upload } from '@element-plus/icons-vue'
+import { Search, Download, Upload, Delete } from '@element-plus/icons-vue'
 import { useViewNote } from '@/hooks/useViewNote'
 import { useCacheStore } from '@/stores/cache'
 import { useNotesStore } from '@/stores/notes'
@@ -111,12 +115,26 @@ onUnmounted(() => document.removeEventListener('keydown', handleGlobalKeydown))
 
 <style scoped>
 .container {
-  padding: 30px 10px;
+  padding: 15px 10px;
   font-family: var(--el-font-family);
 }
 
 .notes-card {
   margin-bottom: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.card-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
 .notes-toolbar {
@@ -171,16 +189,12 @@ onUnmounted(() => document.removeEventListener('keydown', handleGlobalKeydown))
     width: 100%;
   }
 
-  .notes-toolbar .el-date-picker {
+  .card-header .el-date-picker {
     width: 100%;
   }
 
   .toolbar-actions {
     margin-left: 0;
-  }
-
-  .card-title {
-    font-size: 17px;
   }
 }
 
@@ -190,7 +204,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleGlobalKeydown))
   }
 
   .card-title {
-    font-size: 15px;
+    font-size: 17px;
   }
 }
 </style>

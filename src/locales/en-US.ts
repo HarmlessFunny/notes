@@ -23,7 +23,6 @@ const enUS: typeof zhCN = {    common: {
         settings: 'Settings',
     },
     notes: {
-        listTitle: 'Notes',
         searchPlaceholder: 'Search title/subject...',
         pickDate: 'Pick a date',
         import: 'Import',

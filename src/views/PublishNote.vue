@@ -26,7 +26,7 @@ const handleFormSubmit = async (_formData: NoteFormData, _fileList: UploadFile[]
 
 <style scoped>
 .container {
-  padding: 30px 10px;
+  padding: 15px 10px;
   font-family: var(--el-font-family);
 }
 

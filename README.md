@@ -18,6 +18,7 @@
 - **ZIP 导出** — 将笔记导出为 ZIP（含图片）：桌面端弹保存对话框，手机端调起系统分享面板
 - **ZIP 导入** — 将导出的 ZIP 一键恢复为笔记
 - **自动检查更新** — 启动时静默检查 GitHub 最新 Release，设置页也可手动检查并跳转下载
+- **多语言界面** — 内置中文 / English，设置页即时切换并自动记住偏好
 - **响应式设计** — 适配桌面端和移动端
 
 ## 下载
@@ -94,9 +95,18 @@ AI 功能（对话复习）的 API 配置在网页右上角 ⚙️ 设置：
 | 启用识图 | `false` |
 | 思考模式 | `默认` / `禁用` / `low` / `medium` / `high` / `xhigh` / `max` |
 | 显示思考 | `true` |
-| 系统提示词 | 留空使用默认提示词；占位符`{timestamp}`为当前毫秒级时间戳 |
+| 系统提示词 | 留空使用默认提示词（跟随界面语言）；占位符`{timestamp}`为当前毫秒级时间戳 |
 
 配置保存到浏览器 `localStorage`，无需环境变量。
+
+## 国际化 (i18n)
+
+界面支持中文 / English 切换，设置页即时生效，偏好持久化保存。
+
+- **文案定义** — `src/locales/zh-CN.ts` 与 `en-US.ts`（en 以 zh 结构推导类型）；组件内通过 `useI18n()` / `$t()` 取 key
+- **语言传递** — 前端对本地 API 请求自动携带 `X-Lang: zh|en` 请求头；后端 `i18n.rs` 的 `Lang` 提取器读取该头，本地化所有接口错误消息（含磁盘 I/O 异常）
+- **添加新语言** — 在 `src/locales/` 新建 `<code>.ts` 并按 `zh-CN.ts` 结构翻译，到 `index.ts` 注册（locale 值、语言显示名、Element Plus 组件文案）；后端文案为内联 `i18n::text(lang, zh, en)` 双语对，新增语言需同步补充
+- **AI 层保持中文** — AI 工具定义/摘要、默认系统提示词及 AI 读写笔记的内部消息固定中文：复习内容面向中文用户，不随界面语言切换
 
 ## 数据存储
 
@@ -104,7 +114,8 @@ AI 功能（对话复习）的 API 配置在网页右上角 ⚙️ 设置：
 
 ```
 data/
-├── database.json          # 笔记元信息（title/subject/time）+ AI 聊天记录（含思维链、工具调用）
+├── database.json          # 笔记元信息（title/subject/time）
+├── ai_chat.json           # AI 聊天记录（含思维链、工具调用）
 ├── notes/                 # 笔记正文（Markdown 文件）
 │   ├── <title>.md
 │   └── ...
@@ -115,6 +126,7 @@ data/
 
 - `database.json` 只存笔记元信息（标题、科目、时间）
 - 每篇笔记正文存储在 `notes/<title>.md`，首行为 `# subject/title`
+- AI 聊天记录单独存于 `ai_chat.json`，与笔记数据互不干扰
 - 运行后自动创建，无需手动初始化
 
 ## 项目结构
@@ -124,6 +136,7 @@ notes/
 ├── src/                    # Vue 3 前端
 │   ├── components/
 │   ├── hooks/
+│   ├── locales/               # 国际化文案（zh-CN.ts / en-US.ts / index.ts）
 │   ├── stores/
 │   ├── views/
 │   ├── router/
@@ -133,6 +146,7 @@ notes/
 │   │   ├── config.rs         # 数据路径、复习间隔配置
 │   │   ├── db.rs             # 数据层（JSON 数据库 + 缓存）
 │   │   ├── models.rs         # 数据结构定义
+│   │   ├── i18n.rs           # 语言提取器（X-Lang 头）
 │   │   ├── notes_file.rs     # 笔记文件读写
 │   │   ├── routes_notes.rs   # 笔记 CRUD API
 │   │   ├── routes_ai.rs      # AI 对话/识图上传 API
@@ -163,7 +177,7 @@ notes/
 | `/api/notes/delete` | DELETE | 批量删除笔记 |
 | `/api/ai/status` | GET | AI 配置状态 |
 | `/api/ai` | POST | AI 流式对话 |
-| `/api/ai/chat` | GET/POST/DELETE | AI 对话记录管理 |
+| `/api/ai/chat` | GET/POST | AI 对话记录读取/保存 |
 | `/api/ai/upload` | POST | 上传 AI 识图图片 |
 | `/api/export` | GET | 导出笔记为 ZIP（桌面保存/手机分享） |
 | `/api/import` | POST | 导入 ZIP 笔记 |

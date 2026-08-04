@@ -38,7 +38,7 @@ impl AppState {
         }
         self.migrate_legacy_ai_chat();
         // No contention during initialization, safe sync refresh
-        if let Ok(db) = self.load_database_raw() {
+        if let Ok(db) = self.load_database_raw("zh") {
             let mut cache = std::collections::HashMap::new();
             for note in &db.notes {
                 cache.insert(note.title.clone(), notes_file::read_note_file(&self.paths, &note.title));
@@ -50,7 +50,7 @@ impl AppState {
     }
 
     pub(crate) async fn refresh_cache(&self) {
-        if let Ok(db) = self.load_database_raw() {
+        if let Ok(db) = self.load_database_raw("zh") {
             let mut cache = std::collections::HashMap::new();
             for note in &db.notes {
                 cache.insert(note.title.clone(), notes_file::read_note_file(&self.paths, &note.title));
@@ -60,15 +60,15 @@ impl AppState {
         }
     }
 
-    pub fn load_database_raw(&self) -> Result<Database, String> {
-        let data = std::fs::read_to_string(&self.paths.db_file).map_err(|e| format!("读取数据库失败: {} (路径: {})", e, self.paths.db_file.display()))?;
-        let db: Database = serde_json::from_str(&data).map_err(|e| format!("解析数据库失败: {}", e))?;
+    pub fn load_database_raw(&self, lang: &str) -> Result<Database, String> {
+        let data = std::fs::read_to_string(&self.paths.db_file).map_err(|e| crate::i18n::text(lang, "读取数据库失败: {} (路径: {})", "Failed to read the database: {} (path: {})").replace("{}", &e.to_string()).replace("{}", &self.paths.db_file.display().to_string()))?;
+        let db: Database = serde_json::from_str(&data).map_err(|e| crate::i18n::text(lang, "解析数据库失败: {}", "Failed to parse the database: {}").replace("{}", &e.to_string()))?;
         Ok(db)
     }
 
-    pub fn save_database_raw(&self, db: &Database) -> Result<(), String> {
-        let json = serde_json::to_string_pretty(db).map_err(|e| format!("序列化数据库失败: {}", e))?;
-        std::fs::write(&self.paths.db_file, json).map_err(|e| format!("写入数据库失败: {}", e))
+    pub fn save_database_raw(&self, db: &Database, lang: &str) -> Result<(), String> {
+        let json = serde_json::to_string_pretty(db).map_err(|e| crate::i18n::text(lang, "序列化数据库失败: {}", "Failed to serialize the database: {}").replace("{}", &e.to_string()))?;
+        std::fs::write(&self.paths.db_file, json).map_err(|e| crate::i18n::text(lang, "写入数据库失败: {}", "Failed to write the database: {}").replace("{}", &e.to_string()))
     }
 
     fn migrate_legacy_ai_chat(&self) {
@@ -134,8 +134,8 @@ impl AppState {
         None
     }
 
-    pub fn fetch_all_notes(&self) -> Result<Vec<LightNote>, String> {
-        let db = self.load_database_raw()?;
+    pub fn fetch_all_notes(&self, lang: &str) -> Result<Vec<LightNote>, String> {
+        let db = self.load_database_raw(lang)?;
         Ok(db.notes.iter().map(|n| LightNote {
             title: n.title.clone(),
             subject: n.subject.clone(),
@@ -143,8 +143,8 @@ impl AppState {
         }).collect())
     }
 
-    pub fn fetch_notes_by_day(&self, someday: &str) -> Result<Vec<LightNote>, String> {
-        let db = self.load_database_raw()?;
+    pub fn fetch_notes_by_day(&self, someday: &str, lang: &str) -> Result<Vec<LightNote>, String> {
+        let db = self.load_database_raw(lang)?;
         let diffs: Vec<i32> = REVIEW_INTERVAL_DAYS.to_vec();
         let filtered: Vec<LightNote> = db.notes.iter()
             .filter(|n| diffs.contains(&Self::days_difference(someday, &n.time)))
@@ -157,8 +157,8 @@ impl AppState {
         Ok(filtered)
     }
 
-    pub fn fetch_notes_by_titles(&self, titles: &[String]) -> Result<Vec<Note>, String> {
-        let db = self.load_database_raw()?;
+    pub fn fetch_notes_by_titles(&self, titles: &[String], lang: &str) -> Result<Vec<Note>, String> {
+        let db = self.load_database_raw(lang)?;
         let title_set: std::collections::HashSet<String> = titles.iter().cloned().collect();
         let mut result = Vec::new();
         for meta in &db.notes {
@@ -177,11 +177,11 @@ impl AppState {
         Ok(result)
     }
 
-    pub async fn search_notes(&self, keyword: &str) -> Result<Vec<LightNote>, String> {
+    pub async fn search_notes(&self, keyword: &str, lang: &str) -> Result<Vec<LightNote>, String> {
         if keyword.trim().is_empty() {
             return Ok(vec![]);
         }
-        let db = self.load_database_raw()?;
+        let db = self.load_database_raw(lang)?;
         let q = keyword.trim().to_lowercase();
         let cache = self.content_cache.read().await;
         let mut matched = Vec::new();
@@ -215,7 +215,7 @@ impl AppState {
             timestamp.to_string()
         };
 
-        let mut db = self.load_database_raw()?;
+        let mut db = self.load_database_raw(lang)?;
         if db.notes.iter().any(|n| n.title == title) {
             return Err(crate::i18n::text(lang, "标题「{}」已存在，请更换标题", "A note titled \"{}\" already exists, please pick another title").replace("{}", title));
         }
@@ -225,7 +225,7 @@ impl AppState {
             subject: subject.to_string(),
             time: ts,
         });
-        self.save_database_raw(&db)?;
+        self.save_database_raw(&db, lang)?;
         notes_file::save_note_file(&self.paths, title, subject, content, imgs, lang)?;
 
         let mut cache = self.content_cache.write().await;
@@ -238,7 +238,7 @@ impl AppState {
             return Err(err);
         }
 
-        let mut db = self.load_database_raw()?;
+        let mut db = self.load_database_raw(lang)?;
         let idx = db.notes.iter().position(|n| n.title == old_title)
             .ok_or_else(|| crate::i18n::text(lang, "笔记不存在", "Note not found"))?;
 
@@ -248,7 +248,7 @@ impl AppState {
 
         db.notes[idx].title = new_title.to_string();
         db.notes[idx].subject = subject.to_string();
-        self.save_database_raw(&db)?;
+        self.save_database_raw(&db, lang)?;
 
         notes_file::save_note_file(&self.paths, new_title, subject, content, imgs, lang)?;
 
@@ -265,7 +265,7 @@ impl AppState {
         if title.trim().is_empty() {
             return Err(crate::i18n::text(lang, "标题不能为空", "Title cannot be empty"));
         }
-        let mut db = self.load_database_raw()?;
+        let mut db = self.load_database_raw(lang)?;
         let idx = db.notes.iter().position(|n| n.title == title)
             .ok_or_else(|| crate::i18n::text(lang, "笔记不存在", "Note not found"))?;
 
@@ -280,23 +280,23 @@ impl AppState {
         let _ = std::fs::remove_file(md_path);
 
         db.notes.remove(idx);
-        self.save_database_raw(&db)?;
+        self.save_database_raw(&db, lang)?;
         drop(cache);
         self.refresh_cache().await;
         Ok(())
     }
 
-    pub fn fetch_ai_chat(&self) -> Result<Vec<ChatMessage>, String> {
+    pub fn fetch_ai_chat(&self, lang: &str) -> Result<Vec<ChatMessage>, String> {
         if !self.paths.ai_chat_file.exists() {
             return Ok(vec![]);
         }
         let data = std::fs::read_to_string(&self.paths.ai_chat_file)
-            .map_err(|e| format!("读取 AI 聊天失败: {} (路径: {})", e, self.paths.ai_chat_file.display()))?;
-        serde_json::from_str(&data).map_err(|e| format!("解析 AI 聊天失败: {}", e))
+            .map_err(|e| crate::i18n::text(lang, "读取 AI 聊天失败: {} (路径: {})", "Failed to read AI chat history: {} (path: {})").replace("{}", &e.to_string()).replace("{}", &self.paths.ai_chat_file.display().to_string()))?;
+        serde_json::from_str(&data).map_err(|e| crate::i18n::text(lang, "解析 AI 聊天失败: {}", "Failed to parse AI chat history: {}").replace("{}", &e.to_string()))
     }
 
-    pub fn save_ai_chat(&self, messages: &[ChatMessage]) -> Result<(), String> {
-        let json = serde_json::to_string_pretty(messages).map_err(|e| format!("序列化 AI 聊天失败: {}", e))?;
-        std::fs::write(&self.paths.ai_chat_file, json).map_err(|e| format!("写入 AI 聊天失败: {} (路径: {})", e, self.paths.ai_chat_file.display()))
+    pub fn save_ai_chat(&self, messages: &[ChatMessage], lang: &str) -> Result<(), String> {
+        let json = serde_json::to_string_pretty(messages).map_err(|e| crate::i18n::text(lang, "序列化 AI 聊天失败: {}", "Failed to serialize AI chat history: {}").replace("{}", &e.to_string()))?;
+        std::fs::write(&self.paths.ai_chat_file, json).map_err(|e| crate::i18n::text(lang, "写入 AI 聊天失败: {} (路径: {})", "Failed to write AI chat history: {} (path: {})").replace("{}", &e.to_string()).replace("{}", &self.paths.ai_chat_file.display().to_string()))
     }
 }

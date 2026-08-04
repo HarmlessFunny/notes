@@ -59,7 +59,7 @@ async fn export_notes(
     lang: Option<String>,
 ) -> Result<String, String> {
     let lang = lang.unwrap_or_else(|| "zh".to_string());
-    let notes = state.fetch_notes_by_titles(&titles)
+    let notes = state.fetch_notes_by_titles(&titles, &lang)
         .map_err(|e| format!("{}: {}", crate::i18n::text(&lang, "查询笔记失败", "Failed to query notes"), e))?;
     if notes.is_empty() {
         return Err(crate::i18n::text(&lang, "未找到要导出的笔记", "No notes found to export"));

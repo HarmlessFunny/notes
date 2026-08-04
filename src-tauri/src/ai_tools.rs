@@ -110,7 +110,7 @@ pub async fn execute_tool(state: &Arc<AppState>, name: &str, args: &Value) -> Va
     match name {
         "fetch_note_by_title" => {
             let title = args["title"].as_str().unwrap_or("");
-            match state.fetch_notes_by_titles(&[title.to_string()]) {
+            match state.fetch_notes_by_titles(&[title.to_string()], "zh") {
                 Ok(mut notes) if !notes.is_empty() => {
                     json!({"status": "success", "note": notes.remove(0)})
                 }
@@ -118,21 +118,21 @@ pub async fn execute_tool(state: &Arc<AppState>, name: &str, args: &Value) -> Va
             }
         }
         "fetch_all_notes" => {
-            match state.fetch_all_notes() {
+            match state.fetch_all_notes("zh") {
                 Ok(notes) => json!({"status": "success", "notes": notes}),
                 Err(e) => json!({"status": "error", "message": e}),
             }
         }
         "fetch_notes_by_day" => {
             let someday = args["someday"].as_str().unwrap_or("");
-            match state.fetch_notes_by_day(someday) {
+            match state.fetch_notes_by_day(someday, "zh") {
                 Ok(notes) => json!({"status": "success", "notes": notes}),
                 Err(e) => json!({"status": "error", "message": e}),
             }
         }
         "search_notes" => {
             let keyword = args["keyword"].as_str().unwrap_or("");
-            match state.search_notes(keyword).await {
+            match state.search_notes(keyword, "zh").await {
                 Ok(notes) => json!({"status": "success", "notes": notes}),
                 Err(e) => json!({"status": "error", "message": e}),
             }

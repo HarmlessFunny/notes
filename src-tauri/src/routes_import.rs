@@ -61,7 +61,7 @@ pub async fn import_notes(
     let imported_notes = imported["notes"].as_array()
         .ok_or_else(|| (StatusCode::BAD_REQUEST, Json(ApiResponse::error(&lang.t("database.json 缺少 notes 字段", "database.json is missing the notes field")))))?;
 
-    let mut current_db = state.load_database_raw()
+    let mut current_db = state.load_database_raw(&lang.0)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error(&e))))?;
 
     let mut imported_count = 0;
@@ -104,7 +104,7 @@ pub async fn import_notes(
         }
     }
 
-    state.save_database_raw(&current_db)
+    state.save_database_raw(&current_db, &lang.0)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error(&e))))?;
 
     state.refresh_cache().await;

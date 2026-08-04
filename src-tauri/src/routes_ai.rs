@@ -65,8 +65,9 @@ pub async fn ai_chat_stream(
 
 pub async fn get_ai_chat(
     State(state): State<Arc<AppState>>,
+    lang: Lang,
 ) -> Json<ApiResponse> {
-    match state.fetch_ai_chat() {
+    match state.fetch_ai_chat(&lang.0) {
         Ok(messages) => Json(ApiResponse::with_messages(messages)),
         Err(e) => Json(ApiResponse::error(&e)),
     }
@@ -74,9 +75,10 @@ pub async fn get_ai_chat(
 
 pub async fn save_ai_chat(
     State(state): State<Arc<AppState>>,
+    lang: Lang,
     Json(body): Json<SaveChatBody>,
 ) -> Json<ApiResponse> {
-    match state.save_ai_chat(&body.messages) {
+    match state.save_ai_chat(&body.messages, &lang.0) {
         Ok(()) => Json(ApiResponse::success()),
         Err(e) => Json(ApiResponse::error(&e)),
     }

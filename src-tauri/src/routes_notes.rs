@@ -20,8 +20,9 @@ pub struct SearchQuery {
 
 pub async fn get_all_notes(
     State(state): State<Arc<AppState>>,
+    lang: Lang,
 ) -> Result<Json<ApiResponse>, (StatusCode, Json<ApiResponse>)> {
-    state.fetch_all_notes()
+    state.fetch_all_notes(&lang.0)
         .map(ApiResponse::with_notes)
         .map(Json)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error(&e))))
@@ -29,9 +30,10 @@ pub async fn get_all_notes(
 
 pub async fn get_notes_by_day(
     State(state): State<Arc<AppState>>,
+    lang: Lang,
     Path(someday): Path<String>,
 ) -> Result<Json<ApiResponse>, (StatusCode, Json<ApiResponse>)> {
-    state.fetch_notes_by_day(&someday)
+    state.fetch_notes_by_day(&someday, &lang.0)
         .map(ApiResponse::with_notes)
         .map(Json)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error(&e))))
@@ -43,7 +45,7 @@ pub async fn get_note_by_title(
     Path(title): Path<String>,
 ) -> Result<Json<ApiResponse>, (StatusCode, Json<ApiResponse>)> {
     let decoded = urlencoding::decode(&title).unwrap_or(std::borrow::Cow::Borrowed(&title));
-    match state.fetch_notes_by_titles(&[decoded.to_string()]) {
+    match state.fetch_notes_by_titles(&[decoded.to_string()], &lang.0) {
         Ok(mut notes) if !notes.is_empty() => Ok(Json(ApiResponse::with_note(notes.remove(0)))),
         Ok(_) => Err((StatusCode::NOT_FOUND, Json(ApiResponse::error(&lang.t("笔记不存在", "Note not found"))))),
         Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error(&e)))),
@@ -52,10 +54,11 @@ pub async fn get_note_by_title(
 
 pub async fn search_notes_route(
     State(state): State<Arc<AppState>>,
+    lang: Lang,
     Query(query): Query<SearchQuery>,
 ) -> Result<Json<ApiResponse>, (StatusCode, Json<ApiResponse>)> {
     let keyword = query.q.unwrap_or_default();
-    state.search_notes(&keyword).await
+    state.search_notes(&keyword, &lang.0).await
         .map(ApiResponse::with_notes)
         .map(Json)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error(&e))))
@@ -142,7 +145,7 @@ pub async fn update_note_route(
     mut multipart: Multipart,
 ) -> Result<Json<ApiResponse>, (StatusCode, Json<ApiResponse>)> {
     let decoded_old = urlencoding::decode(&old_title).unwrap_or(std::borrow::Cow::Borrowed(&old_title)).to_string();
-    let old_imgs = match state.fetch_notes_by_titles(&[decoded_old.clone()]) {
+    let old_imgs = match state.fetch_notes_by_titles(&[decoded_old.clone()], &lang.0) {
         Ok(notes) if !notes.is_empty() => notes[0].imgs.clone(),
         _ => vec![],
     };

@@ -33,7 +33,7 @@ pub async fn export_notes(
         return Err((StatusCode::BAD_REQUEST, Json(ApiResponse::error(&lang.t("请选择要导出的笔记", "Please select notes to export")))));
     }
 
-    let notes = state.fetch_notes_by_titles(&titles)
+    let notes = state.fetch_notes_by_titles(&titles, &lang.0)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error(&e))))?;
 
     if notes.is_empty() {

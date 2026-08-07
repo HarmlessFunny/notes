@@ -13,7 +13,7 @@
 - **Markdown 存储** — 笔记正文以 `.md` 文件存储，database.json 只存元信息，清晰可读
 - **Markdown 渲染** — 支持代码高亮、数学公式（KaTeX）
 - **艾宾浩斯复习** — 根据遗忘曲线智能推荐复习计划
-- **AI 复习助手** — 与 AI 对话复习笔记内容，AI 可调用工具读取、搜索、增删改笔记；支持思考模式与强度
+- **AI 复习助手** — 与 AI 对话复习笔记内容，AI 可调用工具读取、搜索、增删改笔记；支持思考模式与强度；支持多会话管理（新建/切换/重命名/删除，自动记忆上次会话）
 - **暗色模式** — 支持深浅色主题切换，自动保存偏好
 - **ZIP 导出** — 将笔记导出为 ZIP（含图片）：桌面端弹保存对话框，手机端调起系统分享面板
 - **ZIP 导入** — 将导出的 ZIP 一键恢复为笔记
@@ -115,7 +115,10 @@ AI 功能（对话复习）的 API 配置在网页右上角 ⚙️ 设置：
 ```
 data/
 ├── database.json          # 笔记元信息（title/subject/time）
-├── ai_chat.json           # AI 聊天记录（含思维链、工具调用）
+├── ai_sessions/           # AI 聊天会话
+│   ├── index.json         # 会话元信息（id/title/created_at/updated_at）
+│   ├── <session_id>.json  # 每个会话的聊天记录（含思维链、工具调用）
+│   └── ...
 ├── notes/                 # 笔记正文（Markdown 文件）
 │   ├── <title>.md
 │   └── ...
@@ -126,7 +129,7 @@ data/
 
 - `database.json` 只存笔记元信息（标题、科目、时间）
 - 每篇笔记正文存储在 `notes/<title>.md`，首行为 `# subject/title`
-- AI 聊天记录单独存于 `ai_chat.json`，与笔记数据互不干扰
+- AI 聊天按会话拆分存储于 `ai_sessions/`，旧版 `ai_chat.json` 首次启动自动迁移为第一个会话
 - 运行后自动创建，无需手动初始化
 
 ## 项目结构
@@ -177,7 +180,8 @@ notes/
 | `/api/notes/delete` | DELETE | 批量删除笔记 |
 | `/api/ai/status` | GET | AI 配置状态 |
 | `/api/ai` | POST | AI 流式对话 |
-| `/api/ai/chat` | GET/POST | AI 对话记录读取/保存 |
+| `/api/ai/sessions` | GET/POST | AI 会话列表 / 新建会话 |
+| `/api/ai/sessions/<id>` | GET/POST/PUT/DELETE | 会话消息读取/保存、重命名、删除 |
 | `/api/ai/upload` | POST | 上传 AI 识图图片 |
 | `/api/export` | GET | 导出笔记为 ZIP（桌面保存/手机分享） |
 | `/api/import` | POST | 导入 ZIP 笔记 |

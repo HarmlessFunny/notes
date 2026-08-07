@@ -136,6 +136,22 @@ You are an intelligent review assistant, using English for thinking and respondi
         errorPrefix: 'Sorry, something went wrong: {msg}',
         requestFailed: 'AI request failed',
         networkError: 'Sorry, the request failed. Please check your network and retry.',
+        session: {
+            newChat: 'New Chat',
+            sessions: 'Sessions',
+            empty: 'No sessions yet',
+            rename: 'Rename',
+            delete: 'Delete session',
+            deleteConfirm: 'Delete this session?',
+            createFailed: 'Failed to create session',
+            alreadyNew: 'You are already in a new chat',
+            deleteSuccess: 'Session deleted',
+            deleteFailed: 'Failed to delete session',
+            renamePlaceholder: 'Enter session title',
+            renameSuccess: 'Session renamed',
+            renameFailed: 'Failed to rename session',
+            defaultTitle: 'New Chat',
+        },
         tool: {
             name: {
                 fetchNoteByTitle: 'Get note detail',

@@ -135,6 +135,22 @@ export default {
         errorPrefix: '抱歉，出错了：{msg}',
         requestFailed: 'AI 请求失败',
         networkError: '抱歉，请求失败，请检查网络后重试。',
+        session: {
+            newChat: '新建会话',
+            sessions: '会话列表',
+            empty: '暂无会话',
+            rename: '重命名',
+            delete: '删除会话',
+            deleteConfirm: '确定要删除这个会话吗？',
+            createFailed: '创建会话失败',
+            alreadyNew: '已处于新会话',
+            deleteSuccess: '会话已删除',
+            deleteFailed: '删除会话失败',
+            renamePlaceholder: '输入会话标题',
+            renameSuccess: '会话已重命名',
+            renameFailed: '重命名失败',
+            defaultTitle: '新会话',
+        },
         tool: {
             name: {
                 fetchNoteByTitle: '获取笔记详情',

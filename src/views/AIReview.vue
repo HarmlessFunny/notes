@@ -6,79 +6,119 @@
             <p>{{ $t('ai.unconfiguredHintPrefix') }} <el-icon><Setting /></el-icon> {{ $t('ai.unconfiguredHintSuffix') }}</p>
         </div>
         <template v-else>
-        <div ref="messageListRef" class="message-list">
-            <template v-for="(message, index) in chatMessages" :key="index">
-                <div v-if="message.role !== 'system'" :class="['message-item', message.role]">
-                    <div class="message-content">
-                        <template v-if="typeof message.content === 'string'">
-                            <div v-if="message.thinking && showThinking" class="thinking-block">
-                                <div class="thinking-header" @click="toggleThinking(message)">
-                                    <el-icon :size="12"><Cpu /></el-icon>
-                                    <span>{{ $t('ai.thinking') }}</span>
-                                    <el-icon :size="12" class="thinking-toggle-icon">
-                                        <ArrowDown v-if="isThinkingExpanded(message)" />
-                                        <ArrowRight v-else />
-                                    </el-icon>
-                                </div>
-                                <div v-show="isThinkingExpanded(message)" class="thinking-body">{{ message.thinking }}</div>
-                            </div>
-                            <div v-if="message.tools?.length && showThinking" class="tool-list">
-                                <div v-for="tool in message.tools" :key="`${tool.round}-${tool.name}`" class="tool-card" :class="{ failed: !tool.success }">
-                                    <el-icon :size="13"><Cpu /></el-icon>
-                                    <span class="tool-name">{{ toolNames[tool.name] ?? tool.name }}</span>
-                                    <span class="tool-args" :title="JSON.stringify(tool.arguments)">{{ formatArgs(tool) }}</span>
-                                    <span v-if="!tool.success || !isMutationTool(tool.name)" class="tool-summary">{{ tool.summary }}</span>
-                                    <span class="tool-status" :class="tool.success ? 'ok' : 'bad'">{{ tool.success ? '✓' : '✗' }}</span>
-                                </div>
-                            </div>
-                            <MarkdownRenderer class="message-text" :content="message.content" />
-                        </template>
-                        <template v-else>
-                            <template v-for="(part, pi) in message.content" :key="pi">
-                                <MarkdownRenderer v-if="part.type === 'text'" class="message-text" :content="part.text" />
-                                <el-image v-else-if="part.type === 'image_url'" :src="part.image_url.url" class="chat-image" :preview-src-list="[part.image_url.url]" preview-teleported />
-                            </template>
-                        </template>
-                        <div v-if="message.role === 'user'" class="message-actions">
-                            <el-icon class="action-btn" :title="$t('ai.copy')" @click.stop="copyMessage(message)">
-                                <CopyDocument />
-                            </el-icon>
-                            <el-icon class="action-btn delete-btn" :title="$t('ai.deleteFromHere')" @click.stop="truncateMessages(index)">
-                                <Delete />
-                            </el-icon>
-                        </div>
-                        <div v-if="message.role === 'assistant' && !sending" class="message-actions">
-                            <el-icon class="action-btn" :title="$t('ai.copy')" @click.stop="copyMessage(message)">
-                                <CopyDocument />
-                            </el-icon>
-                            <el-icon class="action-btn" :title="$t('ai.regenerate')" @click.stop="retryMessage(index)">
-                                <Refresh />
+            <div class="chat-layout">
+                <!-- 桌面端会话侧栏 -->
+                <aside v-if="ready && !narrow" class="session-sidebar" :class="{ collapsed: !sidebarOpen }">
+                    <div v-if="sidebarOpen" class="sidebar-inner">
+                        <SessionList :sessions="sessions" :active-id="activeSessionId" :disabled="sending"
+                            @switch="handleSwitchSession" @create="handleCreateSession" @rename="handleRenameSession"
+                            @delete="handleDeleteSession" />
+                        <div class="sidebar-collapse-btn" @click="sidebarOpen = false">
+                            <el-icon :size="14">
+                                <DArrowLeft />
                             </el-icon>
                         </div>
                     </div>
-                </div>
-            </template>
-        </div>
+                    <div v-else class="sidebar-expand" @click="sidebarOpen = true">
+                        <el-icon :size="16">
+                            <DArrowRight />
+                        </el-icon>
+                    </div>
+                </aside>
 
-        <div ref="inputAreaRef" class="input-area">
-            <div v-if="selectedImages.length" class="image-preview-list">
-                <div v-for="(img, idx) in selectedImages" :key="idx" class="image-preview-item">
-                    <el-image :src="img.preview" class="image-preview-thumb" :preview-src-list="[img.preview]" preview-teleported />
-                    <el-icon class="remove-image-btn" @click="removeImage(idx)"><Close /></el-icon>
+                <div class="chat-main">
+                    <div class="chat-header">
+                        <template v-if="narrow">
+                            <el-button class="header-btn" :icon="ChatLineSquare" text circle :disabled="!ready"
+                                @click="drawerVisible = true" />
+                        </template>
+                        <span class="current-session-title">{{ currentSessionTitle }}</span>
+                        <el-button v-if="narrow" class="header-btn" :icon="Plus" text circle :loading="sending"
+                            :disabled="!ready || sending" :title="$t('ai.session.newChat')" @click="handleCreateSession" />
+                    </div>
+
+                    <div ref="messageListRef" class="message-list">
+                        <template v-for="(message, index) in chatMessages" :key="index">
+                            <div v-if="message.role !== 'system'" :class="['message-item', message.role]">
+                                <div class="message-content">
+                                    <template v-if="typeof message.content === 'string'">
+                                        <div v-if="message.thinking && showThinking" class="thinking-block">
+                                            <div class="thinking-header" @click="toggleThinking(message)">
+                                                <el-icon :size="12"><Cpu /></el-icon>
+                                                <span>{{ $t('ai.thinking') }}</span>
+                                                <el-icon :size="12" class="thinking-toggle-icon">
+                                                    <ArrowDown v-if="isThinkingExpanded(message)" />
+                                                    <ArrowRight v-else />
+                                                </el-icon>
+                                            </div>
+                                            <div v-show="isThinkingExpanded(message)" class="thinking-body">{{ message.thinking }}</div>
+                                        </div>
+                                        <div v-if="message.tools?.length && showThinking" class="tool-list">
+                                            <div v-for="tool in message.tools" :key="`${tool.round}-${tool.name}`" class="tool-card" :class="{ failed: !tool.success }">
+                                                <el-icon :size="13"><Cpu /></el-icon>
+                                                <span class="tool-name">{{ toolNames[tool.name] ?? tool.name }}</span>
+                                                <span class="tool-args" :title="JSON.stringify(tool.arguments)">{{ formatArgs(tool) }}</span>
+                                                <span v-if="!tool.success || !isMutationTool(tool.name)" class="tool-summary">{{ tool.summary }}</span>
+                                                <span class="tool-status" :class="tool.success ? 'ok' : 'bad'">{{ tool.success ? '✓' : '✗' }}</span>
+                                            </div>
+                                        </div>
+                                        <MarkdownRenderer class="message-text" :content="message.content" />
+                                    </template>
+                                    <template v-else>
+                                        <template v-for="(part, pi) in message.content" :key="pi">
+                                            <MarkdownRenderer v-if="part.type === 'text'" class="message-text" :content="part.text" />
+                                            <el-image v-else-if="part.type === 'image_url'" :src="part.image_url.url" class="chat-image" :preview-src-list="[part.image_url.url]" preview-teleported />
+                                        </template>
+                                    </template>
+                                    <div v-if="message.role === 'user'" class="message-actions">
+                                        <el-icon class="action-btn" :title="$t('ai.copy')" @click.stop="copyMessage(message)">
+                                            <CopyDocument />
+                                        </el-icon>
+                                        <el-icon class="action-btn delete-btn" :title="$t('ai.deleteFromHere')" @click.stop="truncateMessages(index)">
+                                            <Delete />
+                                        </el-icon>
+                                    </div>
+                                    <div v-if="message.role === 'assistant' && !sending" class="message-actions">
+                                        <el-icon class="action-btn" :title="$t('ai.copy')" @click.stop="copyMessage(message)">
+                                            <CopyDocument />
+                                        </el-icon>
+                                        <el-icon class="action-btn" :title="$t('ai.regenerate')" @click.stop="retryMessage(index)">
+                                            <Refresh />
+                                        </el-icon>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div ref="inputAreaRef" class="input-area">
+                        <div v-if="selectedImages.length" class="image-preview-list">
+                            <div v-for="(img, idx) in selectedImages" :key="idx" class="image-preview-item">
+                                <el-image :src="img.preview" class="image-preview-thumb" :preview-src-list="[img.preview]" preview-teleported />
+                                <el-icon class="remove-image-btn" @click="removeImage(idx)"><Close /></el-icon>
+                            </div>
+                        </div>
+                        <div class="input-row">
+                            <el-button v-if="visionEnabled" :icon="Picture" circle @click="triggerUpload" :disabled="sending || uploading" />
+                            <input v-if="visionEnabled" ref="fileInputRef" type="file" multiple accept="image/*" class="hidden-input" @change="onFileChange" />
+                            <el-input v-model="inputMessage" type="textarea" :autosize="{ minRows: 1, maxRows: 6 }"
+                                resize="none" :placeholder="inputPlaceholder" class="message-input"
+                                @keydown="onInputKeydown" />
+                            <el-button type="primary" class="send-btn" :icon="Top" @click="sendMessage" :loading="sending"
+                                :disabled="(!inputMessage.trim() && !selectedImages.length) || sending || uploading">
+                                {{ uploading ? $t('ai.uploading') : $t('ai.send') }}
+                            </el-button>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="input-row">
-                <el-button v-if="visionEnabled" :icon="Picture" circle @click="triggerUpload" :disabled="sending || uploading" />
-                <input v-if="visionEnabled" ref="fileInputRef" type="file" multiple accept="image/*" class="hidden-input" @change="onFileChange" />
-                <el-input v-model="inputMessage" type="textarea" :autosize="{ minRows: 1, maxRows: 6 }"
-                    resize="none" :placeholder="inputPlaceholder" class="message-input"
-                    @keydown="onInputKeydown" />
-                <el-button type="primary" class="send-btn" :icon="Top" @click="sendMessage" :loading="sending"
-                    :disabled="(!inputMessage.trim() && !selectedImages.length) || sending || uploading">
-                    {{ uploading ? $t('ai.uploading') : $t('ai.send') }}
-                </el-button>
-            </div>
-        </div>
+
+            <!-- 移动端会话抽屉 -->
+            <el-drawer v-model="drawerVisible" :title="$t('ai.session.sessions')" direction="ltr" size="min(300px, 80vw)">
+                <SessionList :sessions="sessions" :active-id="activeSessionId" :disabled="sending"
+                    @create="handleDrawerCreate" @switch="handleDrawerSwitch" @rename="handleDrawerRename"
+                    @delete="handleDrawerDelete" />
+            </el-drawer>
         </template>
     </div>
 </template>
@@ -86,9 +126,10 @@
 <script setup lang="ts">
 defineOptions({ name: 'AIReview' })
 import { ref, reactive, computed, watch, nextTick, onMounted, onUnmounted, onActivated } from 'vue'
-import { Top, Delete, Picture, Close, Refresh, ChatDotRound, Setting, Cpu, ArrowDown, ArrowRight, CopyDocument } from '@element-plus/icons-vue'
+import { Top, Delete, Picture, Close, Refresh, ChatLineSquare, Setting, Cpu, ArrowDown, ArrowRight, CopyDocument, Plus, DArrowLeft, DArrowRight } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
+import SessionList from '@/components/SessionList.vue'
 import { useAIReview } from '@/hooks/useAIReview'
 import type { ChatMsg } from '@/hooks/useAIReview'
 import type { ToolCallInfo } from '@/utils/stream'
@@ -106,6 +147,15 @@ const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches
 const inputPlaceholder = computed(() => isCoarsePointer
     ? t('ai.inputPlaceholderMobile')
     : t('ai.inputPlaceholderDesktop'))
+
+const narrowMediaQuery = window.matchMedia('(max-width: 768px)')
+const narrow = ref(narrowMediaQuery.matches)
+function onNarrowChange() {
+    narrow.value = narrowMediaQuery.matches
+}
+
+const drawerVisible = ref(false)
+const sidebarOpen = ref(true)
 
 const expandedThinking = reactive(new Set<ChatMsg>())
 function toggleThinking(msg: ChatMsg) {
@@ -197,18 +247,76 @@ async function copyMessage(message: ChatMsg) {
 }
 
 const {
+    sessions,
+    activeSessionId,
     chatMessages,
     inputMessage,
     sending,
     selectedImages,
     uploading,
-    loadChat,
+    ready,
+    ensureReady,
+    switchSession,
+    createSession,
+    deleteSession,
+    renameSession,
     sendMessage,
     truncateMessages,
     retryMessage,
     addImages,
     removeImage,
 } = useAIReview()
+
+const currentSessionTitle = computed(() => {
+    const s = sessions.value.find(x => x.id === activeSessionId.value)
+    return s?.title || t('ai.session.defaultTitle')
+})
+
+async function handleCreateSession() {
+    if (chatMessages.value.length === 0) {
+        ElMessage.info(t('ai.session.alreadyNew'))
+        return
+    }
+    const session = await createSession()
+    if (!session) {
+        ElMessage.error(t('ai.session.createFailed'))
+        return
+    }
+    if (drawerVisible.value) drawerVisible.value = false
+    await nextTick()
+    scrollToBottom()
+}
+
+function handleSwitchSession(id: string) {
+    switchSession(id)
+}
+
+async function handleRenameSession(id: string, title: string) {
+    const ok = await renameSession(id, title)
+    if (ok) ElMessage.success(t('ai.session.renameSuccess'))
+}
+
+async function handleDeleteSession(id: string) {
+    const ok = await deleteSession(id)
+    if (ok) ElMessage.success(t('ai.session.deleteSuccess'))
+}
+
+function handleDrawerCreate() {
+    handleCreateSession()
+}
+
+function handleDrawerSwitch(id: string) {
+    drawerVisible.value = false
+    switchSession(id)
+}
+
+function handleDrawerRename(id: string, title: string) {
+    handleRenameSession(id, title)
+}
+
+function handleDrawerDelete(id: string) {
+    handleDeleteSession(id)
+}
 
 function onInputKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey && !isCoarsePointer) {
@@ -260,6 +368,7 @@ function onFileChange(e: Event) {
 
 onMounted(() => {
     store.loadAiStatus()
+    narrowMediaQuery.addEventListener('change', onNarrowChange)
     if (inputAreaRef.value) {
         resizeObserver = new ResizeObserver(onInputAreaResize)
         resizeObserver.observe(inputAreaRef.value)
@@ -267,11 +376,11 @@ onMounted(() => {
 })
 onUnmounted(() => {
     resizeObserver?.disconnect()
-    resizeObserver = null
+    narrowMediaQuery.removeEventListener('change', onNarrowChange)
 })
 
 async function handleActivated() {
-    await loadChat()
+    await ensureReady()
     await nextTick()
     scrollToBottom(true)
     window.setTimeout(() => scrollToBottom(), 400)
@@ -297,6 +406,104 @@ watch(chatMessages, () => {
     font-family: var(--el-font-family);
     overflow: hidden;
     min-height: 0;
+}
+
+.chat-layout {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+}
+
+.session-sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--el-bg-color);
+    border-right: 1px solid var(--el-border-color-light);
+    transition: width 0.2s ease;
+    overflow: hidden;
+}
+
+.session-sidebar.collapsed {
+    width: 36px;
+}
+
+.sidebar-inner {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    position: relative;
+}
+
+.sidebar-collapse-btn {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--el-text-color-placeholder);
+    border-radius: 6px 0 0 6px;
+}
+
+.sidebar-collapse-btn:hover {
+    color: var(--el-color-primary);
+    background: var(--el-fill-color-light);
+}
+
+.sidebar-expand {
+    width: 36px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--el-text-color-placeholder);
+}
+
+.sidebar-expand:hover {
+    color: var(--el-color-primary);
+    background: var(--el-fill-color-light);
+}
+
+.chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+}
+
+.chat-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 16px;
+    box-sizing: border-box;
+    border-bottom: 1px solid var(--el-border-color-light);
+    background: var(--el-bg-color);
+    flex-shrink: 0;
+}
+
+.current-session-title {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--el-text-color-primary);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+}
+
+.header-btn {
+    font-size: 16px;
 }
 
 .unconfigured-hint {

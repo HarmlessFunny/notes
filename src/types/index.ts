@@ -84,6 +84,14 @@ export interface ChatMessage {
     content: string | ContentPart[]
 }
 
+export interface AiSession {
+    id: string
+    title: string
+    created_at: number
+    updated_at: number
+    message_count?: number
+}
+
 export interface ApiResponse<T = any> {
     status: 'success' | 'error'
     message?: string

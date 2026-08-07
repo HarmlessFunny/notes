@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::convert::Infallible;
 use axum::{
-    extract::{State, Multipart},
+    extract::{Path, State, Multipart},
     http::{StatusCode, HeaderMap},
     response::sse::{Event, Sse},
     Json,
@@ -63,22 +63,72 @@ pub async fn ai_chat_stream(
     ))
 }
 
-pub async fn get_ai_chat(
+pub async fn get_ai_sessions(
     State(state): State<Arc<AppState>>,
     lang: Lang,
 ) -> Json<ApiResponse> {
-    match state.fetch_ai_chat(&lang.0) {
+    match state.list_ai_sessions(&lang.0) {
+        Ok(sessions) => Json(ApiResponse::with_sessions(sessions)),
+        Err(e) => Json(ApiResponse::error(&e)),
+    }
+}
+
+pub async fn create_ai_session(
+    State(state): State<Arc<AppState>>,
+    lang: Lang,
+) -> Json<ApiResponse> {
+    match state.create_ai_session(&lang.0) {
+        Ok(session) => Json(ApiResponse::with_session(session)),
+        Err(e) => Json(ApiResponse::error(&e)),
+    }
+}
+
+pub async fn delete_ai_session(
+    State(state): State<Arc<AppState>>,
+    lang: Lang,
+    Path(session_id): Path<String>,
+) -> Json<ApiResponse> {
+    match state.delete_ai_session(&session_id, &lang.0) {
+        Ok(()) => Json(ApiResponse::success()),
+        Err(e) => Json(ApiResponse::error(&e)),
+    }
+}
+
+#[derive(Deserialize)]
+pub struct RenameSessionBody {
+    title: String,
+}
+
+pub async fn rename_ai_session(
+    State(state): State<Arc<AppState>>,
+    lang: Lang,
+    Path(session_id): Path<String>,
+    Json(body): Json<RenameSessionBody>,
+) -> Json<ApiResponse> {
+    match state.rename_ai_session(&session_id, &body.title, &lang.0) {
+        Ok(()) => Json(ApiResponse::success()),
+        Err(e) => Json(ApiResponse::error(&e)),
+    }
+}
+
+pub async fn get_ai_session_messages(
+    State(state): State<Arc<AppState>>,
+    lang: Lang,
+    Path(session_id): Path<String>,
+) -> Json<ApiResponse> {
+    match state.fetch_ai_session_messages(&session_id, &lang.0) {
         Ok(messages) => Json(ApiResponse::with_messages(messages)),
         Err(e) => Json(ApiResponse::error(&e)),
     }
 }
 
-pub async fn save_ai_chat(
+pub async fn save_ai_session_messages(
     State(state): State<Arc<AppState>>,
     lang: Lang,
+    Path(session_id): Path<String>,
     Json(body): Json<SaveChatBody>,
 ) -> Json<ApiResponse> {
-    match state.save_ai_chat(&body.messages, &lang.0) {
+    match state.save_ai_session_messages(&session_id, &body.messages, &lang.0) {
         Ok(()) => Json(ApiResponse::success()),
         Err(e) => Json(ApiResponse::error(&e)),
     }

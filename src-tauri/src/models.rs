@@ -38,6 +38,21 @@ pub struct ChatMessage {
     pub tools: Option<Vec<serde_json::Value>>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AiSession {
+    pub id: String,
+    pub title: String,
+    pub created_at: i64,
+    pub updated_at: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message_count: Option<usize>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct AiSessionIndex {
+    pub sessions: Vec<AiSession>,
+}
+
 #[derive(Debug, Serialize, Default)]
 pub struct ApiResponse<T = ()> {
     pub status: String,
@@ -59,31 +74,41 @@ pub struct ApiResponse<T = ()> {
     pub urls: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub deleted_count: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sessions: Option<Vec<AiSession>>,
 }
 
 impl ApiResponse<()> {
     pub fn success() -> Self {
-        Self { status: "success".into(), message: None, data: None, notes: None, note: None, messages: None, ai_available: None, vision_enabled: None, urls: None, deleted_count: None }
+        Self { status: "success".into(), message: None, data: None, notes: None, note: None, messages: None, ai_available: None, vision_enabled: None, urls: None, deleted_count: None, sessions: None }
     }
 
     pub fn success_msg(message: &str) -> Self {
-        Self { status: "success".into(), message: Some(message.into()), data: None, notes: None, note: None, messages: None, ai_available: None, vision_enabled: None, urls: None, deleted_count: None }
+        Self { status: "success".into(), message: Some(message.into()), data: None, notes: None, note: None, messages: None, ai_available: None, vision_enabled: None, urls: None, deleted_count: None, sessions: None }
     }
 
     pub fn error(message: &str) -> Self {
-        Self { status: "error".into(), message: Some(message.into()), data: None, notes: None, note: None, messages: None, ai_available: None, vision_enabled: None, urls: None, deleted_count: None }
+        Self { status: "error".into(), message: Some(message.into()), data: None, notes: None, note: None, messages: None, ai_available: None, vision_enabled: None, urls: None, deleted_count: None, sessions: None }
     }
 
     pub fn with_notes(notes: Vec<LightNote>) -> Self {
-        Self { status: "success".into(), message: None, data: None, notes: Some(notes), note: None, messages: None, ai_available: None, vision_enabled: None, urls: None, deleted_count: None }
+        Self { status: "success".into(), message: None, data: None, notes: Some(notes), note: None, messages: None, ai_available: None, vision_enabled: None, urls: None, deleted_count: None, sessions: None }
     }
 
     pub fn with_note(note: Note) -> Self {
-        Self { status: "success".into(), message: None, data: None, notes: None, note: Some(note), messages: None, ai_available: None, vision_enabled: None, urls: None, deleted_count: None }
+        Self { status: "success".into(), message: None, data: None, notes: None, note: Some(note), messages: None, ai_available: None, vision_enabled: None, urls: None, deleted_count: None, sessions: None }
     }
 
     pub fn with_messages(messages: Vec<ChatMessage>) -> Self {
-        Self { status: "success".into(), message: None, data: None, notes: None, note: None, messages: Some(messages), ai_available: None, vision_enabled: None, urls: None, deleted_count: None }
+        Self { status: "success".into(), message: None, data: None, notes: None, note: None, messages: Some(messages), ai_available: None, vision_enabled: None, urls: None, deleted_count: None, sessions: None }
+    }
+
+    pub fn with_sessions(sessions: Vec<AiSession>) -> Self {
+        Self { status: "success".into(), message: None, data: None, notes: None, note: None, messages: None, ai_available: None, vision_enabled: None, urls: None, deleted_count: None, sessions: Some(sessions) }
+    }
+
+    pub fn with_session(session: AiSession) -> Self {
+        Self { status: "success".into(), message: None, data: None, notes: None, note: None, messages: None, ai_available: None, vision_enabled: None, urls: None, deleted_count: None, sessions: Some(vec![session]) }
     }
 }
 

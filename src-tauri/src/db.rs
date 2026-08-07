@@ -2,7 +2,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use crate::config::{AppPaths, REVIEW_INTERVAL_DAYS};
-use crate::models::{Database, NoteMeta, LightNote, Note, ChatMessage};
+use crate::models::{Database, NoteMeta, LightNote, Note, ChatMessage, AiSession, AiSessionIndex};
 use crate::notes_file;
 
 pub struct AppState {
@@ -25,6 +25,9 @@ impl AppState {
         if let Err(e) = std::fs::create_dir_all(&self.paths.uploads_folder) {
             eprintln!("[notes] create uploads_folder failed: {e} (path: {:?})", self.paths.uploads_folder);
         }
+        if let Err(e) = std::fs::create_dir_all(&self.paths.ai_sessions_folder) {
+            eprintln!("[notes] create ai_sessions_folder failed: {e} (path: {:?})", self.paths.ai_sessions_folder);
+        }
         if !self.paths.db_file.exists() {
             let db = Database { notes: vec![] };
             match serde_json::to_string_pretty(&db) {
@@ -37,6 +40,7 @@ impl AppState {
             }
         }
         self.migrate_legacy_ai_chat();
+        self.migrate_legacy_ai_chat_sessions();
         // No contention during initialization, safe sync refresh
         if let Ok(db) = self.load_database_raw("zh") {
             let mut cache = std::collections::HashMap::new();
@@ -106,6 +110,128 @@ impl AppState {
                 Err(e) => eprintln!("[notes] serialize database.json failed: {e}"),
             }
         }
+    }
+
+    fn migrate_legacy_ai_chat_sessions(&self) {
+        if !self.paths.ai_chat_file.exists() {
+            return;
+        }
+        if self.load_session_index("zh").map(|i| !i.sessions.is_empty()).unwrap_or(false) {
+            return;
+        }
+        let Ok(data) = std::fs::read_to_string(&self.paths.ai_chat_file) else {
+            return;
+        };
+        let Ok(messages) = serde_json::from_str::<Vec<ChatMessage>>(&data) else {
+            return;
+        };
+        if let Ok(_) = self.create_ai_session_empty("zh") {
+            if let Ok(sessions) = self.load_session_index("zh") {
+                if let Some(first) = sessions.sessions.iter().find(|s| s.title.is_empty()).cloned() {
+                    let _ = self.save_ai_session_messages(&first.id, &messages, "zh");
+                }
+            }
+        }
+        let _ = std::fs::remove_file(&self.paths.ai_chat_file);
+    }
+
+    // ===== AI 多会话（ai_sessions/）=====
+
+    fn sessions_index_path(&self) -> std::path::PathBuf {
+        self.paths.ai_sessions_folder.join("index.json")
+    }
+
+    fn load_session_index(&self, lang: &str) -> Result<AiSessionIndex, String> {
+        let path = self.sessions_index_path();
+        if !path.exists() {
+            return Ok(AiSessionIndex::default());
+        }
+        let data = std::fs::read_to_string(&path).map_err(|e| crate::i18n::text(lang, "读取 AI 会话失败: {} (路径: {})", "Failed to read AI sessions: {} (path: {})").replace("{}", &e.to_string()).replace("{}", &path.display().to_string()))?;
+        serde_json::from_str(&data).map_err(|e| crate::i18n::text(lang, "解析 AI 会话失败: {}", "Failed to parse AI sessions: {}").replace("{}", &e.to_string()))
+    }
+
+    fn save_session_index(&self, index: &AiSessionIndex, lang: &str) -> Result<(), String> {
+        let json = serde_json::to_string_pretty(index).map_err(|e| crate::i18n::text(lang, "序列化 AI 会话失败: {}", "Failed to serialize AI sessions: {}").replace("{}", &e.to_string()))?;
+        std::fs::write(self.sessions_index_path(), json).map_err(|e| crate::i18n::text(lang, "写入 AI 会话失败: {} (路径: {})", "Failed to write AI sessions: {} (path: {})").replace("{}", &e.to_string()).replace("{}", &self.sessions_index_path().display().to_string()))
+    }
+
+    fn session_file(&self, id: &str) -> std::path::PathBuf {
+        self.paths.ai_sessions_folder.join(format!("{id}.json"))
+    }
+
+    fn now_ms() -> i64 {
+        chrono::Utc::now().timestamp_millis()
+    }
+
+    pub fn list_ai_sessions(&self, lang: &str) -> Result<Vec<AiSession>, String> {
+        let mut sessions = self.load_session_index(lang)?.sessions;
+        for s in &mut sessions {
+            let path = self.session_file(&s.id);
+            let count = std::fs::read_to_string(&path).ok()
+                .and_then(|data| serde_json::from_str::<Vec<serde_json::Value>>(&data).ok())
+                .map(|arr| arr.len())
+                .unwrap_or(0);
+            s.message_count = Some(count);
+        }
+        sessions.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
+        Ok(sessions)
+    }
+
+    fn create_ai_session_empty(&self, lang: &str) -> Result<AiSession, String> {
+        let id = uuid::Uuid::new_v4().simple().to_string();
+        let now = Self::now_ms();
+        let session = AiSession { id: id.clone(), title: String::new(), created_at: now, updated_at: now, message_count: Some(0) };
+        std::fs::write(self.session_file(&id), "[]").map_err(|e| crate::i18n::text(lang, "创建 AI 会话失败: {}", "Failed to create AI session: {}").replace("{}", &e.to_string()))?;
+        let mut index = self.load_session_index(lang)?;
+        index.sessions.push(session.clone());
+        self.save_session_index(&index, lang)?;
+        Ok(session)
+    }
+
+    pub fn create_ai_session(&self, lang: &str) -> Result<AiSession, String> {
+        self.create_ai_session_empty(lang)
+    }
+
+    pub fn delete_ai_session(&self, id: &str, lang: &str) -> Result<(), String> {
+        let mut index = self.load_session_index(lang)?;
+        index.sessions.retain(|s| s.id != id);
+        self.save_session_index(&index, lang)?;
+        let _ = std::fs::remove_file(self.session_file(id));
+        Ok(())
+    }
+
+    pub fn rename_ai_session(&self, id: &str, title: &str, lang: &str) -> Result<(), String> {
+        let mut index = self.load_session_index(lang)?;
+        let Some(session) = index.sessions.iter_mut().find(|s| s.id == id) else {
+            return Err(crate::i18n::text(lang, "会话不存在", "Session not found"));
+        };
+        let title = title.trim();
+        if title.is_empty() {
+            return Err(crate::i18n::text(lang, "会话标题不能为空", "Session title cannot be empty"));
+        }
+        session.title = title.chars().take(100).collect();
+        self.save_session_index(&index, lang)
+    }
+
+    pub fn fetch_ai_session_messages(&self, id: &str, lang: &str) -> Result<Vec<ChatMessage>, String> {
+        let path = self.session_file(id);
+        if !path.exists() {
+            return Err(crate::i18n::text(lang, "会话不存在", "Session not found"));
+        }
+        let data = std::fs::read_to_string(&path).map_err(|e| crate::i18n::text(lang, "读取 AI 聊天失败: {} (路径: {})", "Failed to read AI chat history: {} (path: {})").replace("{}", &e.to_string()).replace("{}", &path.display().to_string()))?;
+        serde_json::from_str(&data).map_err(|e| crate::i18n::text(lang, "解析 AI 聊天失败: {}", "Failed to parse AI chat history: {}").replace("{}", &e.to_string()))
+    }
+
+    pub fn save_ai_session_messages(&self, id: &str, messages: &[ChatMessage], lang: &str) -> Result<(), String> {
+        let path = self.session_file(id);
+        let json = serde_json::to_string_pretty(messages).map_err(|e| crate::i18n::text(lang, "序列化 AI 聊天失败: {}", "Failed to serialize AI chat history: {}").replace("{}", &e.to_string()))?;
+        std::fs::write(&path, json).map_err(|e| crate::i18n::text(lang, "写入 AI 聊天失败: {} (路径: {})", "Failed to write AI chat history: {} (path: {})").replace("{}", &e.to_string()).replace("{}", &path.display().to_string()))?;
+        let mut index = self.load_session_index(lang)?;
+        if let Some(s) = index.sessions.iter_mut().find(|s| s.id == id) {
+            s.updated_at = Self::now_ms();
+            self.save_session_index(&index, lang)?;
+        }
+        Ok(())
     }
 
     fn days_difference(later: &str, earlier: &str) -> i32 {
@@ -284,19 +410,5 @@ impl AppState {
         drop(cache);
         self.refresh_cache().await;
         Ok(())
-    }
-
-    pub fn fetch_ai_chat(&self, lang: &str) -> Result<Vec<ChatMessage>, String> {
-        if !self.paths.ai_chat_file.exists() {
-            return Ok(vec![]);
-        }
-        let data = std::fs::read_to_string(&self.paths.ai_chat_file)
-            .map_err(|e| crate::i18n::text(lang, "读取 AI 聊天失败: {} (路径: {})", "Failed to read AI chat history: {} (path: {})").replace("{}", &e.to_string()).replace("{}", &self.paths.ai_chat_file.display().to_string()))?;
-        serde_json::from_str(&data).map_err(|e| crate::i18n::text(lang, "解析 AI 聊天失败: {}", "Failed to parse AI chat history: {}").replace("{}", &e.to_string()))
-    }
-
-    pub fn save_ai_chat(&self, messages: &[ChatMessage], lang: &str) -> Result<(), String> {
-        let json = serde_json::to_string_pretty(messages).map_err(|e| crate::i18n::text(lang, "序列化 AI 聊天失败: {}", "Failed to serialize AI chat history: {}").replace("{}", &e.to_string()))?;
-        std::fs::write(&self.paths.ai_chat_file, json).map_err(|e| crate::i18n::text(lang, "写入 AI 聊天失败: {} (路径: {})", "Failed to write AI chat history: {} (path: {})").replace("{}", &e.to_string()).replace("{}", &self.paths.ai_chat_file.display().to_string()))
     }
 }

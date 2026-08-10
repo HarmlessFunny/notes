@@ -2,8 +2,8 @@
   <el-config-provider :locale="elLocale">
   <div id="app">
     <!-- 导航栏 -->
-    <div class="navbar-wrapper">
-      <el-menu mode="horizontal" :default-active="$route.name as string" class="navbar" @select="handleMenuSelect">
+    <div class="navbar-wrapper" :class="{ 'navbar-hidden': navHidden }">
+      <el-menu mode="horizontal" :default-active="activeMenuIndex" class="navbar" @select="handleMenuSelect">
         <el-menu-item index="publish">
           <el-icon>
             <Edit />
@@ -31,7 +31,7 @@
     </div>
 
     <!-- 路由出口 -->
-    <main class="main-content">
+    <main class="main-content" :class="{ 'fill-navbar-space': navHidden && $route.name === 'aiReview' }">
       <router-view v-slot="{ Component }">
         <keep-alive :include="['AIReview']">
           <component :is="Component" />
@@ -45,7 +45,7 @@
 
 <script setup lang="ts">
 defineOptions({ name: 'App' })
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { Edit, Notebook, ChatDotRound, Setting } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { useCacheStore } from '@/stores/cache'
@@ -62,10 +62,51 @@ const elLocale = computed(() => (cacheStore.effectiveLocale === 'zh-CN' ? zhCn :
 
 const router = useRouter()
 
+// 导航栏选中项：笔记详情页归属“查看笔记”
+const activeMenuIndex = computed(() => {
+  const name = router.currentRoute.value.name as string
+  return name === 'viewDetail' ? 'view' : name
+})
+
+const navHidden = ref(false)
+let lastScrollY = 0
+let suppressUntil = 0
+
+function handleScroll(e: Event) {
+  const target = e.target
+  const y = target instanceof HTMLElement ? target.scrollTop : window.scrollY
+  // 隐藏/显示导致的布局变化（AI 页 margin 过渡撑大消息列表）会触发 scrollTop 钳制，
+  // 产生伪滚动事件，此时忽略方向判断，避免导航栏来回弹跳
+  if (performance.now() < suppressUntil) {
+    lastScrollY = y
+    return
+  }
+  if (y > 100 && y > lastScrollY) {
+    if (!navHidden.value) suppressUntil = performance.now() + 400
+    navHidden.value = true
+  } else if (y < lastScrollY || y <= 100) {
+    if (navHidden.value) suppressUntil = performance.now() + 400
+    navHidden.value = false
+  }
+  lastScrollY = y
+}
+
 // 启动时检查 AI 是否可用（决定是否展示 AI 对话菜单）
 onMounted(() => {
+  lastScrollY = window.scrollY
+  window.addEventListener('scroll', handleScroll, { passive: true, capture: true })
   cacheStore.loadAiStatus()
   checkSilentUpdate()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll, { capture: true })
+})
+
+// 路由切换后恢复导航栏显示（避免带着隐藏状态进入新页面）
+watch(() => router.currentRoute.value.name, () => {
+  navHidden.value = false
+  lastScrollY = 0
 })
 
 async function checkSilentUpdate() {
@@ -112,6 +153,11 @@ function handleMenuSelect(index: string) {
   position: sticky;
   top: 0;
   z-index: 1000;
+  transition: transform 0.25s ease;
+}
+
+.navbar-wrapper.navbar-hidden {
+  transform: translateY(-100%);
 }
 
 .navbar {
@@ -144,6 +190,13 @@ function handleMenuSelect(index: string) {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  transition: margin-top 0.25s ease;
+}
+
+/* 仅在 AI 对话页（窗口不滚动、页面内容直接占满）隐藏导航栏时，
+     上移内容填补导航栏空出的空间；其他页面由滚动内容自然填充 */
+.main-content.fill-navbar-space {
+  margin-top: -60px;
 }
 
 @media (max-width: 768px) {

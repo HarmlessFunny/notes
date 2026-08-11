@@ -68,5 +68,16 @@ export default defineConfig({
     outDir: './dist',
     assetsDir: 'assets',
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+          if (id.includes('element-plus') || id.includes('@element-plus')) return 'element-plus'
+          if (id.includes('katex') || id.includes('marked') || id.includes('highlight.js') || id.includes('dompurify')) return 'markdown'
+          if (id.includes('vue') || id.includes('pinia') || id.includes('vue-i18n')) return 'vue-core'
+          return 'vendor'
+        },
+      },
+    },
   },
 })

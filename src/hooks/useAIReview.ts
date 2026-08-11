@@ -239,29 +239,7 @@ export function useAIReview() {
         }
     }
 
-    async function sendMessage() {
-        if ((!inputMessage.value.trim() && selectedImages.value.length === 0) || sending.value) return
-        sending.value = true
-
-        const imageUrls = await uploadImages()
-        const text = inputMessage.value.trim()
-
-        let content: string | ContentPart[]
-        if (imageUrls.length > 0) {
-            content = []
-            if (text) {
-                content.push({ type: 'text', text })
-            }
-            for (const url of imageUrls) {
-                content.push({ type: 'image_url', image_url: { url } })
-            }
-        } else {
-            content = text
-        }
-
-        chatMessages.value.push({ role: 'user', content })
-        inputMessage.value = ''
-        clearImages()
+    async function runChat(): Promise<void> {
         const aiIndex = chatMessages.value.length
         chatMessages.value.push({ role: 'assistant', content: '', thinking: '', tools: [] })
 
@@ -301,50 +279,39 @@ export function useAIReview() {
         }
     }
 
+    async function sendMessage() {
+        if ((!inputMessage.value.trim() && selectedImages.value.length === 0) || sending.value) return
+        sending.value = true
+
+        const imageUrls = await uploadImages()
+        const text = inputMessage.value.trim()
+
+        let content: string | ContentPart[]
+        if (imageUrls.length > 0) {
+            content = []
+            if (text) {
+                content.push({ type: 'text', text })
+            }
+            for (const url of imageUrls) {
+                content.push({ type: 'image_url', image_url: { url } })
+            }
+        } else {
+            content = text
+        }
+
+        chatMessages.value.push({ role: 'user', content })
+        inputMessage.value = ''
+        clearImages()
+        await runChat()
+    }
+
     async function retryMessage(index: number) {
         if (sending.value) return
         sending.value = true
 
         chatMessages.value.splice(index)
         await saveChat()
-
-        const aiIndex = chatMessages.value.length
-        chatMessages.value.push({ role: 'assistant', content: '', thinking: '', tools: [] })
-
-        const { promise, abort } = createAbortableStream('/api/ai', {
-            messages: [
-                buildSystemMessage(),
-                ...chatMessages.value.slice(0, -1)
-            ]
-        }, {
-            onContent: (content) => {
-                chatMessages.value[aiIndex]!.content += content
-            },
-            onThinking: (text) => {
-                chatMessages.value[aiIndex]!.thinking = (chatMessages.value[aiIndex]!.thinking ?? '') + text
-            },
-            onTool: (info) => {
-                chatMessages.value[aiIndex]!.tools ??= []
-                chatMessages.value[aiIndex]!.tools!.push(info)
-            },
-            onError: (error) => {
-                chatMessages.value[aiIndex]!.content = i18n.global.t('ai.errorPrefix', { msg: error.message })
-            },
-        }, getHeaders())
-
-        currentStream = { abort }
-
-        try {
-            await promise
-            await saveChat()
-        } catch (error: any) {
-            if (error?.name === 'AbortError') return
-            handleApiError(error, i18n.global.t('ai.requestFailed'))
-            chatMessages.value[aiIndex]!.content = i18n.global.t('ai.networkError')
-        } finally {
-            sending.value = false
-            currentStream = null
-        }
+        await runChat()
     }
 
     async function truncateMessages(index: number) {

@@ -6,7 +6,7 @@
 import { computed, ref, watch } from 'vue'
 import { Marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
-import hljs from 'highlight.js'
+import hljs from 'highlight.js/lib/common'
 import katex from 'katex'
 import DOMPurify from 'dompurify'
 import 'katex/dist/katex.min.css'

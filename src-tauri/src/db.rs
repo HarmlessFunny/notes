@@ -165,14 +165,6 @@ impl AppState {
 
     pub fn list_ai_sessions(&self, lang: &str) -> Result<Vec<AiSession>, String> {
         let mut sessions = self.load_session_index(lang)?.sessions;
-        for s in &mut sessions {
-            let path = self.session_file(&s.id);
-            let count = std::fs::read_to_string(&path).ok()
-                .and_then(|data| serde_json::from_str::<Vec<serde_json::Value>>(&data).ok())
-                .map(|arr| arr.len())
-                .unwrap_or(0);
-            s.message_count = Some(count);
-        }
         sessions.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
         Ok(sessions)
     }
@@ -407,8 +399,6 @@ impl AppState {
 
         db.notes.remove(idx);
         self.save_database_raw(&db, lang)?;
-        drop(cache);
-        self.refresh_cache().await;
         Ok(())
     }
 }

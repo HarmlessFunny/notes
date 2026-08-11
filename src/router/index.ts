@@ -2,14 +2,14 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useNotesStore } from '@/stores/notes'
 
-// 导入组件
-import PublishNote from '@/views/PublishNote.vue'
-import ViewNote from '@/views/ViewNote.vue'
-import NoteDetail from '@/views/NoteDetail.vue'
-import AIReview from '@/views/AIReview.vue'
-import SettingsLayout from '@/views/settings/SettingsLayout.vue'
-import SettingsBase from '@/views/settings/SettingsBase.vue'
-import SettingsAi from '@/views/settings/SettingsAi.vue'
+// 导入组件（懒加载，按路由拆分 chunk）
+const PublishNote = () => import('@/views/PublishNote.vue')
+const ViewNote = () => import('@/views/ViewNote.vue')
+const NoteDetail = () => import('@/views/NoteDetail.vue')
+const AIReview = () => import('@/views/AIReview.vue')
+const SettingsLayout = () => import('@/views/settings/SettingsLayout.vue')
+const SettingsBase = () => import('@/views/settings/SettingsBase.vue')
+const SettingsAi = () => import('@/views/settings/SettingsAi.vue')
 import { useCacheStore } from '@/stores/cache.ts'
 import { handleApiError } from '@/utils/error.ts'
 import { i18n } from '@/locales'

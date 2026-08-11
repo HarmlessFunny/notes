@@ -146,15 +146,24 @@ const form = reactive<AiConfig>({
 })
 
 const dirty = ref(false)
+let saveTimer: ReturnType<typeof setTimeout> | null = null
 
-// 修改即自动保存（写入 store + localStorage）
+// 修改即自动保存（写入 store + localStorage），防抖避免每次按键都写
 watch(form, () => {
     dirty.value = true
-    store.updateAiConfig({ ...form })
+    if (saveTimer) clearTimeout(saveTimer)
+    saveTimer = setTimeout(() => {
+        store.updateAiConfig({ ...form })
+    }, 500)
 }, { deep: true })
 
-// 离开设置路由时静默测试连接，刷新 AI 可用状态
+// 离开设置路由前：先落盘防抖中的修改，再静默测试连接刷新 AI 可用状态
 onBeforeRouteLeave(async () => {
+    if (saveTimer) {
+        clearTimeout(saveTimer)
+        saveTimer = null
+        store.updateAiConfig({ ...form })
+    }
     if (!dirty.value) return
     const ok = await store.testAiConfig(store.aiConfig)
     store.aiAvailable = ok

@@ -74,6 +74,8 @@ let suppressUntil = 0
 
 function handleScroll(e: Event) {
   const target = e.target
+  // 文本域内部滚动不应触发导航栏隐藏
+  if (target instanceof HTMLTextAreaElement) return
   const y = target instanceof HTMLElement ? target.scrollTop : window.scrollY
   // 隐藏/显示导致的布局变化（AI 页 margin 过渡撑大消息列表）会触发 scrollTop 钳制，
   // 产生伪滚动事件，此时忽略方向判断，避免导航栏来回弹跳

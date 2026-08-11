@@ -29,6 +29,9 @@ jobs:
         with:
           targets: aarch64-linux-android
 
+      - name: Setup sccache
+        uses: mozilla/sccache-action@v0.0.8
+
       - name: Cache Cargo dependencies
         uses: Swatinem/rust-cache@v2
 
@@ -72,6 +75,8 @@ jobs:
 
       - name: Build (exe + APK)
         run: .\build.bat
+        env:
+          RUSTC_WRAPPER: sccache
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v2

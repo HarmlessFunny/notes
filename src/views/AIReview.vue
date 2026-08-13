@@ -126,6 +126,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'AIReview' })
 import { ref, reactive, computed, watch, nextTick, onMounted, onUnmounted, onActivated } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { Top, Delete, Picture, Close, Refresh, ChatLineSquare, Setting, Cpu, ArrowDown, ArrowRight, CopyDocument, Plus, DArrowLeft, DArrowRight } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
@@ -137,6 +138,10 @@ import { useCacheStore } from '@/stores/cache'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
+
+const route = useRoute()
+const router = useRouter()
+const sessionId = computed(() => route.params.sessionId as string | undefined)
 
 const store = useCacheStore()
 const visionEnabled = computed(() => store.visionEnabled)
@@ -283,12 +288,13 @@ async function handleCreateSession() {
         return
     }
     if (drawerVisible.value) drawerVisible.value = false
+    router.replace(`/ai/${session.id}`)
     await nextTick()
     scrollToBottom()
 }
 
 function handleSwitchSession(id: string) {
-    switchSession(id)
+    router.push(`/ai/${id}`)
 }
 
 async function handleRenameSession(id: string, title: string) {
@@ -298,7 +304,12 @@ async function handleRenameSession(id: string, title: string) {
 
 async function handleDeleteSession(id: string) {
     const ok = await deleteSession(id)
-    if (ok) ElMessage.success(t('ai.session.deleteSuccess'))
+    if (ok) {
+        ElMessage.success(t('ai.session.deleteSuccess'))
+        if (activeSessionId.value) {
+            router.replace(`/ai/${activeSessionId.value}`)
+        }
+    }
 }
 
 function handleDrawerCreate() {
@@ -307,7 +318,7 @@ function handleDrawerCreate() {
 
 function handleDrawerSwitch(id: string) {
     drawerVisible.value = false
-    switchSession(id)
+    router.push(`/ai/${id}`)
 }
 
 function handleDrawerRename(id: string, title: string) {
@@ -379,8 +390,40 @@ onUnmounted(() => {
     narrowMediaQuery.removeEventListener('change', onNarrowChange)
 })
 
-async function handleActivated() {
+async function syncToRoute() {
+    if (!route.path.startsWith('/ai')) return
     await ensureReady()
+    const id = sessionId.value
+    if (!id) {
+        // 裸 /ai：跳转到当前/上次会话，无会话则新建
+        if (activeSessionId.value) {
+            await switchSession(activeSessionId.value)
+            router.replace(`/ai/${activeSessionId.value}`)
+        } else {
+            const s = await createSession()
+            if (s) router.replace(`/ai/${s.id}`)
+        }
+        return
+    }
+    // /ai/:id 不存在（会话被删/过期）：跳转到第一个会话，没有则新建
+    if (!sessions.value.some(s => s.id === id)) {
+        if (sessions.value.length > 0) {
+            const first = sessions.value[0]!.id
+            await switchSession(first)
+            router.replace(`/ai/${first}`)
+        } else {
+            const s = await createSession()
+            if (s) router.replace(`/ai/${s.id}`)
+        }
+        return
+    }
+    await switchSession(id)
+}
+
+watch(sessionId, syncToRoute)
+
+async function handleActivated() {
+    await syncToRoute()
     await nextTick()
     scrollToBottom(true)
     window.setTimeout(() => scrollToBottom(), 400)

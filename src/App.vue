@@ -31,7 +31,7 @@
     </div>
 
     <!-- 路由出口 -->
-    <main class="main-content" :class="{ 'fill-navbar-space': navHidden && $route.name === 'aiReview' }">
+    <main class="main-content" :class="{ 'fill-navbar-space': navHidden && $route.path.startsWith('/ai') }">
       <router-view v-slot="{ Component }">
         <keep-alive :include="['AIReview']">
           <component :is="Component" />
@@ -62,10 +62,12 @@ const elLocale = computed(() => (cacheStore.effectiveLocale === 'zh-CN' ? zhCn :
 
 const router = useRouter()
 
-// 导航栏选中项：笔记详情页归属“查看笔记”
+// 导航栏选中项：笔记详情页归属“查看笔记”，会话页归属“AI对话”
 const activeMenuIndex = computed(() => {
   const name = router.currentRoute.value.name as string
-  return name === 'viewDetail' ? 'view' : name
+  if (name === 'viewDetail') return 'view'
+  if (name === 'aiSession') return 'aiReview'
+  return name
 })
 
 const navHidden = ref(false)

@@ -48,6 +48,14 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/ai/:sessionId',
+    name: 'aiSession',
+    component: AIReview,
+    meta: {
+      title: 'titles.ai'
+    }
+  },
+  {
     path: '/settings',
     redirect: '/settings/base'
   },
@@ -105,7 +113,7 @@ router.beforeEach(async (to, from) => {
   }
 
   // AI 不可用时，拦截 /ai 路由
-  if (to.name === 'aiReview' && !cacheStore.aiAvailable) {
+  if (to.path.startsWith('/ai') && !cacheStore.aiAvailable) {
     return { name: 'view' }
   }
 

@@ -106,33 +106,33 @@ pub fn get_tool_definitions() -> Vec<Value> {
     ]
 }
 
-pub async fn execute_tool(state: &Arc<AppState>, name: &str, args: &Value) -> Value {
+pub async fn execute_tool(state: &Arc<AppState>, name: &str, args: &Value, lang: &str) -> Value {
     match name {
         "fetch_note_by_title" => {
             let title = args["title"].as_str().unwrap_or("");
-            match state.fetch_notes_by_titles(&[title.to_string()], "zh") {
+            match state.fetch_notes_by_titles(&[title.to_string()], lang) {
                 Ok(mut notes) if !notes.is_empty() => {
                     json!({"status": "success", "note": notes.remove(0)})
                 }
-                _ => json!({"status": "error", "message": "笔记不存在"}),
+                _ => json!({"status": "error", "message": crate::i18n::text(lang, "笔记不存在", "Note not found")}),
             }
         }
         "fetch_all_notes" => {
-            match state.fetch_all_notes("zh") {
+            match state.fetch_all_notes(lang) {
                 Ok(notes) => json!({"status": "success", "notes": notes}),
                 Err(e) => json!({"status": "error", "message": e}),
             }
         }
         "fetch_notes_by_day" => {
             let someday = args["someday"].as_str().unwrap_or("");
-            match state.fetch_notes_by_day(someday, "zh") {
+            match state.fetch_notes_by_day(someday, lang) {
                 Ok(notes) => json!({"status": "success", "notes": notes}),
                 Err(e) => json!({"status": "error", "message": e}),
             }
         }
         "search_notes" => {
             let keyword = args["keyword"].as_str().unwrap_or("");
-            match state.search_notes(keyword, "zh").await {
+            match state.search_notes(keyword, lang).await {
                 Ok(notes) => json!({"status": "success", "notes": notes}),
                 Err(e) => json!({"status": "error", "message": e}),
             }
@@ -142,15 +142,15 @@ pub async fn execute_tool(state: &Arc<AppState>, name: &str, args: &Value) -> Va
             let subject = args["subject"].as_str().unwrap_or("");
             let content = args["content"].as_str().unwrap_or("");
             let ts = format!("{}", chrono::Utc::now().timestamp_millis());
-            match state.add_note(title, subject, content, &ts, &[], "zh").await {
-                Ok(()) => json!({"status": "success", "message": "笔记已添加"}),
+            match state.add_note(title, subject, content, &ts, &[], lang).await {
+                Ok(()) => json!({"status": "success", "message": crate::i18n::text(lang, "笔记已添加", "Note added")}),
                 Err(e) => json!({"status": "error", "message": e}),
             }
         }
         "delete_notes" => {
             let title = args["title"].as_str().unwrap_or("");
-            match state.delete_note(title, "zh").await {
-                Ok(()) => json!({"status": "success", "message": format!("已删除笔记「{}」", title)}),
+            match state.delete_note(title, lang).await {
+                Ok(()) => json!({"status": "success", "message": crate::i18n::text(lang, "已删除笔记「{}」", "Deleted note \"{}\"").replace("{}", title)}),
                 Err(e) => json!({"status": "error", "message": e}),
             }
         }
@@ -164,11 +164,11 @@ pub async fn execute_tool(state: &Arc<AppState>, name: &str, args: &Value) -> Va
                 .unwrap_or_else(|| {
                     notes_file::read_note_imgs(&state.paths, old_title)
                 });
-            match state.update_note(old_title, new_title, subject, content, &images, "zh").await {
-                Ok(()) => json!({"status": "success", "message": "笔记已更新"}),
+            match state.update_note(old_title, new_title, subject, content, &images, lang).await {
+                Ok(()) => json!({"status": "success", "message": crate::i18n::text(lang, "笔记已更新", "Note updated")}),
                 Err(e) => json!({"status": "error", "message": e}),
             }
         }
-        _ => json!({"status": "error", "message": format!("未知工具: {}", name)}),
+        _ => json!({"status": "error", "message": crate::i18n::text(lang, "未知工具: {}", "Unknown tool: {}").replace("{}", name)}),
     }
 }

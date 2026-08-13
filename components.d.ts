@@ -11,6 +11,9 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    ChatMessageItem: typeof import('./src/components/chat/ChatMessageItem.vue')['default']
+    ChatThinkingBlock: typeof import('./src/components/chat/ChatThinkingBlock.vue')['default']
+    ChatToolList: typeof import('./src/components/chat/ChatToolList.vue')['default']
     ElAutocomplete: typeof import('element-plus/es')['ElAutocomplete']
     ElBreadcrumb: typeof import('element-plus/es')['ElBreadcrumb']
     ElBreadcrumbItem: typeof import('element-plus/es')['ElBreadcrumbItem']

@@ -36,32 +36,15 @@ fn build_openai_body(
         }
     }
     if let Some(re) = &config.reasoning_effort {
-        match re.as_str() {
-            "disabled" => {
-                body["thinking"] = json!({"type": "disabled"});
-            }
-            "low" => {
-                body["thinking"] = json!({"type": "enabled"});
-                body["reasoning_effort"] = json!("low");
-            }
-            "medium" => {
-                body["thinking"] = json!({"type": "enabled"});
-                body["reasoning_effort"] = json!("medium");
-            }
-            "high" => {
-                body["thinking"] = json!({"type": "enabled"});
-                body["reasoning_effort"] = json!("high");
-            }
-            "xhigh" => {
-                body["thinking"] = json!({"type": "enabled"});
-                body["reasoning_effort"] = json!("xhigh");
-            }
-            "max" => {
-                body["thinking"] = json!({"type": "enabled"});
-                body["reasoning_effort"] = json!("max");
-            }
-            _ => {
-                body["thinking"] = json!({"type": "enabled"});
+        if re == "disabled" {
+            body["thinking"] = json!({"type": "disabled"});
+        } else {
+            body["thinking"] = json!({"type": "enabled"});
+            match re.as_str() {
+                "low" | "medium" | "high" | "xhigh" | "max" => {
+                    body["reasoning_effort"] = json!(re);
+                }
+                _ => {}
             }
         }
     }
@@ -334,7 +317,7 @@ pub fn stream_ai_chat(
                 let func_name = tc["function"]["name"].as_str().unwrap_or("");
                 let args_str = tc["function"]["arguments"].as_str().unwrap_or("{}");
                 let args: Value = serde_json::from_str(args_str).unwrap_or(json!({}));
-                let result = ai_tools::execute_tool(&state, func_name, &args).await;
+                let result = ai_tools::execute_tool(&state, func_name, &args, &lang).await;
                 current_messages.push(json!({
                     "role": "tool",
                     "tool_call_id": tc["id"],

@@ -84,16 +84,12 @@ function confirmRename() {
 
 async function remove(s: AiSession) {
     if (props.disabled) return
-    try {
-        const ok = await ElMessageBox.confirm(t('ai.session.deleteConfirm'), t('common.warning'), {
-            confirmButtonText: t('common.confirm'),
-            cancelButtonText: t('common.cancel'),
-            type: 'warning'
-        }).then(() => true).catch(() => false)
-        if (!ok) return
-    } catch {
-        return
-    }
+    const ok = await ElMessageBox.confirm(t('ai.session.deleteConfirm'), t('common.warning'), {
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+        type: 'warning'
+    }).then(() => true).catch(() => false)
+    if (!ok) return
     emit('delete', s.id)
 }
 </script>

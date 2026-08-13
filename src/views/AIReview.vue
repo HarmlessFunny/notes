@@ -38,56 +38,12 @@
                     </div>
 
                     <div ref="messageListRef" class="message-list">
-                        <template v-for="(message, index) in chatMessages" :key="index">
-                            <div v-if="message.role !== 'system'" :class="['message-item', message.role]">
-                                <div class="message-content">
-                                    <template v-if="typeof message.content === 'string'">
-                                        <div v-if="message.thinking && showThinking" class="thinking-block">
-                                            <div class="thinking-header" @click="toggleThinking(message)">
-                                                <el-icon :size="12"><Cpu /></el-icon>
-                                                <span>{{ $t('ai.thinking') }}</span>
-                                                <el-icon :size="12" class="thinking-toggle-icon">
-                                                    <ArrowDown v-if="isThinkingExpanded(message)" />
-                                                    <ArrowRight v-else />
-                                                </el-icon>
-                                            </div>
-                                            <div v-show="isThinkingExpanded(message)" class="thinking-body">{{ message.thinking }}</div>
-                                        </div>
-                                        <div v-if="message.tools?.length && showThinking" class="tool-list">
-                                            <div v-for="tool in message.tools" :key="`${tool.round}-${tool.name}`" class="tool-card" :class="{ failed: !tool.success }">
-                                                <el-icon :size="13"><Cpu /></el-icon>
-                                                <span class="tool-name">{{ toolNames[tool.name] ?? tool.name }}</span>
-                                                <span class="tool-args" :title="JSON.stringify(tool.arguments)">{{ formatArgs(tool) }}</span>
-                                                <span v-if="!tool.success || !isMutationTool(tool.name)" class="tool-summary">{{ tool.summary }}</span>
-                                                <span class="tool-status" :class="tool.success ? 'ok' : 'bad'">{{ tool.success ? '✓' : '✗' }}</span>
-                                            </div>
-                                        </div>
-                                        <MarkdownRenderer class="message-text" :content="message.content" />
-                                    </template>
-                                    <template v-else>
-                                        <template v-for="(part, pi) in message.content" :key="pi">
-                                            <MarkdownRenderer v-if="part.type === 'text'" class="message-text" :content="part.text" />
-                                            <el-image v-else-if="part.type === 'image_url'" :src="part.image_url.url" class="chat-image" :preview-src-list="[part.image_url.url]" preview-teleported />
-                                        </template>
-                                    </template>
-                                    <div v-if="message.role === 'user'" class="message-actions">
-                                        <el-icon class="action-btn" :title="$t('ai.copy')" @click.stop="copyMessage(message)">
-                                            <CopyDocument />
-                                        </el-icon>
-                                        <el-icon class="action-btn delete-btn" :title="$t('ai.deleteFromHere')" @click.stop="truncateMessages(index)">
-                                            <Delete />
-                                        </el-icon>
-                                    </div>
-                                    <div v-if="message.role === 'assistant' && !sending" class="message-actions">
-                                        <el-icon class="action-btn" :title="$t('ai.copy')" @click.stop="copyMessage(message)">
-                                            <CopyDocument />
-                                        </el-icon>
-                                        <el-icon class="action-btn" :title="$t('ai.regenerate')" @click.stop="retryMessage(index)">
-                                            <Refresh />
-                                        </el-icon>
-                                    </div>
-                                </div>
-                            </div>
+                        <template v-for="(message, index) in chatMessages" :key="message.id ?? index">
+                            <ChatMessageItem v-if="message.role !== 'system'" :message="message" :index="index"
+                                :sending="sending" :show-thinking="showThinking"
+                                :streaming="index === chatMessages.length - 1 && sending"
+                                :auto-expand="index === chatMessages.length - 1 && sending"
+                                @truncate="truncateMessages" @retry="retryMessage" />
                         </template>
                     </div>
 
@@ -104,6 +60,8 @@
                             <el-input v-model="inputMessage" type="textarea" :autosize="{ minRows: 1, maxRows: 6 }"
                                 resize="none" :placeholder="inputPlaceholder" class="message-input"
                                 @keydown="onInputKeydown" />
+                            <el-button v-if="sending" class="stop-btn" :icon="VideoPause" circle :title="$t('ai.stop')"
+                                @click="stopGenerating" />
                             <el-button type="primary" class="send-btn" :icon="Top" @click="sendMessage" :loading="sending"
                                 :disabled="(!inputMessage.trim() && !selectedImages.length) || sending || uploading">
                                 {{ uploading ? $t('ai.uploading') : $t('ai.send') }}
@@ -116,8 +74,8 @@
             <!-- 移动端会话抽屉 -->
             <el-drawer v-model="drawerVisible" :title="$t('ai.session.sessions')" direction="ltr" size="min(300px, 80vw)">
                 <SessionList :sessions="sessions" :active-id="activeSessionId" :disabled="sending"
-                    @create="handleDrawerCreate" @switch="handleDrawerSwitch" @rename="handleDrawerRename"
-                    @delete="handleDrawerDelete" />
+                    @create="handleCreateSession" @switch="handleDrawerSwitch" @rename="handleRenameSession"
+                    @delete="handleDeleteSession" />
             </el-drawer>
         </template>
     </div>
@@ -125,15 +83,14 @@
 
 <script setup lang="ts">
 defineOptions({ name: 'AIReview' })
-import { ref, reactive, computed, watch, nextTick, onMounted, onUnmounted, onActivated } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted, onActivated } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Top, Delete, Picture, Close, Refresh, ChatLineSquare, Setting, Cpu, ArrowDown, ArrowRight, CopyDocument, Plus, DArrowLeft, DArrowRight } from '@element-plus/icons-vue'
+import { Top, Picture, Close, ChatLineSquare, Setting, Plus, DArrowLeft, DArrowRight, VideoPause, ChatDotRound } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import SessionList from '@/components/SessionList.vue'
-import { useAIReview } from '@/hooks/useAIReview'
-import type { ChatMsg } from '@/hooks/useAIReview'
-import type { ToolCallInfo } from '@/utils/stream'
+import ChatMessageItem from '@/components/chat/ChatMessageItem.vue'
+import { useAutoScroll } from '@/composables/useAutoScroll'
+import { useAIReview, isDraftId } from '@/hooks/useAIReview'
 import { useCacheStore } from '@/stores/cache'
 import { useI18n } from 'vue-i18n'
 
@@ -162,95 +119,6 @@ function onNarrowChange() {
 const drawerVisible = ref(false)
 const sidebarOpen = ref(true)
 
-const expandedThinking = reactive(new Set<ChatMsg>())
-function toggleThinking(msg: ChatMsg) {
-    if (expandedThinking.has(msg)) {
-        expandedThinking.delete(msg)
-    } else {
-        expandedThinking.add(msg)
-    }
-}
-
-function isThinkingExpanded(msg: ChatMsg) {
-    return expandedThinking.has(msg)
-        || (sending.value && msg === chatMessages.value[chatMessages.value.length - 1])
-}
-
-const toolNames = computed<Record<string, string>>(() => ({
-    fetch_note_by_title: t('ai.tool.name.fetchNoteByTitle'),
-    fetch_all_notes: t('ai.tool.name.fetchAllNotes'),
-    fetch_notes_by_day: t('ai.tool.name.fetchNotesByDay'),
-    search_notes: t('ai.tool.name.searchNotes'),
-    add_note: t('ai.tool.name.addNote'),
-    delete_notes: t('ai.tool.name.deleteNotes'),
-    update_note: t('ai.tool.name.updateNote'),
-}))
-
-const MUTATION_TOOLS = new Set(['add_note', 'delete_notes', 'update_note'])
-function isMutationTool(name: string) {
-    return MUTATION_TOOLS.has(name)
-}
-
-function formatArgs(tool: ToolCallInfo): string {
-    const args = tool.arguments as Record<string, unknown>
-    const arg = (key: string): string => String(args[key] ?? '')
-
-    switch (tool.name) {
-        case 'fetch_note_by_title':
-            return `${t('ai.tool.arg.title')}: ${arg('title')}`
-        case 'fetch_all_notes':
-            return ''
-        case 'fetch_notes_by_day': {
-            const ts = Number(arg('someday'))
-            if (Number.isFinite(ts) && ts > 0) {
-                const d = new Date(ts)
-                const pad = (n: number) => String(n).padStart(2, '0')
-                return `${t('ai.tool.arg.date')}: ${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-            }
-            return `${t('ai.tool.arg.timestamp')}: ${arg('someday')}`
-        }
-        case 'search_notes':
-            return `${t('ai.tool.arg.keyword')}: ${arg('keyword')}`
-        case 'add_note': {
-            const parts = [`${t('ai.tool.arg.title')}: ${arg('title')}`]
-            if (arg('subject')) parts.push(`${t('ai.tool.arg.subject')}: ${arg('subject')}`)
-            return parts.join(' · ')
-        }
-        case 'delete_notes':
-            return `${t('ai.tool.arg.title')}: ${arg('title')}`
-        case 'update_note':
-            return `${t('ai.tool.arg.old')}: ${arg('old_title')} → ${t('ai.tool.arg.new')}: ${arg('new_title')}`
-        default:
-            return JSON.stringify(args)
-    }
-}
-
-async function copyMessage(message: ChatMsg) {
-    let text = ''
-    if (typeof message.content === 'string') {
-        text = message.content
-    } else {
-        text = message.content
-            .filter((part): part is { type: 'text'; text: string } => part.type === 'text')
-            .map(part => part.text)
-            .join('\n')
-    }
-    if (!text) return
-    try {
-        await navigator.clipboard.writeText(text)
-    } catch {
-        const ta = document.createElement('textarea')
-        ta.value = text
-        ta.style.position = 'fixed'
-        ta.style.opacity = '0'
-        document.body.appendChild(ta)
-        ta.select()
-        document.execCommand('copy')
-        document.body.removeChild(ta)
-    }
-    ElMessage.success(t('ai.copied'))
-}
-
 const {
     sessions,
     activeSessionId,
@@ -263,9 +131,11 @@ const {
     ensureReady,
     switchSession,
     createSession,
+    createDraftSession,
     deleteSession,
     renameSession,
     sendMessage,
+    stopGenerating,
     truncateMessages,
     retryMessage,
     addImages,
@@ -277,23 +147,22 @@ const currentSessionTitle = computed(() => {
     return s?.title || t('ai.session.defaultTitle')
 })
 
-async function handleCreateSession() {
+function handleCreateSession() {
     if (chatMessages.value.length === 0) {
         ElMessage.info(t('ai.session.alreadyNew'))
         return
     }
-    const session = await createSession()
-    if (!session) {
-        ElMessage.error(t('ai.session.createFailed'))
-        return
-    }
+    createDraftSession()
     if (drawerVisible.value) drawerVisible.value = false
-    router.replace(`/ai/${session.id}`)
-    await nextTick()
-    scrollToBottom()
+    router.replace('/ai')
+    nextTick().then(() => scrollToBottom())
 }
 
 function handleSwitchSession(id: string) {
+    if (sending.value) {
+        ElMessage.info(t('ai.session.switchBusy'))
+        return
+    }
     router.push(`/ai/${id}`)
 }
 
@@ -312,21 +181,13 @@ async function handleDeleteSession(id: string) {
     }
 }
 
-function handleDrawerCreate() {
-    handleCreateSession()
-}
-
 function handleDrawerSwitch(id: string) {
+    if (sending.value) {
+        ElMessage.info(t('ai.session.switchBusy'))
+        return
+    }
     drawerVisible.value = false
     router.push(`/ai/${id}`)
-}
-
-function handleDrawerRename(id: string, title: string) {
-    handleRenameSession(id, title)
-}
-
-function handleDrawerDelete(id: string) {
-    handleDeleteSession(id)
 }
 
 function onInputKeydown(e: KeyboardEvent) {
@@ -339,31 +200,8 @@ function onInputKeydown(e: KeyboardEvent) {
 const fileInputRef = ref<HTMLInputElement>()
 const messageListRef = ref<HTMLDivElement>()
 const inputAreaRef = ref<HTMLDivElement>()
+const { scrollToBottom, scrollToBottomIfNear, requestScroll } = useAutoScroll(messageListRef)
 let resizeObserver: ResizeObserver | null = null
-
-function onInputAreaResize() {
-    scrollToBottomIfNear()
-}
-
-function isNearBottom() {
-    const el = messageListRef.value
-    if (!el) return true
-    return el.scrollHeight - el.scrollTop - el.clientHeight < 120
-}
-
-function scrollToBottomIfNear() {
-    if (isNearBottom()) scrollToBottom()
-}
-
-function scrollToBottom(smooth = false) {
-    const el = messageListRef.value
-    if (!el) return
-    if (smooth) {
-        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
-    } else {
-        el.scrollTop = el.scrollHeight
-    }
-}
 
 function triggerUpload() {
     fileInputRef.value?.click()
@@ -381,7 +219,7 @@ onMounted(() => {
     store.loadAiStatus()
     narrowMediaQuery.addEventListener('change', onNarrowChange)
     if (inputAreaRef.value) {
-        resizeObserver = new ResizeObserver(onInputAreaResize)
+        resizeObserver = new ResizeObserver(scrollToBottomIfNear)
         resizeObserver.observe(inputAreaRef.value)
     }
 })
@@ -395,25 +233,22 @@ async function syncToRoute() {
     await ensureReady()
     const id = sessionId.value
     if (!id) {
-        // 裸 /ai：跳转到当前/上次会话，无会话则新建
-        if (activeSessionId.value) {
+        // 裸 /ai：跳转到当前/上次会话，草稿不写入路由
+        if (activeSessionId.value && !isDraftId(activeSessionId.value)) {
             await switchSession(activeSessionId.value)
             router.replace(`/ai/${activeSessionId.value}`)
-        } else {
-            const s = await createSession()
-            if (s) router.replace(`/ai/${s.id}`)
         }
         return
     }
-    // /ai/:id 不存在（会话被删/过期）：跳转到第一个会话，没有则新建
+    // /ai/:id 不存在（会话被删/过期）：跳转到第一个会话，没有则建草稿
     if (!sessions.value.some(s => s.id === id)) {
         if (sessions.value.length > 0) {
             const first = sessions.value[0]!.id
             await switchSession(first)
             router.replace(`/ai/${first}`)
         } else {
-            const s = await createSession()
-            if (s) router.replace(`/ai/${s.id}`)
+            createDraftSession()
+            router.replace('/ai')
         }
         return
     }
@@ -426,16 +261,13 @@ async function handleActivated() {
     await syncToRoute()
     await nextTick()
     scrollToBottom(true)
+    // markdown 异步解析撑高内容后再定位一次
     window.setTimeout(() => scrollToBottom(), 400)
 }
 onActivated(handleActivated)
 
 watch(chatMessages, () => {
-    if (sending.value) {
-        scrollToBottom()
-    } else {
-        scrollToBottomIfNear()
-    }
+    requestScroll(sending.value)
 }, { deep: true })
 </script>
 
@@ -582,187 +414,6 @@ watch(chatMessages, () => {
     gap: 16px;
 }
 
-.message-item {
-    display: flex;
-    flex-direction: column;
-}
-
-.message-item.user {
-    align-items: flex-end;
-}
-
-.message-item:not(.user) {
-    align-items: flex-start;
-}
-
-.message-item.user .message-content {
-    align-items: flex-end;
-}
-
-.message-item.user .message-text {
-    background: var(--el-color-primary);
-    color: white;
-    border-radius: 12px 12px 0 12px;
-}
-
-.message-item:not(.user) .message-text {
-    color: var(--el-text-color-primary);
-    background: var(--el-fill-color-light);
-}
-
-.message-content {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-width: 75%;
-}
-
-.message-text {
-    padding: 10px 14px;
-    border-radius: 12px 12px 12px 0;
-    line-height: 1.6;
-    word-break: break-word;
-}
-
-.thinking-block {
-    background: var(--el-fill-color-light);
-    border-radius: 8px;
-    padding: 4px 8px;
-    font-size: 13px;
-}
-
-.thinking-header {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: var(--el-text-color-secondary);
-    cursor: pointer;
-    user-select: none;
-}
-
-.thinking-header:hover {
-    color: var(--el-color-primary);
-}
-
-.thinking-toggle-icon {
-    margin-left: auto;
-}
-
-.thinking-body {
-    color: var(--el-text-color-secondary);
-    font-style: italic;
-    white-space: pre-wrap;
-    word-break: break-word;
-    max-height: 200px;
-    overflow-y: auto;
-    padding: 4px 0 2px;
-    font-size: 13px;
-    line-height: 1.6;
-}
-
-.tool-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.tool-card {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    background: var(--el-fill-color-light);
-    border: 1px solid var(--el-border-color-lighter);
-    border-radius: 6px;
-    padding: 4px 8px;
-    color: var(--el-text-color-secondary);
-}
-
-.tool-card.failed {
-    border-color: var(--el-color-danger-light-5);
-    background: var(--el-color-danger-light-9);
-}
-
-.tool-name {
-    font-weight: 600;
-    color: var(--el-text-color-primary);
-    flex-shrink: 0;
-}
-
-.tool-args {
-    font-family: monospace;
-    color: var(--el-text-color-secondary);
-    word-break: break-all;
-}
-
-.tool-summary {
-    word-break: break-all;
-    flex: 1;
-    min-width: 0;
-}
-
-.tool-status {
-    flex-shrink: 0;
-    margin-left: auto;
-    font-weight: 600;
-}
-
-.tool-status.ok {
-    color: var(--el-color-success);
-}
-
-.tool-status.bad {
-    color: var(--el-color-danger);
-}
-
-.message-actions {
-    display: flex;
-    justify-content: flex-end;
-    padding-top: 2px;
-    opacity: 0;
-    transition: opacity 0.2s;
-}
-
-.message-content:hover .message-actions {
-    opacity: 1;
-}
-
-.action-btn {
-    font-size: 14px;
-    color: var(--el-text-color-placeholder);
-    cursor: pointer;
-}
-
-.action-btn:hover {
-    color: var(--el-color-primary);
-}
-
-.action-btn.delete-btn:hover {
-    color: var(--el-color-danger);
-}
-
-.message-text :deep(img) {
-    max-height: 300px;
-    width: auto;
-    object-fit: contain;
-}
-
-.chat-image {
-    max-width: 300px;
-    max-height: 300px;
-    border-radius: 8px;
-    margin-top: 4px;
-    cursor: zoom-in;
-    overflow: hidden;
-}
-
-.chat-image :deep(img) {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    max-height: 300px;
-}
-
 .input-area {
     padding: 12px 20px;
     flex-shrink: 0;
@@ -821,6 +472,10 @@ watch(chatMessages, () => {
     padding: 0 20px;
 }
 
+.stop-btn {
+    flex-shrink: 0;
+}
+
 .hidden-input {
     display: none;
 }
@@ -828,10 +483,6 @@ watch(chatMessages, () => {
 @media (max-width: 768px) {
     .input-area {
         padding: 12px 16px;
-    }
-
-    .message-content {
-        max-width: 85%;
     }
 }
 
@@ -841,21 +492,8 @@ watch(chatMessages, () => {
         gap: 12px;
     }
 
-    .message-text {
-        padding: 8px 12px;
-        font-size: 14px;
-    }
-
-    .message-content {
-        max-width: 90%;
-    }
-
     .input-area {
         padding: 10px 12px;
-    }
-
-    .input-actions {
-        gap: 6px;
     }
 
     .send-btn {

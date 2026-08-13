@@ -14,19 +14,13 @@ export interface StreamCallback {
     onComplete?: () => void
 }
 
-export interface StreamResult<T> {
-    data: T | null
-    error: Error | null
-}
-
 async function processSSEStream(
     response: Response,
     callback?: StreamCallback
-): Promise<string> {
+): Promise<void> {
     const reader = response.body!.getReader()
     const decoder = new TextDecoder()
     let buffer = ''
-    let fullText = ''
 
     while (true) {
         const { done, value } = await reader.read()
@@ -39,9 +33,8 @@ async function processSSEStream(
         for (const line of lines) {
             if (!line.startsWith('data: ')) continue
             try {
-                const data: { type: string; content?: string; raw_json?: string } = JSON.parse(line.slice(6))
+                const data: { type: string; content?: string } = JSON.parse(line.slice(6))
                 if (data.type === 'content' && typeof data.content === 'string') {
-                    fullText += data.content
                     callback?.onContent(data.content)
                 } else if (data.type === 'thinking' && typeof data.content === 'string') {
                     callback?.onThinking?.(data.content)
@@ -49,10 +42,6 @@ async function processSSEStream(
                     try {
                         callback?.onTool?.(JSON.parse(data.content) as ToolCallInfo)
                     } catch { /* ignore malformed tool event */ }
-                } else if (data.type === 'done') {
-                    if (data.raw_json && typeof data.raw_json === 'string') {
-                        fullText = data.raw_json
-                    }
                 } else if (data.type === 'error') {
                     throw new Error(data.content)
                 }
@@ -65,24 +54,16 @@ async function processSSEStream(
     }
 
     callback?.onComplete?.()
-    return fullText
 }
 
-function parseStreamResult<T>(fullText: string): T | null {
-    try {
-        return JSON.parse(fullText) as T
-    } catch {
-        return fullText as unknown as T
-    }
-}
-
-async function executeStreamRequest<T>(
+// 流式请求：错误通过返回值暴露（onError 回调也会触发），promise 永不 reject
+async function executeStream(
     url: string,
     body: object,
     callback?: StreamCallback,
     signal?: AbortSignal,
     headers?: Record<string, string>
-): Promise<StreamResult<T>> {
+): Promise<Error | null> {
     try {
         const response = await fetch(url, {
             method: 'POST',
@@ -99,36 +80,26 @@ async function executeStreamRequest<T>(
             throw new Error('No response body')
         }
 
-        const fullText = await processSSEStream(response, callback)
-        return { data: parseStreamResult<T>(fullText), error: null }
+        await processSSEStream(response, callback)
+        return null
 
     } catch (error: any) {
         if (error?.name === 'AbortError') {
-            return { data: null, error: new Error('Request aborted') }
+            return new Error('Request aborted')
         }
         callback?.onError?.(error)
-        return { data: null, error }
+        return error as Error
     }
 }
 
-export async function streamFetch<T>(
+export function createAbortableStream(
     url: string,
     body: object,
     callback?: StreamCallback,
     headers?: Record<string, string>
-): Promise<StreamResult<T>> {
+): { promise: Promise<Error | null>; abort: () => void } {
     const controller = new AbortController()
-    return executeStreamRequest<T>(url, body, callback, controller.signal, headers)
-}
-
-export function createAbortableStream<T>(
-    url: string,
-    body: object,
-    callback?: StreamCallback,
-    headers?: Record<string, string>
-): { promise: Promise<StreamResult<T>>; abort: () => void } {
-    const controller = new AbortController()
-    const promise = executeStreamRequest<T>(url, body, callback, controller.signal, headers)
+    const promise = executeStream(url, body, callback, controller.signal, headers)
     return {
         promise,
         abort: () => controller.abort(),

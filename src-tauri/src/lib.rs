@@ -20,7 +20,60 @@ use axum::{
 };
 use tower_http::cors::{CorsLayer, Any};
 use tauri::Manager;
+use tauri_plugin_log::{Target, TargetKind};
 use crate::db::AppState;
+
+/// 探测目录能否创建并写入（只读盘、磁盘满、无权限都会失败）。
+/// 日志目录和数据目录都靠它决定是否需要回退，避免应用"能启动但功能不可用"。
+fn dir_is_usable(dir: &std::path::Path) -> bool {
+    if std::fs::create_dir_all(dir).is_err() {
+        return false;
+    }
+    let probe = dir.join(".write-probe");
+    match std::fs::write(&probe, b"") {
+        Ok(()) => {
+            let _ = std::fs::remove_file(&probe);
+            true
+        }
+        Err(_) => false,
+    }
+}
+
+/// 把文件或整个目录复制到目标位置（用于旧数据目录迁移）
+fn copy_recursively(src: &std::path::Path, dst: &std::path::Path) -> std::io::Result<()> {
+    if src.is_dir() {
+        std::fs::create_dir_all(dst)?;
+        for entry in std::fs::read_dir(src)? {
+            let entry = entry?;
+            copy_recursively(&entry.path(), &dst.join(entry.file_name()))?;
+        }
+        Ok(())
+    } else {
+        if let Some(parent) = dst.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::copy(src, dst).map(|_| ())
+    }
+}
+
+/// 旧版本把数据放在可执行文件同级目录，Linux 上该位置通常只读。
+/// 迁移到标准 app_data_dir 时把已有数据一并搬过去，避免用户笔记丢失。
+fn migrate_legacy_data_dir(legacy: &std::path::Path, target: &std::path::Path) {
+    if !legacy.is_dir() || target.join("database.json").exists() {
+        return;
+    }
+    if std::fs::rename(legacy, target).is_ok() {
+        eprintln!("[notes] migrated data dir: {:?} -> {:?}", legacy, target);
+        return;
+    }
+    match copy_recursively(legacy, target) {
+        Ok(()) => {
+            let _ = std::fs::remove_dir_all(legacy);
+            eprintln!("[notes] migrated data dir (copy): {:?} -> {:?}", legacy, target);
+        }
+        Err(e) => eprintln!("[notes] data dir migration failed: {e} (from {:?})", legacy),
+    }
+}
 
 fn create_router(state: Arc<AppState>) -> Router {
     let cors = CorsLayer::new()
@@ -129,31 +182,69 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_sharekit::init())
         .invoke_handler(tauri::generate_handler![save_export_file, export_notes])
         .setup(move |app| {
+            // 日志插件默认同时写 app_log_dir() 和 stdout，写不进日志目录会让 setup 失败退出。
+            // 先探测可写性：可写则显式只写文件，不可写则降级为仅 stdout。
+            // 注意: Builder::target() 是追加而非替换，必须用 clear_targets() 清掉默认 target。
+            let log_level = log::LevelFilter::Info;
+            let log_target = match app.path().app_log_dir() {
+                Ok(dir) if dir_is_usable(&dir) => {
+                    Target::new(TargetKind::LogDir { file_name: None })
+                }
+                Ok(dir) => {
+                    eprintln!(
+                        "[notes] log dir not writable ({:?}), falling back to stdout-only logging",
+                        dir
+                    );
+                    Target::new(TargetKind::Stdout)
+                }
+                Err(e) => {
+                    eprintln!(
+                        "[notes] app_log_dir() failed: {e}, falling back to stdout-only logging"
+                    );
+                    Target::new(TargetKind::Stdout)
+                }
+            };
             app.handle().plugin(
-                tauri_plugin_log::Builder::default()
-                    .level(log::LevelFilter::Info)
+                tauri_plugin_log::Builder::new()
+                    .level(log_level)
+                    .clear_targets()
+                    .target(log_target)
                     .build(),
             )?;
 
-            let data_dir = if cfg!(all(not(target_os = "android"), not(target_os = "ios"))) {
-                if cfg!(debug_assertions) {
-                    config::find_project_root().join("data")
-                } else {
-                    let exe = std::env::current_exe().unwrap_or_default();
-                    exe.parent().map_or_else(
-                        || config::find_project_root().join("data"),
-                        |p| p.join("data"),
-                    )
-                }
-            } else {
-                app.path().app_data_dir().unwrap_or_else(|e| {
+            // 统一使用各平台标准的应用数据目录（Windows: %APPDATA%，
+            // Linux: $XDG_DATA_HOME，Android/iOS: 应用私有目录）。
+            // 若该目录不可写（只读 HOME、容器只读挂载等），回退到临时目录并明确告警，
+            // 否则应用会"能启动但数据层完全不可用"，故障难以察觉。
+            let is_desktop = cfg!(all(not(target_os = "android"), not(target_os = "ios")));
+            let mut data_dir = match app.path().app_data_dir() {
+                Ok(dir) => dir,
+                Err(e) => {
                     eprintln!("[notes] app_data_dir() failed: {e}, falling back to '.'");
                     std::path::PathBuf::from(".")
-                })
+                }
             };
+            if !dir_is_usable(&data_dir) {
+                let fallback = std::env::temp_dir().join("notes");
+                eprintln!(
+                    "[notes] WARNING: data dir {:?} is not writable, falling back to {:?}. \
+                     Data will not be persisted across reboots!",
+                    data_dir, fallback
+                );
+                data_dir = fallback;
+            }
+            if is_desktop {
+                if let Some(legacy) = std::env::current_exe()
+                    .ok()
+                    .and_then(|exe| exe.parent().map(|p| p.join("data")))
+                {
+                    migrate_legacy_data_dir(&legacy, &data_dir);
+                }
+            }
             eprintln!("[notes] data_dir resolved to: {:?}", data_dir);
             let paths = config::AppPaths::with_data_dir(&data_dir);
             let state = Arc::new(AppState::new_with_paths(paths));
@@ -161,9 +252,17 @@ pub fn run() {
             let router = create_router(state);
 
             tauri::async_runtime::spawn(async move {
-                let listener = tokio::net::TcpListener::bind("127.0.0.1:5000").await.unwrap();
-                log::info!("Axum server starting on http://127.0.0.1:5000");
-                axum::serve(listener, router).await.unwrap();
+                match tokio::net::TcpListener::bind("127.0.0.1:5000").await {
+                    Ok(listener) => {
+                        log::info!("Axum server starting on http://127.0.0.1:5000");
+                        if let Err(e) = axum::serve(listener, router).await {
+                            eprintln!("[notes] axum server stopped: {e}");
+                        }
+                    }
+                    Err(e) => eprintln!(
+                        "[notes] failed to bind 127.0.0.1:5000: {e} (port already in use?)"
+                    ),
+                }
             });
             Ok(())
         })

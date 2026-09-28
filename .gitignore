@@ -88,3 +88,13 @@ release/
 
 # Android keystore (private key)
 src-tauri/keystore.jks
+
+# 沙箱 / 临时验证环境的缓存与日志（CI 与本地都不应提交）
+.cargo-home/
+.npm-cache/
+.testhome/
+.testlogs/
+
+# 临时验证产物
+*.orig
+*.rej

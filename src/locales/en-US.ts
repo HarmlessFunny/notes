@@ -72,6 +72,7 @@ const enUS: typeof zhCN = {    common: {
         mirror: 'China mirror',
         download: 'Download',
         upToDate: 'You are up to date',
+        unsupported: 'No official package for this platform yet, please check the Releases page',
         check: 'Check for updates',
         checking: 'Checking...',
         currentVersion: 'Current version: {version}',

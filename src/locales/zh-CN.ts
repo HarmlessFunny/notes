@@ -71,6 +71,7 @@ export default {
         mirror: '国内镜像',
         download: '前往下载',
         upToDate: '已是最新版本',
+        unsupported: '当前平台暂无官方安装包，请前往 Release 页面查看',
         check: '检查更新',
         checking: '检查中...',
         currentVersion: '当前版本：{version}',

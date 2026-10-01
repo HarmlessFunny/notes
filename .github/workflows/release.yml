@@ -87,6 +87,9 @@ jobs:
             release/Notes-Android-arm64-v8a.apk
 
   build-linux:
+    # 串行在 Windows job 之后：两个 job 都往同一个 Release 上传产物，
+    # 并发跑会互相抢 Release（可能让 exe / APK 上传失败）。
+    needs: build-windows
     runs-on: ubuntu-latest
     permissions:
       contents: write

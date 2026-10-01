@@ -44,6 +44,11 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # 该 action 默认 packages 是 'tools platform-tools'，但 legacy `tools` 包
+          # 已从 Google SDK 仓库下架，sdkmanager 会报 Failed to find package 'tools'
+          # 并以 exit 1 结束，导致整个 Windows job 失败。只装 platform-tools 即可。
+          packages: 'platform-tools'
 
       - name: Update version from tag
         shell: pwsh

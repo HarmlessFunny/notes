@@ -187,39 +187,42 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![save_export_file, export_notes])
         .setup(move |app| {
             // 日志插件默认同时写 app_log_dir() 和 stdout，写不进日志目录会让 setup 失败退出。
-            // 先探测可写性：可写则显式只写文件，不可写则降级为仅 stdout。
+            // 先探测可写性：可写则写文件 *并保留 stdout*（安卓上 Stdout 即 logcat，
+            // 桌面 dev 下是控制台，两者丢了都很难排查），不可写则降级为仅 stdout。
             // 注意: Builder::target() 是追加而非替换，必须用 clear_targets() 清掉默认 target。
             let log_level = log::LevelFilter::Info;
-            let log_target = match app.path().app_log_dir() {
-                Ok(dir) if dir_is_usable(&dir) => {
-                    Target::new(TargetKind::LogDir { file_name: None })
-                }
+            let log_targets = match app.path().app_log_dir() {
+                Ok(dir) if dir_is_usable(&dir) => vec![
+                    Target::new(TargetKind::LogDir { file_name: None }),
+                    Target::new(TargetKind::Stdout),
+                ],
                 Ok(dir) => {
                     eprintln!(
                         "[notes] log dir not writable ({:?}), falling back to stdout-only logging",
                         dir
                     );
-                    Target::new(TargetKind::Stdout)
+                    vec![Target::new(TargetKind::Stdout)]
                 }
                 Err(e) => {
                     eprintln!(
                         "[notes] app_log_dir() failed: {e}, falling back to stdout-only logging"
                     );
-                    Target::new(TargetKind::Stdout)
+                    vec![Target::new(TargetKind::Stdout)]
                 }
             };
             app.handle().plugin(
                 tauri_plugin_log::Builder::new()
                     .level(log_level)
                     .clear_targets()
-                    .target(log_target)
+                    .targets(log_targets)
                     .build(),
             )?;
 
             // 统一使用各平台标准的应用数据目录（Windows: %APPDATA%，
             // Linux: $XDG_DATA_HOME，Android/iOS: 应用私有目录）。
-            // 若该目录不可写（只读 HOME、容器只读挂载等），回退到临时目录并明确告警，
-            // 否则应用会"能启动但数据层完全不可用"，故障难以察觉。
+            // 若该目录不可写（只读 HOME、容器只读挂载等），回退到应用缓存目录（安卓上
+            // 私有目录始终存在且可写；系统临时目录在安卓是 /data/local/tmp，通常无权写），
+            // 再退到临时目录，并明确告警，否则应用会"能启动但数据层完全不可用"，难以察觉。
             let is_desktop = cfg!(all(not(target_os = "android"), not(target_os = "ios")));
             let mut data_dir = match app.path().app_data_dir() {
                 Ok(dir) => dir,
@@ -229,7 +232,13 @@ pub fn run() {
                 }
             };
             if !dir_is_usable(&data_dir) {
-                let fallback = std::env::temp_dir().join("notes");
+                let fallback = app
+                    .path()
+                    .app_cache_dir()
+                    .ok()
+                    .map(|dir| dir.join("data"))
+                    .filter(|dir| dir_is_usable(dir))
+                    .unwrap_or_else(|| std::env::temp_dir().join("notes"));
                 eprintln!(
                     "[notes] WARNING: data dir {:?} is not writable, falling back to {:?}. \
                      Data will not be persisted across reboots!",

@@ -10,6 +10,7 @@
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "tauri": "tauri",
+    "release:linux": "npx tauri build --no-bundle && mkdir -p release && cp -f src-tauri/target/release/notes release/Notes-Linux-x86_64 && chmod +x release/Notes-Linux-x86_64",
     "release:win": "npx tauri build && if not exist release mkdir release && copy /Y src-tauri\\target\\release\\notes.exe release\\",
     "release:android": "npx tauri android build --target aarch64 && if not exist release mkdir release && copy /Y src-tauri\\gen\\android\\app\\build\\outputs\\apk\\universal\\release\\app-universal-release.apk release\\notes.apk"
   },
@@ -18,6 +19,7 @@
     "@tauri-apps/api": "^2.11.1",
     "@tauri-apps/plugin-dialog": "^2.7.1",
     "@tauri-apps/plugin-opener": "^2.5.4",
+    "@tauri-apps/plugin-os": "2.3.2",
     "@tauri-apps/plugin-shell": "^2.3.5",
     "aimodels": "^0.6.1",
     "axios": "^1.16.1",

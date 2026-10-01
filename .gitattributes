@@ -1,0 +1,23 @@
+# 仓库在 Windows / Linux 上同时开发，统一按 LF 存储，
+# 避免 CRLF 在两边来回翻转产生无意义的 diff。
+* text=auto eol=lf
+
+# Windows 批处理必须是 CRLF，否则 cmd 解析会出问题
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# npm 锁文件由 npm 自行维护，不要做任何行尾/编码转换
+package-lock.json -text
+
+# 二进制资源
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.jar binary
+*.jks binary
+*.apk binary
+
+# 构建产物
+dist/** -diff

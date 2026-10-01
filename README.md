@@ -25,17 +25,25 @@
 
 [**Windows-x64**](https://github.com/HarmlessFunny/notes/releases/latest/download/Notes-Windows-x64.exe) [**国内镜像**](https://gh-proxy.org/https://github.com/HarmlessFunny/notes/releases/latest/download/Notes-Windows-x64.exe)
 
+[**Linux-x86_64**](https://github.com/HarmlessFunny/notes/releases/latest/download/Notes-Linux-x86_64) [**国内镜像**](https://gh-proxy.org/https://github.com/HarmlessFunny/notes/releases/latest/download/Notes-Linux-x86_64)
+
 [**Android-arm64-v8a**](https://github.com/HarmlessFunny/notes/releases/latest/download/Notes-Android-arm64-v8a.apk) [**国内镜像**](https://gh-proxy.org/https://github.com/HarmlessFunny/notes/releases/latest/download/Notes-Android-arm64-v8a.apk)
 
 ## 开发者
 
 ### 环境要求
 
-- Node.js 22+
+- Node.js 22+（自带 npm ≥ 10）
 - Rust toolchain + `aarch64-linux-android` target（Android 交叉编译）
 - Java 17（Android 构建需要，`keytool` 用于生成签名密钥）
 - Android SDK + NDK（构建 APK 时需要）
   - 通过 Android Studio 安装，或 CI 中由 `android-actions/setup-android` 自动配置
+- Linux 构建额外需要 Tauri 系统依赖：
+
+  ```bash
+  sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libsoup-3.0-dev \
+      libjavascriptcoregtk-4.1-dev librsvg2-dev patchelf build-essential
+  ```
 
 ### 启动开发服务器
 
@@ -51,21 +59,30 @@ npm run tauri dev
 
 产物输出到 `release/`：
 - `Notes-Windows-x64.exe`
+- `Notes-Linux-x86_64`
 - `Notes-Android-arm64-v8a.apk`
 
 #### 一键构建（推荐）
 
 ```bash
-.\build.bat
+.\build.bat          # Windows: 前端 → exe → Android APK
+./build.sh           # Linux:   前端 → Linux 二进制
+./build.sh --android # Linux 上额外构建 Android APK
+./build.sh --force   # 强制重建前端
 ```
 
-自动构建前端 → Windows exe → Android APK。首次构建自动生成签名密钥 `src-tauri\keystore.jks`（已存在则复用），保证每次构建签名一致，手机可无缝覆盖安装升级。
+`build.bat` 自动构建前端 → Windows exe → Android APK。首次构建自动生成签名密钥 `src-tauri\keystore.jks`（已存在则复用），保证每次构建签名一致，手机可无缝覆盖安装升级。
+
+`build.sh` 是在 Linux 上对应的脚本，默认只构建前端 + Linux 二进制（Android 需要 SDK/NDK 和 Java，故用 `--android` 显式开启）。
 
 #### 单独构建
 
 ```bash
 # Windows exe
-npx tauri build
+npm run release:win
+
+# Linux 二进制
+npm run release:linux
 
 # Android APK（需先设置签名环境变量）
 set TAURI_ANDROID_KEYSTORE_PATH=%CD%\src-tauri\keystore.jks
@@ -82,6 +99,21 @@ keytool -genkey -v -keystore src-tauri\keystore.jks -alias notes -keyalg RSA -ke
 ```
 
 > CI 环境自动完成以上所有步骤，无需手动配置。GitHub Actions 会从仓库 Secret `ANDROID_KEYSTORE_BASE64` 恢复签名密钥，确保每个 Release 版本签名一致。
+
+#### 数据目录
+
+运行时数据（`database.json`、`notes/`、`uploads/`、`ai_sessions/`）统一存放在各平台标准的应用数据目录：
+
+| 平台 | 位置 |
+|------|------|
+| Windows | `%APPDATA%\com.harmlessfunny.notes` |
+| Linux | `$XDG_DATA_HOME/com.harmlessfunny.notes`（默认 `~/.local/share/...`） |
+| Android / iOS | 应用私有目录 |
+
+Linux 上二进制通常安装在只读位置（`/usr/bin`、AppImage 挂载点），因此**不要**把数据放在可执行文件旁边。旧版本放在 exe 同级 `data/` 目录的数据会在首次启动时自动迁移过来。
+
+> 注意：`package-lock.json` 中的平台元数据（`libc` 字段等）会随执行 `npm install` 的操作系统不同而小幅变动。CI 与本地均使用 `npm ci`（不校验也不改写元数据）；如需新增依赖，请勿在提交时夹带无关的锁文件元数据变动。
+
 
 ### AI 配置
 
